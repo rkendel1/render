@@ -32,7 +32,7 @@ bun add @json-render/core @json-render/react`}</Code>
         json-render requires the following peer dependencies:
       </p>
       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
-        <li><code className="text-foreground">react</code> ^18.0.0 or ^19.0.0</li>
+        <li><code className="text-foreground">react</code> ^19.0.0</li>
         <li><code className="text-foreground">zod</code> ^3.0.0</li>
       </ul>
       <Code lang="bash">npm install react zod</Code>

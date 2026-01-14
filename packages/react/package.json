@@ -3,6 +3,26 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "description": "React renderer for @json-render/core. JSON becomes React components.",
+  "keywords": [
+    "json",
+    "ui",
+    "react",
+    "ai",
+    "generative-ui",
+    "llm",
+    "renderer",
+    "streaming",
+    "components"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vercel-labs/json-render.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/vercel-labs/json-render#readme",
+  "bugs": {
+    "url": "https://github.com/vercel-labs/json-render/issues"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
