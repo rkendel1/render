@@ -151,7 +151,7 @@ export async function Code({ children, lang = "typescript" }: CodeProps) {
   });
 
   return (
-    <div className="group relative my-6 rounded-lg border border-border bg-neutral-100 dark:bg-[#0a0a0a] text-sm font-mono overflow-hidden">
+    <div className="group relative my-6 rounded-lg border border-border bg-neutral-100 dark:bg-[#0a0a0a] text-sm font-mono overflow-hidden max-w-full">
       <div className="absolute top-3 right-3 z-10">
         <CopyButton
           text={children.trim()}

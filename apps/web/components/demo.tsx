@@ -403,7 +403,7 @@ export function Demo() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* Tabbed code/stream/json panel */}
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-4 mb-2 h-6">
             {(["json", "stream", "code"] as const).map((tab) => (
               <button
@@ -448,7 +448,7 @@ export function Demo() {
         </div>
 
         {/* Rendered output using json-render */}
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center justify-between mb-2 h-6">
             <div className="text-xs text-muted-foreground font-mono">
               render

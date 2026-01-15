@@ -89,7 +89,7 @@ export default function Home() {
       <section className="border-t border-border">
         <div className="max-w-5xl mx-auto px-6 py-24">
           <div className="grid lg:grid-cols-2 gap-12">
-            <div>
+            <div className="min-w-0">
               <h2 className="text-2xl font-semibold mb-4">
                 Define your catalog
               </h2>
@@ -121,7 +121,7 @@ export const catalog = createCatalog({
   },
 });`}</Code>
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-2xl font-semibold mb-4">AI generates JSON</h2>
               <p className="text-muted-foreground mb-6">
                 Constrained output that your components render natively.
