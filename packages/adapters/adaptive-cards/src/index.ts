@@ -57,12 +57,17 @@ export function renderAdaptiveCard(
 ): AdaptiveCardElement {
   const rootElements = renderElement(tree.root, tree, registry);
 
-  return {
+  const result: AdaptiveCardElement = {
     type: "AdaptiveCard",
     version: options.version || "1.5",
     body: rootElements,
-    fallbackText: options.fallbackText,
   };
+
+  if (options.fallbackText !== undefined) {
+    result.fallbackText = options.fallbackText;
+  }
+
+  return result;
 }
 
 /**
