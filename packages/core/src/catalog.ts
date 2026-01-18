@@ -315,7 +315,7 @@ export function generateCatalogPrompt<
   }
   lines.push("");
 
-  return lines.join("\n") + generateOuputFormatInstructions();
+  return lines.join("\n") + generateOutputFormatInstructions();
 }
 
 /**
