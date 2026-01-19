@@ -1,6 +1,6 @@
 "use client";
 
-import React, { type ComponentType, type ReactNode, useMemo } from "react";
+import { type ComponentType, type ReactNode } from "react";
 import type {
   UIElement,
   UITree,
@@ -10,7 +10,6 @@ import type {
 } from "@json-render/core";
 import { useIsVisible } from "./contexts/visibility";
 import { useActions } from "./contexts/actions";
-import { useData } from "./contexts/data";
 
 /**
  * Props passed to component renderers
