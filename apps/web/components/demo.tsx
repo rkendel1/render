@@ -219,7 +219,10 @@ export function Demo({
     clear,
   } = useUIStream({
     api: "/api/generate",
-    onError: (err: Error) => console.error("Generation error:", err),
+    onError: (err: Error) => {
+      console.error("Generation error:", err);
+      toast.error(err.message || "Generation failed. Please try again.");
+    },
   } as Parameters<typeof useUIStream>[0]);
 
   // Initialize interactive state for Select components

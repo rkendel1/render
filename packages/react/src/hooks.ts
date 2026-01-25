@@ -153,7 +153,19 @@ export function useUIStream({
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
+          // Try to parse JSON error response for better error messages
+          let errorMessage = `HTTP error: ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch {
+            // Ignore JSON parsing errors, use default message
+          }
+          throw new Error(errorMessage);
         }
 
         const reader = response.body?.getReader();

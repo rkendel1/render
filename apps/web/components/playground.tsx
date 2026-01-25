@@ -28,7 +28,7 @@ interface Version {
   id: string;
   prompt: string;
   tree: UITree | null;
-  status: "generating" | "complete";
+  status: "generating" | "complete" | "error";
 }
 
 const EXAMPLE_PROMPTS = [
@@ -64,7 +64,20 @@ export function Playground() {
     clear,
   } = useUIStream({
     api: "/api/generate",
-    onError: (err: Error) => console.error("Generation error:", err),
+    onError: (err: Error) => {
+      console.error("Generation error:", err);
+      toast.error(err.message || "Generation failed. Please try again.");
+      // Mark the version as errored
+      if (generatingVersionIdRef.current) {
+        const erroredVersionId = generatingVersionIdRef.current;
+        setVersions((prev) =>
+          prev.map((v) =>
+            v.id === erroredVersionId ? { ...v, status: "error" as const } : v,
+          ),
+        );
+        generatingVersionIdRef.current = null;
+      }
+    },
   } as Parameters<typeof useUIStream>[0]);
 
   useInteractiveState();
@@ -306,6 +319,9 @@ ${jsx}
                   <span className="text-xs text-muted-foreground shrink-0 animate-pulse">
                     ...
                   </span>
+                )}
+                {version.status === "error" && (
+                  <span className="text-xs text-red-500 shrink-0">failed</span>
                 )}
               </div>
             </button>
