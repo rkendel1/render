@@ -12,7 +12,7 @@ export default function ChangelogPage() {
         Notable changes and updates to json-render.
       </p>
 
-      <h2 className="text-xl font-semibold mt-12 mb-4">v0.3.0</h2>
+      <h2 className="text-xl font-semibold mt-12 mb-4">v0.4.0</h2>
       <p className="text-sm text-muted-foreground mb-6">February 2026</p>
 
       <h3 className="text-lg font-semibold mt-8 mb-4">
@@ -158,6 +158,25 @@ const catalog = defineCatalog(schema, {
           <code>defineCatalog</code> now requires a schema as first argument
         </li>
       </ul>
+
+      <hr className="my-12 border-border" />
+
+      <h2 className="text-xl font-semibold mt-12 mb-4">v0.3.0</h2>
+      <p className="text-sm text-muted-foreground mb-6">January 2026</p>
+      <p className="text-sm text-muted-foreground mb-4">
+        Internal release with codegen foundations.
+      </p>
+      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
+        <li>
+          Added <code>@json-render/codegen</code> package (spec traversal and
+          JSX serialization)
+        </li>
+        <li>Configurable AI model via environment variables</li>
+        <li>Documentation improvements and bug fixes</li>
+      </ul>
+      <p className="text-sm text-muted-foreground italic">
+        Note: Only @json-render/core was published to npm for this release.
+      </p>
 
       <hr className="my-12 border-border" />
 
