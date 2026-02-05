@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { createSpecStreamCompiler } from "@json-render/core";
 import { Player, PlayerRef } from "@remotion/player";
 import { Renderer, type TimelineSpec } from "@json-render/remotion";
+import { createHighlighter, type Highlighter } from "shiki";
 
 /**
  * Check if spec is complete enough to render
@@ -17,11 +18,146 @@ function isSpecComplete(spec: TimelineSpec): spec is Required<TimelineSpec> {
   );
 }
 
+/**
+ * Shiki theme (Vercel-inspired dark theme)
+ */
+const darkTheme = {
+  name: "custom-dark",
+  type: "dark" as const,
+  colors: {
+    "editor.background": "transparent",
+    "editor.foreground": "#EDEDED",
+  },
+  settings: [
+    {
+      scope: ["string", "string.quoted"],
+      settings: { foreground: "#50E3C2" },
+    },
+    {
+      scope: [
+        "constant.numeric",
+        "constant.language.boolean",
+        "constant.language.null",
+      ],
+      settings: { foreground: "#50E3C2" },
+    },
+    {
+      scope: ["punctuation", "meta.brace", "meta.bracket"],
+      settings: { foreground: "#888888" },
+    },
+    {
+      scope: ["support.type.property-name", "entity.name.tag.json"],
+      settings: { foreground: "#EDEDED" },
+    },
+  ],
+};
+
+// Preload highlighter
+let highlighterPromise: Promise<Highlighter> | null = null;
+
+function getHighlighter() {
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
+      themes: [darkTheme],
+      langs: ["json"],
+    });
+  }
+  return highlighterPromise;
+}
+
+// Start loading immediately
+if (typeof window !== "undefined") {
+  getHighlighter();
+}
+
+/**
+ * Code block with syntax highlighting
+ */
+function CodeBlock({ code }: { code: string }) {
+  const [html, setHtml] = useState<string>("");
+
+  useEffect(() => {
+    getHighlighter().then((highlighter) => {
+      setHtml(
+        highlighter.codeToHtml(code, {
+          lang: "json",
+          theme: "custom-dark",
+        }),
+      );
+    });
+  }, [code]);
+
+  if (!html) {
+    return (
+      <pre className="p-4 text-left">
+        <code className="text-muted-foreground">{code}</code>
+      </pre>
+    );
+  }
+
+  return (
+    <div
+      className="p-4 text-[13px] leading-relaxed [&_pre]:bg-transparent! [&_pre]:p-0! [&_pre]:m-0! [&_code]:bg-transparent!"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+/**
+ * Copy button component
+ */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="p-1.5 rounded hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+      aria-label="Copy JSON"
+    >
+      {copied ? (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 const EXAMPLE_PROMPTS = [
-  "Create a 10-second product intro with title cards",
-  "Make a social media promo video with stats",
-  "Build a testimonial video with quotes",
-  "Design a company intro with split screens",
+  "Create a 10-second product intro with title cards and images",
+  "Make a photo slideshow with 5 different images",
+  "Build a testimonial video with quotes and background images",
+  "Design a dynamic company intro with animated entrances",
 ];
 
 export default function Home() {
@@ -98,9 +234,18 @@ export default function Home() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const totalTime = spec?.composition
-    ? spec.composition.durationInFrames / spec.composition.fps
-    : 0;
+  const handleExport = useCallback(() => {
+    if (!spec) return;
+    const blob = new Blob([JSON.stringify(spec, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "timeline.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [spec]);
 
   return (
     <div className="min-h-screen">
@@ -193,7 +338,7 @@ export default function Home() {
             <div className="text-left">
               <div className="flex items-center gap-4 mb-2 h-6">
                 <span className="text-xs font-mono text-muted-foreground">
-                  timeline.json
+                  json
                 </span>
                 {isGenerating && (
                   <span className="text-xs text-muted-foreground animate-pulse">
@@ -201,13 +346,14 @@ export default function Home() {
                   </span>
                 )}
               </div>
-              <div className="border border-border rounded bg-background font-mono text-xs h-[28rem] overflow-auto">
+              <div className="border border-border rounded bg-background font-mono text-xs h-[28rem] overflow-auto relative group">
+                {spec && (
+                  <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <CopyButton text={JSON.stringify(spec, null, 2)} />
+                  </div>
+                )}
                 {spec ? (
-                  <pre className="p-4 text-left">
-                    <code className="text-muted-foreground">
-                      {JSON.stringify(spec, null, 2)}
-                    </code>
-                  </pre>
+                  <CodeBlock code={JSON.stringify(spec, null, 2)} />
                 ) : isGenerating ? (
                   <div className="p-4 text-muted-foreground/50 h-full flex items-center justify-center">
                     <div className="flex flex-col items-center gap-2">
@@ -233,13 +379,22 @@ export default function Home() {
                 <span className="text-xs font-mono text-muted-foreground">
                   preview
                 </span>
-                {spec?.composition && (
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {totalTime.toFixed(1)}s
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {spec && isSpecComplete(spec) && (
+                    <button
+                      onClick={handleExport}
+                      className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
+                      title="Export timeline JSON"
+                    >
+                      Export
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="border border-border rounded bg-black h-[28rem] relative overflow-hidden">
+              <div
+                className="border border-border rounded bg-black h-[28rem] relative overflow-hidden"
+                data-player-container
+              >
                 {spec && isSpecComplete(spec) ? (
                   <Player
                     ref={playerRef}

@@ -7,6 +7,16 @@ import {
 } from "@json-render/remotion/server";
 
 /**
+ * Custom rules for the AI to follow when generating videos
+ */
+const customRules = [
+  // Image URLs using Picsum (free, no API key)
+  'ImageSlide props: { "src": "https://picsum.photos/1920/1080?random=N", "alt": "description" } - use "src" NOT "imageUrl"',
+  "Use different random numbers for each image to get different photos (e.g., ?random=1, ?random=2, ?random=3)",
+  "Picsum provides random professional stock photos - great for product shots, backgrounds, and visual content",
+];
+
+/**
  * Remotion video catalog
  *
  * Uses standard definitions from @json-render/remotion,
@@ -35,3 +45,10 @@ export const videoCatalog = defineCatalog(schema, {
   // Use all standard effects from the package
   effects: standardEffectDefinitions,
 });
+
+/**
+ * Get the prompt with custom rules for image generation
+ */
+export function getVideoPrompt(): string {
+  return videoCatalog.prompt({ customRules });
+}

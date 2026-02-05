@@ -54,10 +54,13 @@ export const standardComponentDefinitions = {
       quote: z.string(),
       author: z.string().nullable(),
       backgroundColor: z.string().nullable(),
+      textColor: z.string().nullable(),
+      transparent: z.boolean().nullable(),
     }),
     type: "scene",
     defaultDuration: 150,
-    description: "Quote display with attribution. Use for testimonials.",
+    description:
+      "Quote display with author. Props: quote, author, textColor, backgroundColor. Set transparent:true when using as overlay on images.",
   },
 
   StatCard: {

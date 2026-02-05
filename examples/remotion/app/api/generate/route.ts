@@ -1,10 +1,10 @@
 import { streamText } from "ai";
-import { videoCatalog } from "@/lib/catalog";
+import { getVideoPrompt } from "@/lib/catalog";
 
 export const maxDuration = 30;
 
-// Generate prompt from catalog - uses Remotion schema's prompt template
-const SYSTEM_PROMPT = videoCatalog.prompt();
+// Generate prompt from catalog - uses Remotion schema's prompt template with custom rules
+const SYSTEM_PROMPT = getVideoPrompt();
 
 const MAX_PROMPT_LENGTH = 500;
 const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";

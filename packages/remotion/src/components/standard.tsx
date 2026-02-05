@@ -151,18 +151,26 @@ export function SplitScreen({ clip }: { clip: Clip }) {
 // =============================================================================
 
 export function QuoteCard({ clip }: { clip: Clip }) {
-  const { quote, author, backgroundColor } = clip.props as {
-    quote: string;
-    author?: string;
-    backgroundColor?: string;
-  };
+  const { quote, author, backgroundColor, textColor, transparent } =
+    clip.props as {
+      quote: string;
+      author?: string;
+      backgroundColor?: string;
+      textColor?: string;
+      transparent?: boolean;
+    };
+
+  // Use transparent background for overlays, or specified color, or default dark
+  const bgColor = transparent ? "transparent" : backgroundColor || "#1a1a2e";
+
+  const color = textColor || "#ffffff";
 
   return (
     <ClipWrapper clip={clip}>
       <AbsoluteFill
         style={{
-          backgroundColor: backgroundColor || "#1a1a2e",
-          color: "#ffffff",
+          backgroundColor: bgColor,
+          color,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -176,11 +184,22 @@ export function QuoteCard({ clip }: { clip: Clip }) {
             fontStyle: "italic",
             textAlign: "center",
             marginBottom: 24,
+            textShadow: transparent ? "2px 2px 8px rgba(0,0,0,0.8)" : "none",
           }}
         >
           &ldquo;{quote}&rdquo;
         </div>
-        {author && <div style={{ fontSize: 28, opacity: 0.7 }}>- {author}</div>}
+        {author && (
+          <div
+            style={{
+              fontSize: 28,
+              opacity: 0.9,
+              textShadow: transparent ? "1px 1px 4px rgba(0,0,0,0.8)" : "none",
+            }}
+          >
+            - {author}
+          </div>
+        )}
       </AbsoluteFill>
     </ClipWrapper>
   );
