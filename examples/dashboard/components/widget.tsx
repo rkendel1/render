@@ -136,6 +136,7 @@ export function Widget({
     [prompt, send, data, onGenerated],
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClear = useCallback(() => {
     clear();
     setPrompt("");

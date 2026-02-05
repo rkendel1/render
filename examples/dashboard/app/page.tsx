@@ -49,7 +49,8 @@ function DashboardContent() {
     loadWidgets();
   }, []);
 
-  const handleWidgetSaved = useCallback((id: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleWidgetSaved = useCallback((_id: string) => {
     // Reload saved widgets to get the new one
     fetch("/api/v1/widgets")
       .then((res) => res.json())

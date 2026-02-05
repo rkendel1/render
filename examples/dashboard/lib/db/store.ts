@@ -2,7 +2,7 @@
  * Database store for the dashboard API using Drizzle ORM
  */
 
-import { eq, and, ilike, or, sql, desc, asc, max } from "drizzle-orm";
+import { eq, ilike, or, desc, asc, max } from "drizzle-orm";
 import { db } from "./connection";
 import {
   customers,
