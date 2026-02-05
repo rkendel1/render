@@ -242,6 +242,68 @@ const schema = z.object({
   ValidationConfigSchema,  // Full validation config with checks array
 } from '@json-render/core';`}</Code>
 
+      <h2 className="text-xl font-semibold mt-12 mb-4">SpecStream</h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        SpecStream is json-render&apos;s streaming format for progressively
+        building specs from JSONL patches.
+      </p>
+
+      <h3 className="text-lg font-semibold mt-8 mb-4">
+        createSpecStreamCompiler
+      </h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Create a streaming compiler that incrementally builds a spec:
+      </p>
+      <Code lang="typescript">{`import { createSpecStreamCompiler } from '@json-render/core';
+
+const compiler = createSpecStreamCompiler<MySpec>();
+
+// Process streaming chunks
+const { result, newPatches } = compiler.push(chunk);
+
+// Get final result
+const spec = compiler.getResult();
+
+// Reset for reuse
+compiler.reset();`}</Code>
+
+      <h3 className="text-lg font-semibold mt-8 mb-4">compileSpecStream</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Compile an entire SpecStream string at once:
+      </p>
+      <Code lang="typescript">{`import { compileSpecStream } from '@json-render/core';
+
+const jsonl = \`{"op":"set","path":"/root","value":{}}
+{"op":"set","path":"/root/type","value":"Card"}\`;
+
+const spec = compileSpecStream<MySpec>(jsonl);`}</Code>
+
+      <h3 className="text-lg font-semibold mt-8 mb-4">Low-Level Utilities</h3>
+      <Code lang="typescript">{`import {
+  parseSpecStreamLine,
+  applySpecStreamPatch,
+} from '@json-render/core';
+
+// Parse a single line
+const patch = parseSpecStreamLine('{"op":"set","path":"/root","value":{}}');
+
+// Apply patch to object (mutates in place)
+const obj = {};
+applySpecStreamPatch(obj, patch);`}</Code>
+
+      <h3 className="text-lg font-semibold mt-8 mb-4">SpecStream Types</h3>
+      <Code lang="typescript">{`interface SpecStreamLine {
+  op: 'set' | 'add' | 'replace' | 'remove';
+  path: string;
+  value?: unknown;
+}
+
+interface SpecStreamCompiler<T> {
+  push(chunk: string): { result: T; newPatches: SpecStreamLine[] };
+  getResult(): T;
+  reset(): void;
+}`}</Code>
+
       <h2 className="text-xl font-semibold mt-12 mb-4">Utility Functions</h2>
 
       <h3 className="text-lg font-semibold mt-8 mb-4">Path Utilities</h3>

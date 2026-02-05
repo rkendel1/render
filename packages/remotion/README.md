@@ -1,96 +1,104 @@
 # @json-render/remotion
 
-Remotion renderer for json-render. JSON becomes video compositions.
-
-## Overview
-
-This package demonstrates json-render's flexibility - the spec format, schema, and types are completely different from React:
-
-| Feature | @json-render/react | @json-render/remotion |
-|---------|-------------------|----------------------|
-| Spec Format | Element tree (nested components) | Timeline (tracks + clips) |
-| Components | UI components (Button, Card) | Video components (scenes, overlays) |
-| Actions | User interactions (click, submit) | Effects (transitions, animations) |
-| Output | React DOM | Remotion video |
+Remotion video renderer for json-render. Turn JSON timeline specs into video compositions.
 
 ## Installation
 
 ```bash
-npm install @json-render/remotion remotion
+npm install @json-render/remotion @json-render/core remotion @remotion/player zod
 ```
 
-## Schema
+## Quick Start
 
-The Remotion schema is timeline-based, designed for video composition:
+### 1. Create a Catalog
 
 ```typescript
-import { defineCatalog } from '@json-render/core';
-import { schema } from '@json-render/remotion';
-import { z } from 'zod';
+import { defineCatalog } from "@json-render/core";
+import {
+  schema,
+  standardComponentDefinitions,
+  standardTransitionDefinitions,
+  standardEffectDefinitions,
+} from "@json-render/remotion";
 
-const catalog = defineCatalog(schema, {
+// Use standard definitions or add your own
+export const videoCatalog = defineCatalog(schema, {
   components: {
-    TitleCard: {
-      props: z.object({
-        title: z.string(),
-        subtitle: z.string().nullable(),
-        backgroundColor: z.string(),
-      }),
-      type: 'scene',
-      defaultDuration: 90, // 3 seconds at 30fps
-      description: 'Full-screen title card with text',
-    },
-    ImageSlide: {
-      props: z.object({
-        src: z.string(),
-        alt: z.string(),
-        fit: z.enum(['cover', 'contain']),
-      }),
-      type: 'image',
-      defaultDuration: 150, // 5 seconds at 30fps
-      description: 'Full-screen image display',
-    },
-    LowerThird: {
-      props: z.object({
-        name: z.string(),
-        title: z.string(),
-      }),
-      type: 'overlay',
-      defaultDuration: 120,
-      description: 'Name/title overlay in lower third',
-    },
+    ...standardComponentDefinitions,
+    // Add custom components here
   },
-  transitions: {
-    fade: {
-      defaultDuration: 15, // 0.5 seconds
-      description: 'Fade in/out transition',
-    },
-    slideLeft: {
-      defaultDuration: 15,
-      description: 'Slide from right to left',
-    },
-    zoom: {
-      defaultDuration: 20,
-      description: 'Zoom in/out transition',
-    },
-  },
-  effects: {
-    kenBurns: {
-      params: z.object({
-        startScale: z.number(),
-        endScale: z.number(),
-        startX: z.number(),
-        startY: z.number(),
-      }),
-      description: 'Ken Burns pan and zoom effect',
-    },
-  },
+  transitions: standardTransitionDefinitions,
+  effects: standardEffectDefinitions,
 });
 ```
 
-## Spec Format
+### 2. Render with the Player
 
-The AI generates a timeline-based spec:
+```tsx
+import { Player } from "@remotion/player";
+import { Renderer } from "@json-render/remotion";
+
+function VideoPlayer({ spec }) {
+  return (
+    <Player
+      component={Renderer}
+      inputProps={{ spec }}
+      durationInFrames={spec.composition.durationInFrames}
+      fps={spec.composition.fps}
+      compositionWidth={spec.composition.width}
+      compositionHeight={spec.composition.height}
+      controls
+    />
+  );
+}
+```
+
+## Timeline Spec Format
+
+```typescript
+interface TimelineSpec {
+  composition: {
+    id: string;
+    fps: number;
+    width: number;
+    height: number;
+    durationInFrames: number;
+  };
+  tracks: Array<{
+    id: string;
+    name: string;
+    type: "video" | "overlay" | "audio";
+    enabled: boolean;
+  }>;
+  clips: Array<{
+    id: string;
+    trackId: string;
+    component: string;         // Component name from catalog
+    props: object;             // Component-specific props
+    from: number;              // Start frame
+    durationInFrames: number;
+    transitionIn?: {
+      type: string;
+      durationInFrames: number;
+    };
+    transitionOut?: {
+      type: string;
+      durationInFrames: number;
+    };
+  }>;
+  audio: {
+    tracks: Array<{
+      id: string;
+      src: string;
+      from: number;
+      durationInFrames: number;
+      volume?: number;
+    }>;
+  };
+}
+```
+
+Example spec:
 
 ```json
 {
@@ -113,105 +121,190 @@ The AI generates a timeline-based spec:
       "props": {
         "title": "Welcome",
         "subtitle": "To the future",
-        "backgroundColor": "#1a1a1a"
+        "backgroundColor": "#1a1a1a",
+        "textColor": "#ffffff"
       },
       "from": 0,
       "durationInFrames": 90,
       "transitionIn": { "type": "fade", "durationInFrames": 15 },
       "transitionOut": { "type": "fade", "durationInFrames": 15 }
-    },
-    {
-      "id": "clip-2",
-      "trackId": "main",
-      "component": "ImageSlide",
-      "props": {
-        "src": "/images/hero.jpg",
-        "alt": "Hero image",
-        "fit": "cover"
-      },
-      "from": 90,
-      "durationInFrames": 150,
-      "transitionIn": { "type": "slideLeft", "durationInFrames": 15 },
-      "transitionOut": { "type": "fade", "durationInFrames": 15 }
     }
   ],
-  "audio": {
-    "tracks": [
-      {
-        "id": "bg-music",
-        "src": "/audio/background.mp3",
-        "from": 0,
-        "durationInFrames": 300,
-        "volume": 0.5
-      }
-    ]
-  }
+  "audio": { "tracks": [] }
 }
 ```
 
-## Types
+## Standard Components
 
-Define video components with frame-aware context:
+The package includes pre-built video components:
 
-```typescript
-import { VideoComponents, VideoComponentFn } from '@json-render/remotion';
-import { interpolate } from 'remotion';
+| Component | Description | Key Props |
+|-----------|-------------|-----------|
+| `TitleCard` | Full-screen title with subtitle | `title`, `subtitle`, `backgroundColor`, `textColor` |
+| `ImageSlide` | Full-screen image display | `src`, `alt`, `fit` |
+| `SplitScreen` | Two-column layout | `leftTitle`, `rightTitle`, `leftContent`, `rightContent` |
+| `QuoteCard` | Quote with attribution | `quote`, `author`, `role` |
+| `StatCard` | Large statistic display | `value`, `label`, `trend` |
+| `LowerThird` | Name/title overlay | `name`, `title` |
+| `TextOverlay` | Centered text | `text`, `fontSize`, `fontFamily` |
+| `TypingText` | Terminal typing effect | `text`, `charsPerSecond`, `showCursor` |
+| `LogoBug` | Corner logo overlay | `src`, `position`, `size` |
+| `VideoClip` | Video playback | `src` |
 
-const TitleCard: VideoComponentFn<typeof catalog, 'TitleCard'> = ({ props, frame }) => {
-  // Animate based on current frame
-  const opacity = interpolate(frame.frame, [0, 30], [0, 1], {
-    extrapolateRight: 'clamp',
-  });
+## Standard Transitions
 
+| Transition | Description |
+|------------|-------------|
+| `fade` | Opacity fade in/out |
+| `slideLeft` | Slide from right |
+| `slideRight` | Slide from left |
+| `slideUp` | Slide from bottom |
+| `slideDown` | Slide from top |
+| `zoom` | Scale zoom in/out |
+| `wipe` | Horizontal wipe |
+
+## Custom Components
+
+Add custom components to the Renderer:
+
+```tsx
+import { Renderer, standardComponents, ClipWrapper } from "@json-render/remotion";
+import type { Clip } from "@json-render/remotion";
+
+// Define a custom component
+function CustomOverlay({ clip }: { clip: Clip }) {
   return (
-    <div style={{ 
-      opacity,
-      backgroundColor: props.backgroundColor,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: '100%',
-    }}>
-      <h1>{props.title}</h1>
-      {props.subtitle && <h2>{props.subtitle}</h2>}
-    </div>
+    <ClipWrapper clip={clip}>
+      <div style={{ backgroundColor: clip.props.color }}>
+        {clip.props.message}
+      </div>
+    </ClipWrapper>
   );
+}
+
+// Merge with standard components
+const customComponents = {
+  ...standardComponents,
+  CustomOverlay,
 };
 
-const components: VideoComponents<typeof catalog> = {
-  TitleCard,
-  ImageSlide: ({ props }) => <Img src={props.src} style={{ objectFit: props.fit }} />,
-  LowerThird: ({ props, frame }) => {
-    const slideIn = interpolate(frame.frame, [0, 15], [-200, 0]);
-    return (
-      <div style={{ transform: `translateX(${slideIn}px)` }}>
-        <div>{props.name}</div>
-        <div>{props.title}</div>
-      </div>
-    );
-  },
-};
+// Pass to Renderer
+<Player
+  component={Renderer}
+  inputProps={{ spec, components: customComponents }}
+  // ...
+/>
 ```
 
-## Why Different Schemas?
+## Hooks and Utilities
 
-json-render is fundamentally "JSON -> render". What happens in between is completely flexible:
+### useTransition
 
-- **React**: Nested component tree, user interactions, DOM output
-- **Remotion**: Timeline with tracks/clips, frame-based animations, video output
-- **Vue** (hypothetical): Could use a different tree structure, Vue-specific reactivity
-- **Native** (hypothetical): Could target React Native, Flutter, or native mobile
+Calculate transition styles for a clip:
 
-The core provides:
-- `defineSchema()` - define your spec format
-- `defineCatalog()` - create catalogs that match your schema
-- Type inference utilities
+```tsx
+import { useTransition } from "@json-render/remotion";
+import { useCurrentFrame } from "remotion";
 
-Each renderer provides:
-- Its own schema (spec format)
-- Type-safe component/handler types
-- The actual rendering implementation
+function MyComponent({ clip }: { clip: Clip }) {
+  const frame = useCurrentFrame();
+  const transition = useTransition(clip, frame);
 
-This separation allows json-render to power any rendering target while sharing the same AI generation flow.
+  return (
+    <div style={{ opacity: transition.opacity }}>
+      Content
+    </div>
+  );
+}
+```
+
+### ClipWrapper
+
+Apply transitions automatically:
+
+```tsx
+import { ClipWrapper } from "@json-render/remotion";
+
+function MyComponent({ clip }: { clip: Clip }) {
+  return (
+    <ClipWrapper clip={clip}>
+      {/* Content gets transition styles applied */}
+      <div>My content</div>
+    </ClipWrapper>
+  );
+}
+```
+
+## Generate AI Prompts
+
+```typescript
+const systemPrompt = videoCatalog.prompt();
+// Returns detailed prompt with:
+// - Component descriptions and props
+// - Transition types
+// - Effect definitions
+// - Timeline spec format requirements
+```
+
+## Exports
+
+### Components
+
+```typescript
+import {
+  // Main renderer
+  Renderer,
+  standardComponents,
+
+  // Standard components
+  TitleCard,
+  ImageSlide,
+  SplitScreen,
+  QuoteCard,
+  StatCard,
+  LowerThird,
+  TextOverlay,
+  TypingText,
+  LogoBug,
+  VideoClip,
+
+  // Utilities
+  ClipWrapper,
+  useTransition,
+} from "@json-render/remotion";
+```
+
+### Types
+
+```typescript
+import type {
+  Clip,
+  TimelineSpec,
+  AudioTrack,
+  TransitionStyles,
+  ClipComponent,
+  ComponentRegistry,
+} from "@json-render/remotion";
+```
+
+### Schema and Catalog Definitions
+
+```typescript
+import {
+  schema,
+  standardComponentDefinitions,
+  standardTransitionDefinitions,
+  standardEffectDefinitions,
+} from "@json-render/remotion";
+```
+
+## Why Different from React?
+
+| Feature | @json-render/react | @json-render/remotion |
+|---------|-------------------|----------------------|
+| Spec Format | Element tree (nested components) | Timeline (tracks + clips) |
+| Components | UI components (Button, Card) | Video components (scenes, overlays) |
+| Timing | User interactions | Frame-based animations |
+| Output | React DOM | Remotion video |
+
+json-render is "JSON to render" - the spec format and components are completely flexible per renderer.

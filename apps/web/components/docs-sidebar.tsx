@@ -58,6 +58,7 @@ const navigation = [
     items: [
       { title: "@json-render/core", href: "/docs/api/core" },
       { title: "@json-render/react", href: "/docs/api/react" },
+      { title: "@json-render/remotion", href: "/docs/api/remotion" },
       { title: "@json-render/codegen", href: "/docs/api/codegen" },
     ],
   },
