@@ -27,8 +27,8 @@ function remotionPromptTemplate(context: PromptContext): string {
   lines.push("");
   lines.push(`{"op":"set","path":"/composition","value":{"id":"intro","fps":30,"width":1920,"height":1080,"durationInFrames":300}}
 {"op":"set","path":"/tracks","value":[{"id":"main","name":"Main","type":"video","enabled":true},{"id":"overlay","name":"Overlay","type":"overlay","enabled":true}]}
-{"op":"set","path":"/clips/0","value":{"id":"clip-1","trackId":"main","component":"TitleCard","props":{"title":"Welcome","subtitle":"Getting Started"},"from":0,"durationInFrames":90,"transitionIn":{"type":"fade","durationInFrames":15},"transitionOut":{"type":"fade","durationInFrames":15}}}
-{"op":"set","path":"/clips/1","value":{"id":"clip-2","trackId":"main","component":"TitleCard","props":{"title":"Features"},"from":90,"durationInFrames":90}}
+{"op":"set","path":"/clips/0","value":{"id":"clip-1","trackId":"main","component":"TitleCard","props":{"title":"Welcome","subtitle":"Getting Started"},"from":0,"durationInFrames":90,"transitionIn":{"type":"fade","durationInFrames":15},"transitionOut":{"type":"fade","durationInFrames":15},"motion":{"enter":{"opacity":0,"y":50,"scale":0.9,"duration":25},"spring":{"damping":15}}}}
+{"op":"set","path":"/clips/1","value":{"id":"clip-2","trackId":"main","component":"TitleCard","props":{"title":"Features"},"from":90,"durationInFrames":90,"motion":{"enter":{"opacity":0,"x":-100,"duration":20},"exit":{"opacity":0,"x":100,"duration":15}}}}
 {"op":"set","path":"/audio","value":{"tracks":[]}}`);
   lines.push("");
 
@@ -71,6 +71,38 @@ function remotionPromptTemplate(context: PromptContext): string {
     lines.push("");
   }
 
+  // Motion system documentation
+  lines.push("MOTION SYSTEM:");
+  lines.push(
+    "Clips can have a 'motion' field for declarative animations (optional, use for dynamic/engaging videos):",
+  );
+  lines.push("");
+  lines.push(
+    "- enter: {opacity?, scale?, x?, y?, rotate?, duration?} - animate FROM these values TO normal when clip starts",
+  );
+  lines.push(
+    "- exit: {opacity?, scale?, x?, y?, rotate?, duration?} - animate FROM normal TO these values when clip ends",
+  );
+  lines.push(
+    "- spring: {damping?, stiffness?, mass?} - physics config (lower damping = more bounce)",
+  );
+  lines.push(
+    '- loop: {property, from, to, duration, easing?} - continuous animation (property: "scale"|"rotate"|"x"|"y"|"opacity")',
+  );
+  lines.push("");
+  lines.push("Example motion configs:");
+  lines.push('  Fade up: {"enter":{"opacity":0,"y":30,"duration":20}}');
+  lines.push(
+    '  Scale pop: {"enter":{"scale":0.5,"opacity":0,"duration":15},"spring":{"damping":10}}',
+  );
+  lines.push(
+    '  Slide in/out: {"enter":{"x":-100,"duration":20},"exit":{"x":100,"duration":15}}',
+  );
+  lines.push(
+    '  Gentle pulse: {"loop":{"property":"scale","from":1,"to":1.05,"duration":60,"easing":"ease"}}',
+  );
+  lines.push("");
+
   // Rules
   lines.push("RULES:");
   const baseRules = [
@@ -83,6 +115,8 @@ function remotionPromptTemplate(context: PromptContext): string {
     "fps is always 30 (1 second = 30 frames, 10 seconds = 300 frames)",
     'Clips on "main" track flow sequentially (from = previous clip\'s from + durationInFrames)',
     'Overlay clips (LowerThird, TextOverlay) go on "overlay" track',
+    "Use motion.enter for engaging clip entrances, motion.exit for smooth departures",
+    "Spring damping: 20=smooth, 10=bouncy, 5=very bouncy",
   ];
   const allRules = [...baseRules, ...customRules];
   allRules.forEach((rule, i) => {
@@ -160,6 +194,61 @@ export const schema = defineSchema(
           transitionOut: s.object({
             type: s.ref("catalog.transitions"),
             durationInFrames: s.number(),
+          }),
+          /** Declarative motion configuration for custom animations */
+          motion: s.object({
+            /** Enter animation - animates FROM these values TO neutral */
+            enter: s.object({
+              /** Starting opacity (0-1), animates to 1 */
+              opacity: s.number(),
+              /** Starting scale (e.g., 0.8 = 80%), animates to 1 */
+              scale: s.number(),
+              /** Starting X offset in pixels, animates to 0 */
+              x: s.number(),
+              /** Starting Y offset in pixels, animates to 0 */
+              y: s.number(),
+              /** Starting rotation in degrees, animates to 0 */
+              rotate: s.number(),
+              /** Duration of enter animation in frames (default: 20) */
+              duration: s.number(),
+            }),
+            /** Exit animation - animates FROM neutral TO these values */
+            exit: s.object({
+              /** Ending opacity (0-1), animates from 1 */
+              opacity: s.number(),
+              /** Ending scale, animates from 1 */
+              scale: s.number(),
+              /** Ending X offset in pixels, animates from 0 */
+              x: s.number(),
+              /** Ending Y offset in pixels, animates from 0 */
+              y: s.number(),
+              /** Ending rotation in degrees, animates from 0 */
+              rotate: s.number(),
+              /** Duration of exit animation in frames (default: 20) */
+              duration: s.number(),
+            }),
+            /** Spring physics configuration */
+            spring: s.object({
+              /** Damping coefficient (default: 20) */
+              damping: s.number(),
+              /** Stiffness (default: 100) */
+              stiffness: s.number(),
+              /** Mass (default: 1) */
+              mass: s.number(),
+            }),
+            /** Continuous looping animation */
+            loop: s.object({
+              /** Property to animate: "scale" | "rotate" | "x" | "y" | "opacity" */
+              property: s.string(),
+              /** Starting value */
+              from: s.number(),
+              /** Ending value */
+              to: s.number(),
+              /** Duration of one cycle in frames */
+              duration: s.number(),
+              /** Easing type: "linear" | "ease" | "spring" (default: "ease") */
+              easing: s.string(),
+            }),
           }),
         }),
       ),

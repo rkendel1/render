@@ -26,12 +26,17 @@ export type {
   TimelineSpec,
   AudioTrack,
   TransitionStyles,
+  MotionStyles,
+  Motion,
+  MotionState,
+  MotionLoop,
+  SpringConfig,
   ClipComponent,
   ComponentRegistry,
 } from "./components";
 
 // Hooks and utilities
-export { useTransition, ClipWrapper } from "./components";
+export { useTransition, useMotion, ClipWrapper } from "./components";
 
 // Standard components
 export {
