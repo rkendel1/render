@@ -278,8 +278,8 @@ export const Icon: FunctionComponent<ExtendedRenderProps> = ({ element }) => {
     medium: "medium",
     large: "large",
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe UIXT Icon name type is complex
     <UIIcon name={name as any} size={sizeMap[size as string] || "medium"} />
   );
 };
