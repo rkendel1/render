@@ -34,10 +34,11 @@ function buildRegistry(loading?: boolean): ComponentRegistry {
     }) => (
       <Component
         props={renderProps.element.props as never}
-        children={renderProps.children}
         onAction={(a) => executeAction(a.name, a.params)}
         loading={loading}
-      />
+      >
+        {renderProps.children}
+      </Component>
     );
   }
 
