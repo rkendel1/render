@@ -547,7 +547,7 @@ const actionsCatalogInfo = Object.entries(stripeCatalog.data.actions).map(
 // Home Component
 // =============================================================================
 
-const Home = ({ userContext }: ExtensionContextValue) => {
+const Home = (_props: ExtensionContextValue) => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -729,8 +729,9 @@ const Home = ({ userContext }: ExtensionContextValue) => {
 
                 <Divider />
                 <Box css={{ font: "caption", color: "secondary" }}>
-                  Try: "Show revenue metrics" • "Show recent payments" • "Show
-                  subscriptions" • "Show customers" • "Show invoices"
+                  Try: &quot;Show revenue metrics&quot; &bull; &quot;Show recent
+                  payments&quot; &bull; &quot;Show subscriptions&quot; &bull;
+                  &quot;Show customers&quot; &bull; &quot;Show invoices&quot;
                 </Box>
               </Box>
             </TabPanel>

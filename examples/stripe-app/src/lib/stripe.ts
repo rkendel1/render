@@ -18,7 +18,7 @@ export const stripe = new Stripe(STRIPE_API_KEY, {
 /**
  * Format amount for display (converts cents to dollars)
  */
-export function formatAmount(amount: number, currency: string = "usd"): string {
+export function formatAmount(amount: number, currency = "usd"): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currency.toUpperCase(),

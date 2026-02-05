@@ -229,7 +229,7 @@ function createProductsSpec(data: Record<string, unknown>): Spec {
 // Component
 // =============================================================================
 
-const Products = ({ userContext, environment }: ExtensionContextValue) => {
+const Products = (_props: ExtensionContextValue) => {
   const [data, setData] = useState<Record<string, unknown>>({});
   const [spec, setSpec] = useState<Spec | null>(null);
   const [loading, setLoading] = useState(true);

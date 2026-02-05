@@ -3,7 +3,7 @@
  *
  * Maps json-render catalog components to Stripe UI Extension SDK components.
  */
-import type { FunctionComponent, ReactNode } from "react";
+import type { FunctionComponent } from "react";
 import type { ComponentRenderProps } from "@json-render/react";
 import {
   Box,
@@ -50,7 +50,7 @@ import {
 } from "@stripe/ui-extension-sdk/ui";
 
 // Helper to format currency
-const formatCurrency = (amount: number, currency: string = "usd"): string => {
+const formatCurrency = (amount: number, currency = "usd"): string => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currency.toUpperCase(),
@@ -500,7 +500,7 @@ export const TextField: FunctionComponent<ExtendedRenderProps> = ({
       size={size as "small" | "medium" | "large"}
       disabled={Boolean(disabled) || undefined}
       required={Boolean(required) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     />
   );
 };
@@ -532,7 +532,7 @@ export const TextArea: FunctionComponent<ExtendedRenderProps> = ({
       rows={Number(rows)}
       disabled={Boolean(disabled) || undefined}
       required={Boolean(required) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     />
   );
 };
@@ -564,7 +564,7 @@ export const Select: FunctionComponent<ExtendedRenderProps> = ({
       size={size as "small" | "medium" | "large"}
       disabled={Boolean(disabled) || undefined}
       required={Boolean(required) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     >
       {opts.map((opt: { value: string; label: string }) => (
         <option key={opt.value} value={opt.value}>
@@ -593,7 +593,7 @@ export const Checkbox: FunctionComponent<ExtendedRenderProps> = ({
       error={error ? String(error) : undefined}
       checked={checked || undefined}
       disabled={Boolean(disabled) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     />
   );
 };
@@ -615,7 +615,7 @@ export const Radio: FunctionComponent<ExtendedRenderProps> = ({
       name={String(name || "")}
       checked={currentValue === value}
       disabled={Boolean(disabled) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     />
   );
 };
@@ -637,7 +637,7 @@ export const Switch: FunctionComponent<ExtendedRenderProps> = ({
       description={description ? String(description) : undefined}
       checked={checked || undefined}
       disabled={Boolean(disabled) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     />
   );
 };
@@ -665,7 +665,7 @@ export const DateField: FunctionComponent<ExtendedRenderProps> = ({
       value={value || ""}
       size={size as "small" | "medium" | "large"}
       disabled={Boolean(disabled) || undefined}
-      onChange={() => {}}
+      onChange={() => undefined}
     />
   );
 };

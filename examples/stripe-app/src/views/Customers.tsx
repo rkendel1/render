@@ -150,7 +150,7 @@ function createCustomersListSpec(data: Record<string, unknown>): Spec {
 // Component
 // =============================================================================
 
-const Customers = ({ userContext, environment }: ExtensionContextValue) => {
+const Customers = (_props: ExtensionContextValue) => {
   const [data, setData] = useState<Record<string, unknown>>({});
   const [spec, setSpec] = useState<Spec | null>(null);
   const [loading, setLoading] = useState(true);

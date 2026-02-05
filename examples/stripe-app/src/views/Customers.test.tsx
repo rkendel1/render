@@ -5,7 +5,7 @@ import Customers from "./Customers";
 
 describe("CustomersView", () => {
   it("renders ContextView", () => {
-    const { wrapper } = render(<App {...getMockContextProps()} />);
+    const { wrapper } = render(<Customers {...getMockContextProps()} />);
 
     expect(wrapper.find(ContextView)).toContainText("save to reload this view");
   });

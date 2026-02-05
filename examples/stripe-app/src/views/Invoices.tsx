@@ -209,7 +209,7 @@ function createInvoicesSpec(data: Record<string, unknown>): Spec {
 // Component
 // =============================================================================
 
-const Invoices = ({ userContext, environment }: ExtensionContextValue) => {
+const Invoices = (_props: ExtensionContextValue) => {
   const [data, setData] = useState<Record<string, unknown>>({});
   const [spec, setSpec] = useState<Spec | null>(null);
   const [loading, setLoading] = useState(true);

@@ -1004,7 +1004,7 @@ export const actionHandlers: Record<
     }
   },
 
-  detachPaymentMethod: async (params, setData) => {
+  detachPaymentMethod: async (params, _setData) => {
     try {
       if (!params?.paymentMethodId) return;
       await stripe.paymentMethods.detach(params.paymentMethodId as string);

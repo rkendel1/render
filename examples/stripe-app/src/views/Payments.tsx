@@ -171,7 +171,7 @@ function createPaymentsSpec(data: Record<string, unknown>): Spec {
 // Component
 // =============================================================================
 
-const Payments = ({ userContext, environment }: ExtensionContextValue) => {
+const Payments = (_props: ExtensionContextValue) => {
   const [data, setData] = useState<Record<string, unknown>>({});
   const [spec, setSpec] = useState<Spec | null>(null);
   const [loading, setLoading] = useState(true);
