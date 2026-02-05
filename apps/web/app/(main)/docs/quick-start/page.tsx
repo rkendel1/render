@@ -61,16 +61,19 @@ export const catalog = defineCatalog(schema, {
 });`}</Code>
 
       <h2 className="text-xl font-semibold mt-12 mb-4">
-        2. Create your components
+        2. Create your components and actions
       </h2>
       <p className="text-sm text-muted-foreground mb-4">
-        Register React components that render each catalog type. Each component
+        Define React components that render each catalog type. Each component
         receives <code className="text-foreground">props</code>,{" "}
         <code className="text-foreground">children</code>, and{" "}
         <code className="text-foreground">onAction</code>:
       </p>
-      <Code lang="tsx">{`// components/registry.tsx
-export const registry = {
+      <Code lang="tsx">{`// lib/components.tsx
+import { defineComponents } from '@json-render/react';
+import { catalog } from './catalog';
+
+export const components = defineComponents(catalog, {
   Card: ({ props, children }) => (
     <div className="p-4 border rounded-lg">
       <h2 className="font-bold">{props.title}</h2>
@@ -83,7 +86,7 @@ export const registry = {
   Button: ({ props, onAction }) => (
     <button
       className="px-4 py-2 bg-blue-500 text-white rounded"
-      onClick={() => onAction?.({ name: props.action, params: {} })}
+      onClick={() => onAction?.(props.action)}
     >
       {props.label}
     </button>
@@ -91,7 +94,7 @@ export const registry = {
   Text: ({ props }) => (
     <p>{props.content}</p>
   ),
-};`}</Code>
+});`}</Code>
 
       <h2 className="text-xl font-semibold mt-12 mb-4">
         3. Create an API route
@@ -126,7 +129,8 @@ export async function POST(req: Request) {
 'use client';
 
 import { DataProvider, ActionProvider, VisibilityProvider, Renderer, useUIStream } from '@json-render/react';
-import { registry } from '@/components/registry';
+import { catalog } from '@/lib/catalog';
+import { components } from '@/lib/components';
 
 export default function Page() {
   const { spec, isStreaming, send } = useUIStream({
@@ -158,7 +162,7 @@ export default function Page() {
           </form>
 
           <div className="mt-8">
-            <Renderer spec={spec} registry={registry} loading={isStreaming} />
+            <Renderer spec={spec} catalog={catalog} components={components} loading={isStreaming} />
           </div>
         </ActionProvider>
       </VisibilityProvider>

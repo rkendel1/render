@@ -11,6 +11,7 @@ const navigation = [
       { title: "Introduction", href: "/docs" },
       { title: "Installation", href: "/docs/installation" },
       { title: "Quick Start", href: "/docs/quick-start" },
+      { title: "Changelog", href: "/docs/changelog" },
     ],
   },
   {
@@ -29,8 +30,13 @@ const navigation = [
     title: "Examples",
     items: [
       {
-        title: "Dashboard Demo",
-        href: "https://dashboard-demo.json-render.dev",
+        title: "Dashboard",
+        href: "https://github.com/vercel-labs/json-render/tree/main/examples/dashboard",
+        external: true,
+      },
+      {
+        title: "Remotion",
+        href: "https://github.com/vercel-labs/json-render/tree/main/examples/remotion",
         external: true,
       },
     ],
@@ -39,14 +45,14 @@ const navigation = [
     title: "Guides",
     items: [
       { title: "Custom Schema", href: "/docs/custom-schema" },
-      { title: "AI SDK Integration", href: "/docs/ai-sdk" },
       { title: "Streaming", href: "/docs/streaming" },
       { title: "Code Export", href: "/docs/code-export" },
     ],
   },
   {
-    title: "Concepts",
+    title: "Integrations",
     items: [
+      { title: "AI SDK", href: "/docs/ai-sdk" },
       { title: "A2UI", href: "/docs/a2ui" },
       { title: "Adaptive Cards", href: "/docs/adaptive-cards" },
       { title: "AG-UI", href: "/docs/ag-ui" },
