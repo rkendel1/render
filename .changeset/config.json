@@ -18,9 +18,6 @@
     "web",
     "example-dashboard",
     "example-remotion",
-    "com.example.json-render-demo",
-    "@repo/eslint-config",
-    "@repo/typescript-config",
-    "@repo/ui"
+    "com.example.json-render-demo"
   ]
 }
