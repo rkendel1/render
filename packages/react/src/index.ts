@@ -82,7 +82,10 @@ export {
 // Hooks
 export {
   useUIStream,
+  useUITree,
   flatToTree,
   type UseUIStreamOptions,
   type UseUIStreamReturn,
+  type UseUITreeOptions,
+  type UseUITreeReturn,
 } from "./hooks";
