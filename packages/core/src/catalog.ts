@@ -502,6 +502,7 @@ export function generateSystemPrompt<
   lines.push(
     '{"op":"add","path":"/elements/key","value":{"key":"...","type":"...","props":{...},"children":[...]}}',
   );
+  lines.push('{"op":"remove","path":"/elements/key"}');
   lines.push("");
 
   // Rules
@@ -509,6 +510,7 @@ export function generateSystemPrompt<
   const baseRules = [
     "First line sets /root to root element key",
     "Add elements with /elements/{key}",
+    "Remove elements with op:remove - also update the parent's children array to exclude the removed key",
     "Children array contains string keys, not objects",
     "Parent first, then children",
     "Each element needs: key, type, props",
