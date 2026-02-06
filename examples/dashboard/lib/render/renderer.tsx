@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, type ReactNode } from "react";
 import {
-  defineRegistry,
   Renderer,
   type ComponentRenderer,
   type Spec,
@@ -11,15 +10,7 @@ import {
   ActionProvider,
 } from "@json-render/react";
 
-import { dashboardCatalog } from "./catalog";
-import { components, Fallback } from "./catalog/components";
-import { actionHandlers, executeAction } from "./catalog/actions";
-
-// =============================================================================
-// Registry - created once from the catalog and component map
-// =============================================================================
-
-const registry = defineRegistry(dashboardCatalog, components);
+import { registry, Fallback, handlers as createHandlers } from "./registry";
 
 // =============================================================================
 // DashboardRenderer
@@ -55,31 +46,23 @@ export function DashboardRenderer({
   dataRef.current = data;
   setDataRef.current = setData;
 
-  // Create ActionProvider-compatible handlers that delegate to the
-  // dashboard's executeAction (which needs setData + data from refs)
-  const handlers = useMemo(() => {
-    const result: Record<
-      string,
-      (params: Record<string, unknown>) => Promise<void>
-    > = {};
-    for (const name of Object.keys(actionHandlers)) {
-      result[name] = async (params) => {
-        const sd = setDataRef.current;
-        const d = dataRef.current;
-        if (sd) {
-          await executeAction(name, params, sd, d);
-        }
-      };
-    }
-    return result;
-  }, []);
+  // Create ActionProvider-compatible handlers using getters so they
+  // always read the latest data/setData from refs
+  const actionHandlers = useMemo(
+    () =>
+      createHandlers(
+        () => setDataRef.current,
+        () => dataRef.current,
+      ),
+    [],
+  );
 
   if (!spec) return null;
 
   return (
     <DataProvider initialData={data} onDataChange={onDataChange}>
       <VisibilityProvider>
-        <ActionProvider handlers={handlers}>
+        <ActionProvider handlers={actionHandlers}>
           <Renderer
             spec={spec}
             registry={registry}

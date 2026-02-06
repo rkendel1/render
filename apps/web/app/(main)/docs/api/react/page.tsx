@@ -54,13 +54,15 @@ type ValidatorFn = (value: unknown, args?: object) => boolean | Promise<boolean>
       </p>
       <Code lang="tsx">{`import { defineRegistry } from '@json-render/react';
 
-const registry = defineRegistry(catalog, {
-  Card: ({ props, children }) => <div>{props.title}{children}</div>,
-  Button: ({ props, onAction }) => (
-    <button onClick={() => onAction?.({ name: props.action })}>
-      {props.label}
-    </button>
-  ),
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) => <div>{props.title}{children}</div>,
+    Button: ({ props, onAction }) => (
+      <button onClick={() => onAction?.({ name: props.action })}>
+        {props.label}
+      </button>
+    ),
+  },
 });
 
 // Pass to <Renderer>

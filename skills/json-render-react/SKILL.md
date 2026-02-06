@@ -13,8 +13,10 @@ React renderer that converts JSON specs into React component trees.
 import { defineRegistry, Renderer } from "@json-render/react";
 import { catalog } from "./catalog";
 
-const registry = defineRegistry(catalog, {
-  Card: ({ props, children }) => <div>{props.title}{children}</div>,
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) => <div>{props.title}{children}</div>,
+  },
 });
 
 function App({ spec }) {
@@ -47,16 +49,18 @@ export const catalog = defineCatalog(schema, {
 });
 
 // Define component implementations with type-safe props
-const registry = defineRegistry(catalog, {
-  Button: ({ props }) => (
-    <button className={props.variant}>{props.label}</button>
-  ),
-  Card: ({ props, children }) => (
-    <div className="card">
-      <h2>{props.title}</h2>
-      {children}
-    </div>
-  ),
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Button: ({ props }) => (
+      <button className={props.variant}>{props.label}</button>
+    ),
+    Card: ({ props, children }) => (
+      <div className="card">
+        <h2>{props.title}</h2>
+        {children}
+      </div>
+    ),
+  },
 });
 ```
 

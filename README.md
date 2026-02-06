@@ -61,24 +61,26 @@ const catalog = defineCatalog(schema, {
 ```tsx
 import { defineRegistry, Renderer } from "@json-render/react";
 
-const registry = defineRegistry(catalog, {
-  Card: ({ props, children }) => (
-    <div className="card">
-      <h3>{props.title}</h3>
-      {children}
-    </div>
-  ),
-  Metric: ({ props }) => (
-    <div className="metric">
-      <span>{props.label}</span>
-      <span>{format(props.value, props.format)}</span>
-    </div>
-  ),
-  Button: ({ props, onAction }) => (
-    <button onClick={() => onAction?.({ name: props.action })}>
-      {props.label}
-    </button>
-  ),
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) => (
+      <div className="card">
+        <h3>{props.title}</h3>
+        {children}
+      </div>
+    ),
+    Metric: ({ props }) => (
+      <div className="metric">
+        <span>{props.label}</span>
+        <span>{format(props.value, props.format)}</span>
+      </div>
+    ),
+    Button: ({ props, onAction }) => (
+      <button onClick={() => onAction?.({ name: props.action })}>
+        {props.label}
+      </button>
+    ),
+  },
 });
 ```
 
@@ -122,7 +124,7 @@ const spec = {
 };
 
 // defineRegistry creates a type-safe component registry
-const registry = defineRegistry(catalog, components);
+const { registry } = defineRegistry(catalog, { components });
 <Renderer spec={spec} registry={registry} />
 ```
 

@@ -54,31 +54,33 @@ export const catalog = defineCatalog(schema, {
 import { defineRegistry, useData } from "@json-render/react";
 import { catalog } from "./catalog";
 
-export const registry = defineRegistry(catalog, {
-  Card: ({ props, children }) => (
-    <div className="card">
-      <h3>{props.title}</h3>
-      {props.description && <p>{props.description}</p>}
-      {children}
-    </div>
-  ),
-  Button: ({ props, onAction }) => (
-    <button onClick={() => onAction?.({ name: props.action })}>
-      {props.label}
-    </button>
-  ),
-  Input: ({ props }) => {
-    const { get, set } = useData();
-    return (
-      <label>
+export const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) => (
+      <div className="card">
+        <h3>{props.title}</h3>
+        {props.description && <p>{props.description}</p>}
+        {children}
+      </div>
+    ),
+    Button: ({ props, onAction }) => (
+      <button onClick={() => onAction?.({ name: props.action })}>
         {props.label}
-        <input
-          placeholder={props.placeholder ?? ""}
-          value={get("/form/value") ?? ""}
-          onChange={(e) => set("/form/value", e.target.value)}
-        />
-      </label>
-    );
+      </button>
+    ),
+    Input: ({ props }) => {
+      const { get, set } = useData();
+      return (
+        <label>
+          {props.label}
+          <input
+            placeholder={props.placeholder ?? ""}
+            value={get("/form/value") ?? ""}
+            onChange={(e) => set("/form/value", e.target.value)}
+          />
+        </label>
+      );
+    },
   },
 });
 ```
@@ -284,8 +286,10 @@ const catalog = defineCatalog(schema, {
   actions: {},
 });
 
-const registry = defineRegistry(catalog, {
-  Greeting: ({ props }) => <h1>Hello, {props.name}!</h1>,
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Greeting: ({ props }) => <h1>Hello, {props.name}!</h1>,
+  },
 });
 
 const spec = {

@@ -66,6 +66,7 @@ export type {
 export {
   // Registry
   defineRegistry,
+  type DefineRegistryResult,
   // createRenderer (higher-level, includes providers)
   createRenderer,
   type CreateRendererProps,

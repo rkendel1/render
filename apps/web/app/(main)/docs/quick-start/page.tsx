@@ -74,27 +74,29 @@ export const catalog = defineCatalog(schema, {
 import { defineRegistry } from '@json-render/react';
 import { catalog } from './catalog';
 
-export const registry = defineRegistry(catalog, {
-  Card: ({ props, children }) => (
-    <div className="p-4 border rounded-lg">
-      <h2 className="font-bold">{props.title}</h2>
-      {props.description && (
-        <p className="text-gray-600">{props.description}</p>
-      )}
-      {children}
-    </div>
-  ),
-  Button: ({ props, onAction }) => (
-    <button
-      className="px-4 py-2 bg-blue-500 text-white rounded"
-      onClick={() => onAction?.({ name: props.action })}
-    >
-      {props.label}
-    </button>
-  ),
-  Text: ({ props }) => (
-    <p>{props.content}</p>
-  ),
+export const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) => (
+      <div className="p-4 border rounded-lg">
+        <h2 className="font-bold">{props.title}</h2>
+        {props.description && (
+          <p className="text-gray-600">{props.description}</p>
+        )}
+        {children}
+      </div>
+    ),
+    Button: ({ props, onAction }) => (
+      <button
+        className="px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={() => onAction?.({ name: props.action })}
+      >
+        {props.label}
+      </button>
+    ),
+    Text: ({ props }) => (
+      <p>{props.content}</p>
+    ),
+  },
 });`}</Code>
 
       <h2 className="text-xl font-semibold mt-12 mb-4">
