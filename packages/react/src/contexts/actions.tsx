@@ -5,7 +5,9 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -80,6 +82,18 @@ export function ActionProvider({
   const [pendingConfirmation, setPendingConfirmation] =
     useState<PendingConfirmation | null>(null);
 
+  // Sync handlers when initialHandlers prop changes (e.g. from createRenderer)
+  const initialHandlersRef = useRef(initialHandlers);
+  useEffect(() => {
+    // Only update if the handlers object reference actually changed and has entries
+    if (initialHandlers !== initialHandlersRef.current) {
+      initialHandlersRef.current = initialHandlers;
+      if (Object.keys(initialHandlers).length > 0) {
+        setHandlers(initialHandlers);
+      }
+    }
+  }, [initialHandlers]);
+
   const registerHandler = useCallback(
     (name: string, handler: ActionHandler) => {
       setHandlers((prev) => ({ ...prev, [name]: handler }));
@@ -87,15 +101,54 @@ export function ActionProvider({
     [],
   );
 
+  // Use refs for values that change frequently to avoid re-creating `execute`
+  // on every data change. This breaks the cycle:
+  // data changes → execute changes → context value changes → consumers re-render → ...
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const handlersRef = useRef(handlers);
+  handlersRef.current = handlers;
+  const setRef = useRef(set);
+  setRef.current = set;
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   const execute = useCallback(
     async (action: Action) => {
-      const resolved = resolveAction(action, data);
-      const handler = handlers[resolved.name];
+      const currentData = dataRef.current;
+      const currentHandlers = handlersRef.current;
+      const currentSet = setRef.current;
+      const currentNavigate = navigateRef.current;
+
+      const resolved = resolveAction(action, currentData);
+      const handler = currentHandlers[resolved.name];
 
       if (!handler) {
         console.warn(`No handler registered for action: ${resolved.name}`);
         return;
       }
+
+      const doExecute = async () => {
+        setLoadingActions((prev) => new Set(prev).add(resolved.name));
+        try {
+          await executeAction({
+            action: resolved,
+            handler,
+            setData: currentSet,
+            navigate: currentNavigate,
+            executeAction: async (name) => {
+              const subAction: Action = { name };
+              await execute(subAction);
+            },
+          });
+        } finally {
+          setLoadingActions((prev) => {
+            const next = new Set(prev);
+            next.delete(resolved.name);
+            return next;
+          });
+        }
+      };
 
       // If confirmation is required, show dialog
       if (resolved.confirm) {
@@ -112,51 +165,13 @@ export function ActionProvider({
               reject(new Error("Action cancelled"));
             },
           });
-        }).then(async () => {
-          setLoadingActions((prev) => new Set(prev).add(resolved.name));
-          try {
-            await executeAction({
-              action: resolved,
-              handler,
-              setData: set,
-              navigate,
-              executeAction: async (name) => {
-                const subAction: Action = { name };
-                await execute(subAction);
-              },
-            });
-          } finally {
-            setLoadingActions((prev) => {
-              const next = new Set(prev);
-              next.delete(resolved.name);
-              return next;
-            });
-          }
-        });
+        }).then(doExecute);
       }
 
       // Execute immediately
-      setLoadingActions((prev) => new Set(prev).add(resolved.name));
-      try {
-        await executeAction({
-          action: resolved,
-          handler,
-          setData: set,
-          navigate,
-          executeAction: async (name) => {
-            const subAction: Action = { name };
-            await execute(subAction);
-          },
-        });
-      } finally {
-        setLoadingActions((prev) => {
-          const next = new Set(prev);
-          next.delete(resolved.name);
-          return next;
-        });
-      }
+      await doExecute();
     },
-    [data, handlers, set, navigate],
+    [], // stable — reads current values from refs
   );
 
   const confirm = useCallback(() => {
