@@ -316,7 +316,7 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   // Actions
-  Button: ({ props, emit, loading }) => {
+  Button: ({ props, emit }) => {
     const variant =
       props.variant === "danger"
         ? "destructive"
@@ -327,10 +327,10 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
     return (
       <Button
         variant={variant}
-        disabled={props.disabled || loading}
+        disabled={props.disabled ?? false}
         onClick={() => emit?.("press")}
       >
-        {loading ? "..." : props.label}
+        {props.label}
       </Button>
     );
   },
