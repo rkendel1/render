@@ -18,8 +18,24 @@ import {
 import { useStateStore } from "./state";
 
 /**
- * Deep-resolve dynamic value references ({ path: "/..." }) within an object.
- * This allows pushState values to contain references to current state.
+ * Generate a unique ID for use with the "$id" token.
+ * Combines a timestamp with a random suffix for uniqueness.
+ */
+let idCounter = 0;
+function generateUniqueId(): string {
+  idCounter += 1;
+  return `${Date.now()}-${idCounter}`;
+}
+
+/**
+ * Deep-resolve dynamic value references within an object.
+ *
+ * Supported tokens:
+ * - `{ path: "/statePath" }` - read a value from state
+ * - `"$id"` (string) or `{ "$id": true }` - generate a unique ID
+ *
+ * This allows pushState values to contain references to current state
+ * and auto-generated IDs.
  */
 function deepResolveValue(
   value: unknown,
@@ -27,16 +43,23 @@ function deepResolveValue(
 ): unknown {
   if (value === null || value === undefined) return value;
 
-  // { path: "/foo" } -> read from state
-  if (
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    "path" in (value as Record<string, unknown>)
-  ) {
+  // "$id" string token -> generate unique ID
+  if (value === "$id") {
+    return generateUniqueId();
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
     const obj = value as Record<string, unknown>;
-    // Only treat as a path reference if it has exactly one key
-    if (Object.keys(obj).length === 1 && typeof obj.path === "string") {
+    const keys = Object.keys(obj);
+
+    // { path: "/foo" } -> read from state (single-key object with "path")
+    if (keys.length === 1 && typeof obj.path === "string") {
       return get(obj.path as string);
+    }
+
+    // { "$id": true } -> generate unique ID (single-key object)
+    if (keys.length === 1 && "$id" in obj) {
+      return generateUniqueId();
     }
   }
 

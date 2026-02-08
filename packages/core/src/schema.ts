@@ -593,10 +593,17 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     'Values inside pushState can contain { "path": "/statePath" } references to read current state (e.g. the text from an input field).',
   );
   lines.push(
+    'Use "$id" inside a pushState value to auto-generate a unique ID. Example: { path: "/todos", value: { id: "$id", title: { path: "/newTodoText" }, completed: false }, clearPath: "/newTodoText" }.',
+  );
+  lines.push(
     'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a Repeat, use "$index" for the current item index.',
   );
   lines.push(
     "For lists where users can add/remove items (todos, carts, etc.), use pushState and removeState instead of hardcoding with setState.",
+  );
+  lines.push("");
+  lines.push(
+    'IMPORTANT: State paths use RFC 6901 JSON Pointer syntax (e.g. "/todos/0/title"). Do NOT use JavaScript-style dot notation (e.g. "/todos.length" is WRONG). To generate unique IDs for new items, use "$id" instead of trying to read array length.',
   );
   lines.push("");
 

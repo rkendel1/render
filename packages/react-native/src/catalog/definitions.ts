@@ -463,7 +463,7 @@ export const standardActionDefinitions = {
       clearPath: z.string().optional(),
     }),
     description:
-      'Append an item to an array in the state model. The value can contain { path: "/statePath" } references to read from current state. Use clearPath to reset another path after pushing (e.g. clear an input field).',
+      'Append an item to an array in the state model. The value can contain { path: "/statePath" } references to read from current state, and "$id" to auto-generate a unique ID. Use clearPath to reset another path after pushing (e.g. clear an input field). Example: { path: "/todos", value: { id: "$id", title: { path: "/newTodoText" }, completed: false }, clearPath: "/newTodoText" }.',
   },
 
   removeState: {
