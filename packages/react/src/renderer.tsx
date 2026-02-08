@@ -1,6 +1,11 @@
 "use client";
 
-import React, { type ComponentType, type ReactNode, useMemo } from "react";
+import React, {
+  type ComponentType,
+  type ReactNode,
+  useMemo,
+  useRef,
+} from "react";
 import type {
   UIElement,
   Spec,
@@ -458,19 +463,31 @@ export function createRenderer<
     authState,
     fallback,
   }: CreateRendererProps) {
-    // Wrap onAction to match internal API
-    const actionHandlers = onAction
-      ? {
-          __default__: (params: Record<string, unknown>) => {
-            const actionName = params.__actionName__ as string;
-            const actionParams = params.__actionParams__ as Record<
-              string,
-              unknown
-            >;
-            return onAction(actionName, actionParams);
-          },
-        }
-      : undefined;
+    // Stabilize onAction ref so the actionHandlers object doesn't change every render
+    const onActionRef = useRef(onAction);
+    onActionRef.current = onAction;
+
+    // Memoize actionHandlers to prevent re-creating the object on every render,
+    // which would cause ActionProvider to receive new props and potentially
+    // trigger infinite re-renders.
+    const actionHandlers = useMemo(
+      () =>
+        onAction
+          ? {
+              __default__: (params: Record<string, unknown>) => {
+                const actionName = params.__actionName__ as string;
+                const actionParams = params.__actionParams__ as Record<
+                  string,
+                  unknown
+                >;
+                return onActionRef.current?.(actionName, actionParams);
+              },
+            }
+          : undefined,
+      // Only re-create when onAction goes from defined to undefined or vice versa
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [!!onAction],
+    );
 
     return (
       <DataProvider

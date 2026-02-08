@@ -68,12 +68,27 @@ export function DataProvider({
     if (newJson !== initialDataJsonRef.current) {
       initialDataJsonRef.current = newJson;
       if (initialData && Object.keys(initialData).length > 0) {
-        setData((prev) => ({ ...prev, ...initialData }));
+        setData((prev) => {
+          const next = { ...prev, ...initialData };
+          // Bail out if the merged result is identical to avoid unnecessary re-renders
+          if (JSON.stringify(next) === JSON.stringify(prev)) {
+            return prev;
+          }
+          return next;
+        });
       }
     }
   }, [initialData]);
 
-  const get = useCallback((path: string) => getByPath(data, path), [data]);
+  // Use a ref so `get` doesn't need `data` in its dependency array,
+  // preventing cascading re-renders through callbacks that depend on `get`.
+  const dataRef = useRef<DataModel>(data);
+  dataRef.current = data;
+
+  const get = useCallback(
+    (path: string) => getByPath(dataRef.current, path),
+    [],
+  );
 
   const set = useCallback(
     (path: string, value: unknown) => {
