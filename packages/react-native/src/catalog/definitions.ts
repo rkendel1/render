@@ -235,10 +235,11 @@ export const standardComponentDefinitions = {
       disabled: z.boolean().nullable(),
       loading: z.boolean().nullable(),
       action: z.string().nullable(),
+      actionParams: z.record(z.string(), z.unknown()).nullable(),
     }),
     slots: [],
     description:
-      "Pressable button with label. Set variant for styling and action for the handler to call on press.",
+      "Pressable button with label. Set variant for styling. Set action and actionParams for the handler to call on press (e.g. action:'setData', actionParams:{path:'/key', value:'val'}).",
   },
 
   TextInput: {
@@ -253,10 +254,11 @@ export const standardComponentDefinitions = {
       multiline: z.boolean().nullable(),
       numberOfLines: z.number().nullable(),
       label: z.string().nullable(),
+      flex: z.number().nullable(),
     }),
     slots: [],
     description:
-      "Text input field. Use dataPath to bind to the data model for two-way binding.",
+      "Text input field. Use dataPath to bind to the data model for two-way binding. The value typed by the user is stored at the dataPath.",
   },
 
   Switch: {

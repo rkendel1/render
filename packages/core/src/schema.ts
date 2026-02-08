@@ -551,6 +551,25 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
 {"op":"add","path":"/elements/chart-1","value":{"type":"Chart","props":{"type":"bar","dataPath":"analytics.salesByRegion"},"children":[]}}`);
   lines.push("");
 
+  // Initial data section
+  lines.push("INITIAL DATA:");
+  lines.push(
+    "Specs can include an optional /data field to seed the data model. Components with dataPath read from and write to this data.",
+  );
+  lines.push(
+    "When your UI uses dataPath bindings (e.g. TextInput, Checkbox, Switch), you SHOULD provide initial data so those components have starting values.",
+  );
+  lines.push(
+    'Output initial data as a patch: {"op":"add","path":"/data","value":{"todos":[{"title":"Buy milk","completed":false}],"newTodoText":""}}',
+  );
+  lines.push(
+    "Output the /data patch BEFORE element patches so the data model is populated before components render.",
+  );
+  lines.push(
+    'When content comes from the data model, use { "$path": "/some/path" } dynamic props to display it instead of hardcoding the same value in both data and props. The data model is the single source of truth.',
+  );
+  lines.push("");
+
   // Components section
   const components = (catalog.data as Record<string, unknown>).components as
     | Record<

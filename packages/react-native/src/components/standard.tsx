@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import type { ComponentRenderProps } from "../renderer";
 import type { ComponentRegistry } from "../renderer";
+import { useDataBinding } from "../contexts/data";
 
 // =============================================================================
 // Layout Components
@@ -502,6 +503,7 @@ function ButtonComponent({ element, onAction }: ComponentRenderProps) {
     disabled?: boolean;
     loading?: boolean;
     action?: string;
+    actionParams?: Record<string, unknown>;
   };
 
   const variant = buttonVariantStyles[p.variant ?? "primary"] ?? {
@@ -520,7 +522,7 @@ function ButtonComponent({ element, onAction }: ComponentRenderProps) {
       disabled={disabled}
       onPress={() => {
         if (p.action) {
-          onAction?.({ name: p.action });
+          onAction?.({ name: p.action, params: p.actionParams });
         }
       }}
       style={({ pressed }) => ({
@@ -572,14 +574,20 @@ function TextInputComponent({ element }: ComponentRenderProps) {
     multiline?: boolean;
     numberOfLines?: number;
     label?: string;
+    flex?: number;
   };
 
+  const [boundValue, setBoundValue] = useDataBinding<string>(p.dataPath ?? "");
+  // Use bound value if dataPath is set, otherwise fall back to static value
+  const displayValue = p.dataPath ? (boundValue ?? "") : (p.value ?? "");
+
   return (
-    <View>
+    <View style={p.flex != null ? { flex: p.flex } : undefined}>
       {p.label && <Text style={inputStyles.label}>{p.label}</Text>}
       <RNTextInput
         placeholder={p.placeholder ?? undefined}
-        value={p.value ?? undefined}
+        value={displayValue}
+        onChangeText={p.dataPath ? setBoundValue : undefined}
         secureTextEntry={p.secureTextEntry ?? false}
         keyboardType={p.keyboardType ?? "default"}
         multiline={p.multiline ?? false}
@@ -604,9 +612,16 @@ function SwitchComponent({ element }: ComponentRenderProps) {
     disabled?: boolean;
   };
 
+  const [boundValue, setBoundValue] = useDataBinding<boolean>(p.dataPath ?? "");
+  const displayValue = p.dataPath ? (boundValue ?? false) : (p.value ?? false);
+
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <RNSwitch value={p.value ?? false} disabled={p.disabled ?? false} />
+      <RNSwitch
+        value={displayValue}
+        onValueChange={p.dataPath ? setBoundValue : undefined}
+        disabled={p.disabled ?? false}
+      />
       {p.label && (
         <Text style={{ fontSize: 16, color: "#374151" }}>{p.label}</Text>
       )}
@@ -614,7 +629,7 @@ function SwitchComponent({ element }: ComponentRenderProps) {
   );
 }
 
-function CheckboxComponent({ element, onAction }: ComponentRenderProps) {
+function CheckboxComponent({ element }: ComponentRenderProps) {
   const p = element.props as {
     checked?: boolean;
     dataPath?: string;
@@ -622,11 +637,17 @@ function CheckboxComponent({ element, onAction }: ComponentRenderProps) {
     disabled?: boolean;
   };
 
-  const checked = p.checked ?? false;
+  const [boundValue, setBoundValue] = useDataBinding<boolean>(p.dataPath ?? "");
+  const checked = p.dataPath ? (boundValue ?? false) : (p.checked ?? false);
 
   return (
     <Pressable
       disabled={p.disabled ?? false}
+      onPress={() => {
+        if (p.dataPath) {
+          setBoundValue(!checked);
+        }
+      }}
       style={{
         flexDirection: "row",
         alignItems: "center",

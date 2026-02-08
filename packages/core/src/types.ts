@@ -110,6 +110,9 @@ export interface Spec {
   root: string;
   /** Flat map of elements by key */
   elements: Record<string, UIElement>;
+  /** Optional initial data to seed the data model.
+   *  Components using dataPath will read from / write to this data. */
+  data?: Record<string, unknown>;
 }
 
 /**

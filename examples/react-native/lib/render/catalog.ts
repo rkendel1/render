@@ -10,6 +10,16 @@ import {
  * Custom rules for the AI to follow when generating UIs
  */
 export const customRules = [
+  // Initial data
+  "INITIAL DATA: When the UI uses interactive components with dataPath bindings (TextInput, Checkbox, Switch, Slider), you MUST output a /data patch BEFORE the element patches to seed the data model with initial values.",
+  'Example: {"op":"add","path":"/data","value":{"todos":[{"title":"Buy milk","completed":false}],"newTodoText":""}}',
+  "The data model is the source of truth for all dataPath-bound components. Without initial data, bound components will have no starting values.",
+
+  // Data-driven content: no duplicating values as static props
+  'DATA CONSISTENCY: When content comes from the data model, ALWAYS use { "$path": "/some/path" } dynamic props instead of hardcoding the same value in both data and props. The data model is the single source of truth.',
+  'Example: If data has todos[0].title = "Buy groceries", the Paragraph displaying it MUST use "text": { "$path": "/todos/0/title" } -- NOT "text": "Buy groceries". Hardcoding text that also exists in data causes the UI to go out of sync when data changes.',
+  "This applies to ALL display props that correspond to data fields: text, label, color, checked, value, etc. If a value lives in /data, read it with $path.",
+
   // Image URLs using Picsum (free, no API key)
   'Image props: { "src": "https://picsum.photos/WIDTH/HEIGHT?random=N" } - use Picsum for any placeholder or example images',
   "Use different random numbers for each image to get different photos (e.g., ?random=1, ?random=2, ?random=3)",
