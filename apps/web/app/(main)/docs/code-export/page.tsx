@@ -39,7 +39,7 @@ export default function CodeExportPage() {
       <Code lang="typescript">{`import {
   traverseSpec,          // Walk the UI spec
   collectUsedComponents, // Get all component types used
-  collectDataPaths,      // Get all data binding paths
+  collectStatePaths,      // Get all data binding paths
   collectActions,        // Get all action names
   serializeProps,        // Convert props to JSX string
 } from '@json-render/codegen';`}</Code>

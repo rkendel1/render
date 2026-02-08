@@ -181,6 +181,21 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 | `resolveElementProps(props, ctx)` | Resolve all prop expressions in an element |
 | `PropExpression<T>` | Type for prop values that may contain expressions |
 
+### User Prompt
+
+| Export | Purpose |
+|--------|---------|
+| `buildUserPrompt(options)` | Build a user prompt with optional spec refinement and state context |
+| `UserPromptOptions` | Options type for `buildUserPrompt` |
+
+### Spec Validation
+
+| Export | Purpose |
+|--------|---------|
+| `validateSpec(spec, catalog?)` | Validate spec structure and return issues |
+| `autoFixSpec(spec)` | Auto-fix common spec issues (returns corrected copy) |
+| `formatSpecIssues(issues)` | Format validation issues as readable strings |
+
 ### Types
 
 | Export | Purpose |
@@ -246,11 +261,51 @@ import { resolvePropValue, resolveElementProps } from "@json-render/core";
 // Resolve a single value
 const color = resolvePropValue(
   { $cond: { eq: [{ path: "/active" }, "yes"] }, $then: "blue", $else: "gray" },
-  { dataModel: myData }
+  { stateModel: myState }
 );
 
 // Resolve all props on an element
-const resolved = resolveElementProps(element.props, { dataModel: myData });
+const resolved = resolveElementProps(element.props, { stateModel: myState });
+```
+
+## User Prompt Builder
+
+Build structured user prompts for AI generation, with support for refinement and state context:
+
+```typescript
+import { buildUserPrompt } from "@json-render/core";
+
+// Fresh generation
+const prompt = buildUserPrompt({ prompt: "create a todo app" });
+
+// Refinement with existing spec (triggers patch-only mode)
+const refinementPrompt = buildUserPrompt({
+  prompt: "add a dark mode toggle",
+  currentSpec: existingSpec,
+});
+
+// With runtime state context
+const contextPrompt = buildUserPrompt({
+  prompt: "show my data",
+  state: { todos: [{ text: "Buy milk" }] },
+});
+```
+
+## Spec Validation
+
+Validate spec structure and auto-fix common issues:
+
+```typescript
+import { validateSpec, autoFixSpec, formatSpecIssues } from "@json-render/core";
+
+// Validate a spec
+const { valid, issues } = validateSpec(spec, catalog);
+
+// Format issues for display
+console.log(formatSpecIssues(issues));
+
+// Auto-fix common issues (returns a corrected copy)
+const fixed = autoFixSpec(spec);
 ```
 
 ## Custom Schemas

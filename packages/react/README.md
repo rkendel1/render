@@ -215,10 +215,13 @@ const { errors, validate } = useFieldValidation("/form/email", {
 |------|---------|
 | `useStateStore()` | Access data context (`data`, `get`, `set`) |
 | `useStateValue(path)` | Get single value from data |
+| `useStateBinding(path)` | Two-way data binding (returns `[value, setValue]`) |
 | `useVisibility()` | Access visibility evaluation |
 | `useIsVisible(condition)` | Check if condition is met |
 | `useActions()` | Access action context |
+| `useAction(name)` | Get a single action dispatch function |
 | `useFieldValidation(path, config)` | Field validation state |
+| `useUIStream(options)` | Stream specs from an API endpoint |
 
 ## Visibility Conditions
 

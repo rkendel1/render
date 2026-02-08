@@ -84,10 +84,11 @@ The React schema uses an element tree format:
 
 | Context | Purpose |
 |---------|---------|
-| `StateContext` | Provide data for binding (`{{path.to.value}}`) |
+| `StateContext` | Provide data for binding |
 | `ActionsContext` | Provide action handlers |
 | `ValidationContext` | Form validation state |
 | `VisibilityContext` | Conditional rendering |
+| `RepeatScopeContext` | Repeat/iteration scope for lists |
 
 ## Dynamic Prop Expressions
 
@@ -124,4 +125,8 @@ The `setState` action is handled automatically by `ActionProvider` and updates t
 | `Renderer` | Render a spec using a registry |
 | `schema` | Element tree schema |
 | `useStateStore` | Access data context |
+| `useStateValue` | Get single value from data |
+| `useStateBinding` | Two-way data binding |
 | `useActions` | Access actions context |
+| `useAction` | Get a single action dispatch function |
+| `useUIStream` | Stream specs from an API endpoint |

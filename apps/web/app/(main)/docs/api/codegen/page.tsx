@@ -38,15 +38,15 @@ interface SpecVisitor {
 const components = collectUsedComponents(spec);
 // Set { 'Card', 'Metric', 'Chart' }`}</Code>
 
-      <h3 className="text-lg font-semibold mt-8 mb-4">collectDataPaths</h3>
+      <h3 className="text-lg font-semibold mt-8 mb-4">collectStatePaths</h3>
       <p className="text-sm text-muted-foreground mb-4">
-        Get all state paths referenced in props (valuePath, statePath, bindPath,
+        Get all state paths referenced in props (statePath, bindPath, valuePath,
         etc.).
       </p>
-      <Code lang="typescript">{`function collectDataPaths(spec: Spec): Set<string>
+      <Code lang="typescript">{`function collectStatePaths(spec: Spec): Set<string>
 
 // Example
-const paths = collectDataPaths(spec);
+const paths = collectStatePaths(spec);
 // Set { 'analytics/revenue', 'analytics/customers' }`}</Code>
 
       <h3 className="text-lg font-semibold mt-8 mb-4">collectActions</h3>

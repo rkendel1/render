@@ -1,7 +1,7 @@
 export {
   traverseSpec,
   collectUsedComponents,
-  collectDataPaths,
+  collectStatePaths,
   collectActions,
   type TreeVisitor,
 } from "./traverse";

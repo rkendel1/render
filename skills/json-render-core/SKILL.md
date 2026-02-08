@@ -99,7 +99,35 @@ Any prop value can be a dynamic expression resolved at render time:
 ```typescript
 import { resolvePropValue, resolveElementProps } from "@json-render/core";
 
-const resolved = resolveElementProps(element.props, { dataModel: myData });
+const resolved = resolveElementProps(element.props, { stateModel: myState });
+```
+
+## User Prompt Builder
+
+Build structured user prompts with optional spec refinement and state context:
+
+```typescript
+import { buildUserPrompt } from "@json-render/core";
+
+// Fresh generation
+buildUserPrompt({ prompt: "create a todo app" });
+
+// Refinement (patch-only mode)
+buildUserPrompt({ prompt: "add a toggle", currentSpec: spec });
+
+// With runtime state
+buildUserPrompt({ prompt: "show data", state: { todos: [] } });
+```
+
+## Spec Validation
+
+Validate spec structure and auto-fix common issues:
+
+```typescript
+import { validateSpec, autoFixSpec } from "@json-render/core";
+
+const { valid, issues } = validateSpec(spec, catalog);
+const fixed = autoFixSpec(spec);
 ```
 
 ## Key Exports
@@ -110,6 +138,9 @@ const resolved = resolveElementProps(element.props, { dataModel: myData });
 | `defineCatalog` | Create a catalog from schema |
 | `resolvePropValue` | Resolve a single prop expression against data |
 | `resolveElementProps` | Resolve all prop expressions in an element |
+| `buildUserPrompt` | Build user prompts with refinement and state context |
+| `validateSpec` | Validate spec structure |
+| `autoFixSpec` | Auto-fix common spec issues |
 | `createSpecStreamCompiler` | Stream JSONL patches into spec |
 | `parseSpecStreamLine` | Parse single JSONL line |
 | `applySpecStreamPatch` | Apply patch to object |

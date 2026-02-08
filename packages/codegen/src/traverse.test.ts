@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   traverseSpec,
   collectUsedComponents,
-  collectDataPaths,
+  collectStatePaths,
   collectActions,
 } from "./traverse";
 import type { Spec } from "@json-render/core";
@@ -71,7 +71,7 @@ describe("collectUsedComponents", () => {
   });
 });
 
-describe("collectDataPaths", () => {
+describe("collectStatePaths", () => {
   it("collects paths from valuePath props", () => {
     const spec: Spec = {
       root: "root",
@@ -83,7 +83,7 @@ describe("collectDataPaths", () => {
       },
     };
 
-    const paths = collectDataPaths(spec);
+    const paths = collectStatePaths(spec);
     expect(paths).toEqual(new Set(["analytics/revenue"]));
   });
 
@@ -98,7 +98,7 @@ describe("collectDataPaths", () => {
       },
     };
 
-    const paths = collectDataPaths(spec);
+    const paths = collectStatePaths(spec);
     expect(paths).toEqual(new Set(["user/name"]));
   });
 });

@@ -17,7 +17,7 @@ pnpm add @json-render/codegen
 ### Tree Traversal
 
 ```typescript
-import { traverseTree, collectUsedComponents, collectDataPaths, collectActions } from '@json-render/codegen';
+import { traverseTree, collectUsedComponents, collectStatePaths, collectActions } from '@json-render/codegen';
 
 // Walk the tree depth-first
 traverseTree(tree, (element, depth, parent) => {
@@ -28,7 +28,7 @@ traverseTree(tree, (element, depth, parent) => {
 const components = collectUsedComponents(tree);
 // Set { 'Card', 'Metric', 'Button' }
 
-// Get all data paths referenced
+// Get all state paths referenced
 const statePaths = collectStatePaths(tree);
 // Set { 'analytics/revenue', 'user/name' }
 
@@ -80,7 +80,7 @@ See the `examples/dashboard` for a complete example of building a Next.js code g
 ```typescript
 import { 
   collectUsedComponents, 
-  collectDataPaths,
+  collectStatePaths,
   traverseTree,
   serializeProps,
   type GeneratedFile 
