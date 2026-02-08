@@ -91,6 +91,16 @@ export const standardComponentDefinitions = {
       "Scrollable container. Use for content that may overflow the screen.",
   },
 
+  Repeat: {
+    props: z.object({
+      statePath: z.string(),
+      itemKey: z.string().nullable(),
+    }),
+    slots: ["default"],
+    description:
+      'Renders its children once for each item in a state array. Set statePath to the array (e.g. "/todos"). Children use $item/field for per-item state paths (e.g. statePath:"$item/completed", "$path":"$item/title"). Use $index for the current index (e.g. removeState index: "$index"). Set itemKey to a unique field name for stable keys (e.g. "id").',
+  },
+
   SafeArea: {
     props: z.object({
       backgroundColor: z.string().nullable(),

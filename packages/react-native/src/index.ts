@@ -36,6 +36,13 @@ export {
   type FieldValidationState,
 } from "./contexts/validation";
 
+export {
+  RepeatScopeProvider,
+  useRepeatScope,
+  rewriteRepeatTokens,
+  type RepeatScopeValue,
+} from "./contexts/repeat-scope";
+
 // Schema (React Native's spec format)
 export {
   schema,

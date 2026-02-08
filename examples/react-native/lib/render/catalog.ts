@@ -20,10 +20,16 @@ export const customRules = [
   'Example: If state has todos[0].title = "Buy groceries", the Paragraph displaying it MUST use "text": { "$path": "/todos/0/title" } -- NOT "text": "Buy groceries". Hardcoding text that also exists in state causes the UI to go out of sync when state changes.',
   "This applies to ALL display props that correspond to state fields: text, label, color, checked, value, etc. If a value lives in /state, read it with $path.",
 
+  // Dynamic lists with Repeat
+  'DYNAMIC LISTS: Use the Repeat component to render a list of items from a state array. Set statePath to the array path (e.g. "/todos"). Children are the template rendered per item.',
+  'Inside Repeat children, use "$item/field" for per-item paths: statePath:"$item/completed", { "$path": "$item/title" }. Use "$index" for the current array index.',
+  'Set itemKey to a unique field for stable React keys (e.g. "id"). Example: { "type": "Repeat", "props": { "statePath": "/todos", "itemKey": "id" }, "children": ["todo-template"] }.',
+  "ALWAYS use Repeat for lists backed by state arrays. NEVER hardcode individual elements for each array item (e.g. todo-1, todo-2, todo-3). The Repeat component handles dynamic rendering as items are added/removed.",
+
   // Array state actions
   'ARRAY STATE: Use "pushState" to add items to arrays and "removeState" to remove items by index.',
   'pushState params: { "path": "/todos", "value": { "title": { "path": "/newTodoText" }, "completed": false }, "clearPath": "/newTodoText" }. The value can contain { "path": "/statePath" } references to read current state. Use clearPath to reset an input after adding.',
-  'removeState params: { "path": "/todos", "index": 0 }. Removes the item at the given index from the array.',
+  'removeState params: { "path": "/todos", "index": "$index" }. Inside a Repeat, use "$index" for the current item index. Outside Repeat, use a literal number.',
   "For todo lists, shopping carts, or any list that users can add to / remove from, use pushState and removeState instead of trying to hardcode arrays with setState.",
 
   // Image URLs using Picsum (free, no API key)
