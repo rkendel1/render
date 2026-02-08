@@ -64,6 +64,8 @@ export interface Schema<TDef extends SchemaDefinition = SchemaDefinition> {
   readonly definition: TDef;
   /** Custom prompt template for this schema */
   readonly promptTemplate?: PromptTemplate;
+  /** Default rules baked into the schema (injected before customRules) */
+  readonly defaultRules?: string[];
   /** Create a catalog from this schema */
   createCatalog<TCatalog extends InferCatalogInput<TDef["catalog"]>>(
     catalog: TCatalog,
@@ -136,6 +138,8 @@ export type PromptTemplate<TCatalog = unknown> = (
 export interface SchemaOptions<TCatalog = unknown> {
   /** Custom prompt template for this schema */
   promptTemplate?: PromptTemplate<TCatalog>;
+  /** Default rules baked into the schema (injected before customRules in prompts) */
+  defaultRules?: string[];
 }
 
 /**
@@ -334,6 +338,7 @@ export function defineSchema<TDef extends SchemaDefinition>(
   return {
     definition,
     promptTemplate: options?.promptTemplate,
+    defaultRules: options?.defaultRules,
     createCatalog<TCatalog extends InferCatalogInput<TDef["catalog"]>>(
       catalog: TCatalog,
     ): Catalog<TDef, TCatalog> {
@@ -697,7 +702,8 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     "Each element value needs: type, props, children (array of child keys)",
     "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
   ];
-  const allRules = [...baseRules, ...customRules];
+  const schemaRules = catalog.schema.defaultRules ?? [];
+  const allRules = [...baseRules, ...schemaRules, ...customRules];
   allRules.forEach((rule, i) => {
     lines.push(`${i + 1}. ${rule}`);
   });
