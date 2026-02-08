@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { z } from "zod";
+import { useStateBinding } from "@json-render/react";
 
 // shadcn components
 import { Button } from "@/components/ui/button";
@@ -146,37 +147,75 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   Divider: () => <Separator className="my-3" />,
 
   // Form Inputs
-  Input: ({ props }) => (
-    <div className="space-y-2">
-      <Label htmlFor={props.name}>{props.label}</Label>
-      <Input
-        id={props.name}
-        name={props.name}
-        type={props.type ?? "text"}
-        placeholder={props.placeholder ?? ""}
-      />
-    </div>
-  ),
+  Input: ({ props, emit }) => {
+    const [boundValue, setBoundValue] = props.statePath
+      ? useStateBinding<string>(props.statePath)
+      : [undefined, undefined];
+    const [localValue, setLocalValue] = useState("");
+    const value = props.statePath ? (boundValue ?? "") : localValue;
+    const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
-  Textarea: ({ props }) => (
-    <div className="space-y-2">
-      <Label htmlFor={props.name}>{props.label}</Label>
-      <Textarea
-        id={props.name}
-        name={props.name}
-        placeholder={props.placeholder ?? ""}
-        rows={props.rows ?? 3}
-      />
-    </div>
-  ),
+    return (
+      <div className="space-y-2">
+        {props.label && <Label htmlFor={props.name}>{props.label}</Label>}
+        <Input
+          id={props.name}
+          name={props.name}
+          type={props.type ?? "text"}
+          placeholder={props.placeholder ?? ""}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") emit?.("submit");
+          }}
+          onFocus={() => emit?.("focus")}
+          onBlur={() => emit?.("blur")}
+        />
+      </div>
+    );
+  },
 
-  Select: ({ props }) => {
-    const [value, setValue] = useState<string>("");
+  Textarea: ({ props }) => {
+    const [boundValue, setBoundValue] = props.statePath
+      ? useStateBinding<string>(props.statePath)
+      : [undefined, undefined];
+    const [localValue, setLocalValue] = useState("");
+    const value = props.statePath ? (boundValue ?? "") : localValue;
+    const setValue = props.statePath ? setBoundValue! : setLocalValue;
+
+    return (
+      <div className="space-y-2">
+        {props.label && <Label htmlFor={props.name}>{props.label}</Label>}
+        <Textarea
+          id={props.name}
+          name={props.name}
+          placeholder={props.placeholder ?? ""}
+          rows={props.rows ?? 3}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+      </div>
+    );
+  },
+
+  Select: ({ props, emit }) => {
+    const [boundValue, setBoundValue] = props.statePath
+      ? useStateBinding<string>(props.statePath)
+      : [undefined, undefined];
+    const [localValue, setLocalValue] = useState<string>("");
+    const value = props.statePath ? (boundValue ?? "") : localValue;
+    const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
     return (
       <div className="space-y-2">
         <Label>{props.label}</Label>
-        <Select value={value} onValueChange={setValue}>
+        <Select
+          value={value}
+          onValueChange={(v) => {
+            setValue(v);
+            emit?.("change");
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder={props.placeholder ?? "Select..."} />
           </SelectTrigger>
@@ -192,15 +231,23 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
     );
   },
 
-  Checkbox: ({ props }) => {
-    const [checked, setChecked] = useState(!!props.checked);
+  Checkbox: ({ props, emit }) => {
+    const [boundValue, setBoundValue] = props.statePath
+      ? useStateBinding<boolean>(props.statePath)
+      : [undefined, undefined];
+    const [localChecked, setLocalChecked] = useState(!!props.checked);
+    const checked = props.statePath ? (boundValue ?? false) : localChecked;
+    const setChecked = props.statePath ? setBoundValue! : setLocalChecked;
 
     return (
       <div className="flex items-center space-x-2">
         <Checkbox
           id={props.name}
           checked={checked}
-          onCheckedChange={(c) => setChecked(c === true)}
+          onCheckedChange={(c) => {
+            setChecked(c === true);
+            emit?.("change");
+          }}
         />
         <Label htmlFor={props.name} className="cursor-pointer">
           {props.label}
@@ -209,13 +256,24 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
     );
   },
 
-  Radio: ({ props }) => {
-    const [value, setValue] = useState(props.options[0] ?? "");
+  Radio: ({ props, emit }) => {
+    const [boundValue, setBoundValue] = props.statePath
+      ? useStateBinding<string>(props.statePath)
+      : [undefined, undefined];
+    const [localValue, setLocalValue] = useState(props.options[0] ?? "");
+    const value = props.statePath ? (boundValue ?? "") : localValue;
+    const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
     return (
       <div className="space-y-2">
         {props.label && <Label>{props.label}</Label>}
-        <RadioGroup value={value} onValueChange={setValue}>
+        <RadioGroup
+          value={value}
+          onValueChange={(v) => {
+            setValue(v);
+            emit?.("change");
+          }}
+        >
           {props.options.map((opt) => (
             <div key={opt} className="flex items-center space-x-2">
               <RadioGroupItem value={opt} id={`${props.name}-${opt}`} />
@@ -232,8 +290,13 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
     );
   },
 
-  Switch: ({ props }) => {
-    const [checked, setChecked] = useState(!!props.checked);
+  Switch: ({ props, emit }) => {
+    const [boundValue, setBoundValue] = props.statePath
+      ? useStateBinding<boolean>(props.statePath)
+      : [undefined, undefined];
+    const [localChecked, setLocalChecked] = useState(!!props.checked);
+    const checked = props.statePath ? (boundValue ?? false) : localChecked;
+    const setChecked = props.statePath ? setBoundValue! : setLocalChecked;
 
     return (
       <div className="flex items-center justify-between space-x-2">
@@ -243,7 +306,10 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
         <Switch
           id={props.name}
           checked={checked}
-          onCheckedChange={setChecked}
+          onCheckedChange={(c) => {
+            setChecked(c);
+            emit?.("change");
+          }}
         />
       </div>
     );
@@ -261,7 +327,7 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
     return (
       <Button
         variant={variant}
-        disabled={loading}
+        disabled={props.disabled || loading}
         onClick={() => emit?.("press")}
       >
         {loading ? "..." : props.label}

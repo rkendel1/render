@@ -67,8 +67,11 @@ export const playgroundCatalog = defineCatalog(schema, {
         name: z.string(),
         type: z.enum(["text", "email", "password", "number"]).nullable(),
         placeholder: z.string().nullable(),
+        statePath: z.string().nullable(),
       }),
-      description: "Text input field",
+      events: ["submit", "focus", "blur"],
+      description:
+        "Text input field. Use statePath to bind to the state model for two-way binding.",
     },
 
     Textarea: {
@@ -77,8 +80,10 @@ export const playgroundCatalog = defineCatalog(schema, {
         name: z.string(),
         placeholder: z.string().nullable(),
         rows: z.number().nullable(),
+        statePath: z.string().nullable(),
       }),
-      description: "Multi-line text input",
+      description:
+        "Multi-line text input. Use statePath to bind to the state model.",
     },
 
     Select: {
@@ -87,8 +92,11 @@ export const playgroundCatalog = defineCatalog(schema, {
         name: z.string(),
         options: z.array(z.string()),
         placeholder: z.string().nullable(),
+        statePath: z.string().nullable(),
       }),
-      description: "Dropdown select input",
+      events: ["change"],
+      description:
+        "Dropdown select input. Use statePath to bind to the state model.",
     },
 
     Checkbox: {
@@ -96,8 +104,10 @@ export const playgroundCatalog = defineCatalog(schema, {
         label: z.string(),
         name: z.string(),
         checked: z.boolean().nullable(),
+        statePath: z.string().nullable(),
       }),
-      description: "Checkbox input",
+      events: ["change"],
+      description: "Checkbox input. Use statePath to bind to the state model.",
     },
 
     Radio: {
@@ -105,8 +115,11 @@ export const playgroundCatalog = defineCatalog(schema, {
         label: z.string(),
         name: z.string(),
         options: z.array(z.string()),
+        statePath: z.string().nullable(),
       }),
-      description: "Radio button group",
+      events: ["change"],
+      description:
+        "Radio button group. Use statePath to bind to the state model.",
     },
 
     Switch: {
@@ -114,8 +127,11 @@ export const playgroundCatalog = defineCatalog(schema, {
         label: z.string(),
         name: z.string(),
         checked: z.boolean().nullable(),
+        statePath: z.string().nullable(),
       }),
-      description: "Toggle switch input",
+      events: ["change"],
+      description:
+        "Toggle switch input. Use statePath to bind to the state model.",
     },
 
     // Actions
@@ -123,11 +139,11 @@ export const playgroundCatalog = defineCatalog(schema, {
       props: z.object({
         label: z.string(),
         variant: z.enum(["primary", "secondary", "danger"]).nullable(),
-        action: z.string().nullable(),
-        actionParams: z.record(z.string(), z.unknown()).nullable(),
+        disabled: z.boolean().nullable(),
       }),
+      events: ["press"],
       description:
-        "Clickable button. Use action to specify the action name and actionParams for parameters.",
+        "Clickable button. Bind on.press for the handler to call on press.",
     },
 
     Link: {
@@ -135,7 +151,8 @@ export const playgroundCatalog = defineCatalog(schema, {
         label: z.string(),
         href: z.string(),
       }),
-      description: "Anchor link",
+      events: ["press"],
+      description: "Anchor link. Bind on.press for the click handler.",
     },
 
     // Typography
@@ -238,6 +255,34 @@ export const playgroundCatalog = defineCatalog(schema, {
   },
 
   actions: {
+    // Core state actions (built-in to the renderer)
+    setState: {
+      params: z.object({
+        path: z.string(),
+        value: z.unknown(),
+      }),
+      description: "Update a value in the state model at the given path.",
+    },
+
+    pushState: {
+      params: z.object({
+        path: z.string(),
+        value: z.unknown(),
+        clearPath: z.string().optional(),
+      }),
+      description:
+        'Append an item to an array in the state model. The value can contain { path: "/statePath" } references to read from current state, and "$id" to auto-generate a unique ID. Use clearPath to reset another path after pushing (e.g. clear an input field).',
+    },
+
+    removeState: {
+      params: z.object({
+        path: z.string(),
+        index: z.number(),
+      }),
+      description:
+        "Remove an item from an array in the state model at the given index.",
+    },
+
     // Demo actions for the playground
     buttonClick: {
       params: z.object({
