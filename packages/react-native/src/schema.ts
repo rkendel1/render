@@ -57,7 +57,7 @@ export const schema = defineSchema(
       // Element integrity
       "CRITICAL INTEGRITY CHECK: Before outputting ANY element that references children, you MUST have already output (or will output) each child as its own element. If an element has children: ['a', 'b'], then elements 'a' and 'b' MUST exist. A missing child element causes that entire branch of the UI to be invisible.",
       "SELF-CHECK: After generating all elements, mentally walk the tree from root. Every key in every children array must resolve to a defined element. If you find a gap, output the missing element immediately.",
-      "When building repeating content (e.g. posts in a feed, cards in a list), always define a wrapper Container element for each item (e.g. 'post-1', 'post-2') with children pointing to that item's sub-elements (e.g. 'post-1-header', 'post-1-image'). Never reference sub-elements directly from a parent list without a wrapper.",
+      'When building repeating content backed by a state array (e.g. todos, posts, cart items), use the "repeat" field on the container element. Example: { "type": "Column", "props": { "gap": 8 }, "repeat": { "path": "/todos", "key": "id" }, "children": ["todo-item"] }. Inside repeated children, use "$item/field" for per-item state paths and "$index" for the current array index. Do NOT hardcode individual elements for each array item.',
 
       // Visible field placement
       'CRITICAL: The "visible" field goes on the ELEMENT object, NOT inside "props". Correct: {"type":"Column","props":{"gap":8},"visible":{"eq":[{"path":"/activeTab"},"home"]},"children":[...]}. WRONG: {"type":"Column","props":{"gap":8,"visible":{...}},"children":[...]}.',

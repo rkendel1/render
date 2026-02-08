@@ -15,7 +15,7 @@ import type {
   LegacyCatalog,
   ComponentDefinition,
 } from "@json-render/core";
-import { resolveElementProps } from "@json-render/core";
+import { resolveElementProps, getByPath } from "@json-render/core";
 import type {
   Components,
   Actions,
@@ -31,6 +31,11 @@ import { VisibilityProvider } from "./contexts/visibility";
 import { ActionProvider } from "./contexts/actions";
 import { ValidationProvider } from "./contexts/validation";
 import { ConfirmDialog } from "./contexts/actions";
+import {
+  RepeatScopeProvider,
+  useRepeatScope,
+  rewriteRepeatTokens,
+} from "./contexts/repeat-scope";
 
 /**
  * Props passed to component renderers
@@ -88,9 +93,50 @@ function ElementRenderer({
   loading?: boolean;
   fallback?: ComponentRenderer;
 }) {
-  const isVisible = useIsVisible(element.visible);
+  const repeatScope = useRepeatScope();
   const { ctx } = useVisibility();
   const { execute } = useActions();
+
+  // ---- Rewrite $item / $index tokens when inside a repeat ----
+  let effectiveElement = element;
+  if (repeatScope) {
+    const rewrittenProps = rewriteRepeatTokens(
+      element.props,
+      repeatScope.basePath,
+      repeatScope.index,
+    );
+    const rewrittenVisible =
+      element.visible !== undefined
+        ? rewriteRepeatTokens(
+            element.visible,
+            repeatScope.basePath,
+            repeatScope.index,
+          )
+        : element.visible;
+    const rewrittenOn =
+      element.on !== undefined
+        ? rewriteRepeatTokens(
+            element.on,
+            repeatScope.basePath,
+            repeatScope.index,
+          )
+        : element.on;
+    if (
+      rewrittenProps !== element.props ||
+      rewrittenVisible !== element.visible ||
+      rewrittenOn !== element.on
+    ) {
+      effectiveElement = {
+        ...element,
+        props: rewrittenProps as Record<string, unknown>,
+        visible: rewrittenVisible as UIElement["visible"],
+        on: rewrittenOn as UIElement["on"],
+      };
+    }
+  }
+
+  // Evaluate visibility (after token rewriting so paths are absolute)
+  const isVisible = useIsVisible(effectiveElement.visible);
 
   // Don't render if not visible
   if (!isVisible) {
@@ -99,13 +145,13 @@ function ElementRenderer({
 
   // Resolve dynamic prop expressions ($path, $cond/$then/$else)
   const resolvedProps = resolveElementProps(
-    element.props as Record<string, unknown>,
+    effectiveElement.props as Record<string, unknown>,
     ctx,
   );
   const resolvedElement =
-    resolvedProps !== element.props
-      ? { ...element, props: resolvedProps }
-      : element;
+    resolvedProps !== effectiveElement.props
+      ? { ...effectiveElement, props: resolvedProps }
+      : effectiveElement;
 
   // Get the component renderer
   const Component = registry[resolvedElement.type] ?? fallback;
@@ -115,28 +161,38 @@ function ElementRenderer({
     return null;
   }
 
-  // Render children
-  const children = resolvedElement.children?.map((childKey) => {
-    const childElement = spec.elements[childKey];
-    if (!childElement) {
-      if (!loading) {
-        console.warn(
-          `[json-render] Missing element "${childKey}" referenced as child of "${resolvedElement.type}". This element will not render.`,
-        );
+  // ---- Render children (with repeat support) ----
+  const children = resolvedElement.repeat ? (
+    <RepeatChildren
+      element={resolvedElement}
+      spec={spec}
+      registry={registry}
+      loading={loading}
+      fallback={fallback}
+    />
+  ) : (
+    resolvedElement.children?.map((childKey) => {
+      const childElement = spec.elements[childKey];
+      if (!childElement) {
+        if (!loading) {
+          console.warn(
+            `[json-render] Missing element "${childKey}" referenced as child of "${resolvedElement.type}". This element will not render.`,
+          );
+        }
+        return null;
       }
-      return null;
-    }
-    return (
-      <ElementRenderer
-        key={childKey}
-        element={childElement}
-        spec={spec}
-        registry={registry}
-        loading={loading}
-        fallback={fallback}
-      />
-    );
-  });
+      return (
+        <ElementRenderer
+          key={childKey}
+          element={childElement}
+          spec={spec}
+          registry={registry}
+          loading={loading}
+          fallback={fallback}
+        />
+      );
+    })
+  );
 
   // Create emit function that resolves events to action bindings
   const onBindings = resolvedElement.on;
@@ -156,6 +212,73 @@ function ElementRenderer({
     <Component element={resolvedElement} emit={emit} loading={loading}>
       {children}
     </Component>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RepeatChildren -- renders child elements once per item in a state array.
+// Used when an element has a `repeat` field.
+// ---------------------------------------------------------------------------
+
+function RepeatChildren({
+  element,
+  spec,
+  registry,
+  loading,
+  fallback,
+}: {
+  element: UIElement;
+  spec: Spec;
+  registry: ComponentRegistry;
+  loading?: boolean;
+  fallback?: ComponentRenderer;
+}) {
+  const { state } = useStateStore();
+  const repeat = element.repeat!;
+  const statePath = repeat.path;
+
+  const items = (getByPath(state, statePath) as unknown[] | undefined) ?? [];
+
+  return (
+    <>
+      {items.map((item, index) => {
+        // Use a stable key: prefer key field, fall back to index
+        const key =
+          repeat.key && typeof item === "object" && item !== null
+            ? String((item as Record<string, unknown>)[repeat.key] ?? index)
+            : String(index);
+
+        return (
+          <RepeatScopeProvider
+            key={key}
+            basePath={`${statePath}/${index}`}
+            index={index}
+          >
+            {element.children?.map((childKey) => {
+              const childElement = spec.elements[childKey];
+              if (!childElement) {
+                if (!loading) {
+                  console.warn(
+                    `[json-render] Missing element "${childKey}" referenced as child of "${element.type}" (repeat). This element will not render.`,
+                  );
+                }
+                return null;
+              }
+              return (
+                <ElementRenderer
+                  key={childKey}
+                  element={childElement}
+                  spec={spec}
+                  registry={registry}
+                  loading={loading}
+                  fallback={fallback}
+                />
+              );
+            })}
+          </RepeatScopeProvider>
+        );
+      })}
+    </>
   );
 }
 

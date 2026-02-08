@@ -147,19 +147,6 @@ function ElementRenderer({
     return null;
   }
 
-  // ---- Built-in Repeat element: renders children once per array item ----
-  if (effectiveElement.type === "Repeat") {
-    return (
-      <RepeatRenderer
-        element={effectiveElement}
-        spec={spec}
-        registry={registry}
-        loading={loading}
-        fallback={fallback}
-      />
-    );
-  }
-
   // Resolve dynamic prop expressions ($path, $cond/$then/$else)
   const resolvedProps = resolveElementProps(
     effectiveElement.props as Record<string, unknown>,
@@ -178,30 +165,38 @@ function ElementRenderer({
     return null;
   }
 
-  // Render children
-  const children = resolvedElement.children?.map((childKey) => {
-    const childElement = spec.elements[childKey];
-    if (!childElement) {
-      // Only warn when not loading -- during streaming, missing children are
-      // expected because elements arrive progressively.
-      if (!loading) {
-        console.warn(
-          `[json-render] Missing element "${childKey}" referenced as child of "${resolvedElement.type}". This element will not render.`,
-        );
+  // ---- Render children (with repeat support) ----
+  const children = resolvedElement.repeat ? (
+    <RepeatChildren
+      element={resolvedElement}
+      spec={spec}
+      registry={registry}
+      loading={loading}
+      fallback={fallback}
+    />
+  ) : (
+    resolvedElement.children?.map((childKey) => {
+      const childElement = spec.elements[childKey];
+      if (!childElement) {
+        if (!loading) {
+          console.warn(
+            `[json-render] Missing element "${childKey}" referenced as child of "${resolvedElement.type}". This element will not render.`,
+          );
+        }
+        return null;
       }
-      return null;
-    }
-    return (
-      <ElementRenderer
-        key={childKey}
-        element={childElement}
-        spec={spec}
-        registry={registry}
-        loading={loading}
-        fallback={fallback}
-      />
-    );
-  });
+      return (
+        <ElementRenderer
+          key={childKey}
+          element={childElement}
+          spec={spec}
+          registry={registry}
+          loading={loading}
+          fallback={fallback}
+        />
+      );
+    })
+  );
 
   // Create emit function that resolves events to action bindings
   const onBindings = resolvedElement.on;
@@ -225,10 +220,11 @@ function ElementRenderer({
 }
 
 // ---------------------------------------------------------------------------
-// RepeatRenderer -- renders child elements once per item in a state array
+// RepeatChildren -- renders child elements once per item in a state array.
+// Used when an element has a `repeat` field.
 // ---------------------------------------------------------------------------
 
-function RepeatRenderer({
+function RepeatChildren({
   element,
   spec,
   registry,
@@ -242,23 +238,18 @@ function RepeatRenderer({
   fallback?: ComponentRenderer;
 }) {
   const { state } = useStateStore();
-  const p = element.props as { statePath?: string; itemKey?: string };
-  const statePath = p.statePath;
-
-  if (!statePath) {
-    console.warn("[json-render] Repeat element is missing statePath prop.");
-    return null;
-  }
+  const repeat = element.repeat!;
+  const statePath = repeat.path;
 
   const items = (getByPath(state, statePath) as unknown[] | undefined) ?? [];
 
   return (
     <>
       {items.map((item, index) => {
-        // Use a stable key: prefer itemKey field, fall back to index
+        // Use a stable key: prefer key field, fall back to index
         const key =
-          p.itemKey && typeof item === "object" && item !== null
-            ? String((item as Record<string, unknown>)[p.itemKey] ?? index)
+          repeat.key && typeof item === "object" && item !== null
+            ? String((item as Record<string, unknown>)[repeat.key] ?? index)
             : String(index);
 
         return (
@@ -272,7 +263,7 @@ function RepeatRenderer({
               if (!childElement) {
                 if (!loading) {
                   console.warn(
-                    `[json-render] Missing element "${childKey}" referenced as child of Repeat. This element will not render.`,
+                    `[json-render] Missing element "${childKey}" referenced as child of "${element.type}" (repeat). This element will not render.`,
                   );
                 }
                 return null;

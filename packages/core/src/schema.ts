@@ -574,15 +574,24 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     'When content comes from the state model, use { "$path": "/some/path" } dynamic props to display it instead of hardcoding the same value in both state and props. The state model is the single source of truth.',
   );
   lines.push("");
-  lines.push("DYNAMIC LISTS (Repeat):");
+  lines.push("DYNAMIC LISTS (repeat field):");
   lines.push(
-    'Use the Repeat component to render children once per item in a state array. Props: { statePath: "/arrayPath", itemKey: "id" }.',
+    'Any element can have a top-level "repeat" field to render its children once per item in a state array: { "repeat": { "path": "/arrayPath", "key": "id" } }.',
   );
   lines.push(
-    'Inside Repeat children, use "$item/field" for per-item paths: statePath:"$item/completed", { "$path": "$item/title" }. Use "$index" for the current array index.',
+    'The element itself renders once (as the container), and its children are expanded once per array item. "path" is the state array path. "key" is an optional field name on each item for stable React keys.',
   );
   lines.push(
-    "ALWAYS use Repeat for lists backed by state arrays. NEVER hardcode individual elements for each array item.",
+    'Example: { "type": "Column", "props": { "gap": 8 }, "repeat": { "path": "/todos", "key": "id" }, "children": ["todo-item"] }',
+  );
+  lines.push(
+    'Inside children of a repeated element, use "$item/field" for per-item paths: statePath:"$item/completed", { "$path": "$item/title" }. Use "$index" for the current array index.',
+  );
+  lines.push(
+    "ALWAYS use the repeat field for lists backed by state arrays. NEVER hardcode individual elements for each array item.",
+  );
+  lines.push(
+    'IMPORTANT: "repeat" is a top-level field on the element (sibling of type/props/children), NOT inside props.',
   );
   lines.push("");
   lines.push("ARRAY STATE ACTIONS:");
@@ -599,7 +608,7 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     'Example: on: { "press": { "action": "pushState", "params": { "path": "/todos", "value": { "id": "$id", "title": { "path": "/newTodoText" }, "completed": false }, "clearPath": "/newTodoText" } } }',
   );
   lines.push(
-    'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a Repeat, use "$index" for the current item index.',
+    'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a repeated element\'s children, use "$index" for the current item index.',
   );
   lines.push(
     "For lists where users can add/remove items (todos, carts, etc.), use pushState and removeState instead of hardcoding with setState.",

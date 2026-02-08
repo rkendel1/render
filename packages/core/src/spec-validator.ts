@@ -27,7 +27,8 @@ export interface SpecIssue {
     | "visible_in_props"
     | "orphaned_element"
     | "empty_spec"
-    | "on_in_props";
+    | "on_in_props"
+    | "repeat_in_props";
 }
 
 /**
@@ -140,6 +141,16 @@ export function validateSpec(
         code: "on_in_props",
       });
     }
+
+    // 3d. `repeat` inside props (should be a top-level field)
+    if (props && "repeat" in props && props.repeat !== undefined) {
+      issues.push({
+        severity: "error",
+        message: `Element "${key}" has "repeat" inside "props". It should be a top-level field on the element (sibling of type/props/children).`,
+        elementKey: key,
+        code: "repeat_in_props",
+      });
+    }
   }
 
   // 4. Orphaned elements (optional)
@@ -182,6 +193,8 @@ export function validateSpec(
  *
  * Currently fixes:
  * - `visible` inside `props` → moved to element level
+ * - `on` inside `props` → moved to element level
+ * - `repeat` inside `props` → moved to element level
  *
  * Returns the fixed spec and a list of fixes applied.
  */
@@ -207,16 +220,32 @@ export function autoFixSpec(spec: Spec): {
       fixes.push(`Moved "visible" from props to element level on "${key}".`);
     }
 
-    const fixedProps = fixed.props as Record<string, unknown> | undefined;
-    if (fixedProps && "on" in fixedProps && fixedProps.on !== undefined) {
+    let currentProps = fixed.props as Record<string, unknown> | undefined;
+    if (currentProps && "on" in currentProps && currentProps.on !== undefined) {
       // Move on from props to element level
-      const { on, ...restProps } = fixedProps;
+      const { on, ...restProps } = currentProps;
       fixed = {
         ...fixed,
         props: restProps,
         on: on as UIElement["on"],
       };
       fixes.push(`Moved "on" from props to element level on "${key}".`);
+    }
+
+    currentProps = fixed.props as Record<string, unknown> | undefined;
+    if (
+      currentProps &&
+      "repeat" in currentProps &&
+      currentProps.repeat !== undefined
+    ) {
+      // Move repeat from props to element level
+      const { repeat, ...restProps } = currentProps;
+      fixed = {
+        ...fixed,
+        props: restProps,
+        repeat: repeat as UIElement["repeat"],
+      };
+      fixes.push(`Moved "repeat" from props to element level on "${key}".`);
     }
 
     fixedElements[key] = fixed;

@@ -64,6 +64,8 @@ export interface UIElement<
   visible?: VisibilityCondition;
   /** Event bindings — maps event names to action bindings */
   on?: Record<string, ActionBinding | ActionBinding[]>;
+  /** Repeat children once per item in a state array */
+  repeat?: { path: string; key?: string };
 }
 
 /**
