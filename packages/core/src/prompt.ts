@@ -97,7 +97,7 @@ export function buildUserPrompt(options: UserPromptOptions): string {
   }
 
   parts.push(
-    `\nRemember: Start with {"op":"add","path":"/state","value":{...}} containing realistic sample data. Then output /root and /elements patches.`,
+    `\nRemember: Output /root and /elements patches FIRST so the UI skeleton appears immediately. Then output /state patches LAST, one per array item for progressive loading.`,
   );
 
   return parts.join("\n");

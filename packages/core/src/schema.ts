@@ -545,18 +545,19 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     "Output JSONL (one JSON object per line) with patches to build a UI tree.",
   );
   lines.push(
-    "Each line is a JSON patch operation. Start with the root, then add each element.",
+    "Each line is a JSON patch operation. Start with the root, then add elements, then add state LAST so the UI skeleton appears immediately.",
   );
   lines.push("");
   lines.push("Example output (each line is a separate JSON object):");
   lines.push("");
-  lines.push(`{"op":"add","path":"/state","value":{"posts":[{"id":"1","title":"Getting Started","author":"Jane","date":"Jan 15"},{"id":"2","title":"Advanced Tips","author":"Bob","date":"Feb 3"}]}}
-{"op":"add","path":"/root","value":"blog"}
+  lines.push(`{"op":"add","path":"/root","value":"blog"}
 {"op":"add","path":"/elements/blog","value":{"type":"Stack","props":{"direction":"vertical","gap":"md"},"children":["heading","posts-grid"]}}
 {"op":"add","path":"/elements/heading","value":{"type":"Heading","props":{"text":"Blog","level":"h1"},"children":[]}}
 {"op":"add","path":"/elements/posts-grid","value":{"type":"Grid","props":{"columns":2,"gap":"md"},"repeat":{"path":"/posts","key":"id"},"children":["post-card"]}}
 {"op":"add","path":"/elements/post-card","value":{"type":"Card","props":{"title":{"$path":"$item/title"}},"children":["post-meta"]}}
-{"op":"add","path":"/elements/post-meta","value":{"type":"Text","props":{"text":{"$path":"$item/author"},"variant":"muted"},"children":[]}}`);
+{"op":"add","path":"/elements/post-meta","value":{"type":"Text","props":{"text":{"$path":"$item/author"},"variant":"muted"},"children":[]}}
+{"op":"add","path":"/state/posts/0","value":{"id":"1","title":"Getting Started","author":"Jane","date":"Jan 15"}}
+{"op":"add","path":"/state/posts/1","value":{"id":"2","title":"Advanced Tips","author":"Bob","date":"Feb 3"}}`);
   lines.push("");
 
   // Initial state section
@@ -565,13 +566,22 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     "Specs include a /state field to seed the state model. Components with statePath read from and write to this state, and $path expressions read from it.",
   );
   lines.push(
-    "CRITICAL: You MUST include a /state field whenever your UI displays data via $path expressions, uses repeat to iterate over arrays, or uses statePath bindings. Without /state, $path references resolve to nothing and repeat lists render zero items.",
+    "CRITICAL: You MUST include state patches whenever your UI displays data via $path expressions, uses repeat to iterate over arrays, or uses statePath bindings. Without state, $path references resolve to nothing and repeat lists render zero items.",
   );
   lines.push(
-    'Output initial state as a patch: {"op":"add","path":"/state","value":{"todos":[{"id":"1","title":"Buy milk","completed":false}],"newTodoText":""}}',
+    "Output state AFTER /root and /elements so the UI skeleton appears instantly while state streams in progressively.",
   );
   lines.push(
-    "Output the /state patch BEFORE element patches so the state model is populated before components render.",
+    "Stream state progressively - output one patch per array item instead of one giant blob:",
+  );
+  lines.push(
+    '  For arrays: {"op":"add","path":"/state/posts/0","value":{"id":"1","title":"First Post",...}} then /state/posts/1, /state/posts/2, etc.',
+  );
+  lines.push(
+    '  For scalars: {"op":"add","path":"/state/newTodoText","value":""}',
+  );
+  lines.push(
+    '  Initialize the array first if needed: {"op":"add","path":"/state/posts","value":[]}',
   );
   lines.push(
     'When content comes from the state model, use { "$path": "/some/path" } dynamic props to display it instead of hardcoding the same value in both state and props. The state model is the single source of truth.',
@@ -752,9 +762,9 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
   lines.push("RULES:");
   const baseRules = [
     "Output ONLY JSONL patches - one JSON object per line, no markdown, no code fences",
-    'ALWAYS output /state FIRST with sample data: {"op":"add","path":"/state","value":{...}}. This is REQUIRED whenever using $path, repeat, or statePath. Without it, the UI renders empty.',
-    'Then set root: {"op":"add","path":"/root","value":"<root-key>"}',
+    'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
     'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
+    "THEN output /state patches LAST, one per array item for progressive loading. REQUIRED whenever using $path, repeat, or statePath.",
     "ONLY use components listed above",
     "Each element value needs: type, props, children (array of child keys)",
     "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
