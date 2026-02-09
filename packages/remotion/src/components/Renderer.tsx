@@ -1,5 +1,6 @@
 "use client";
 
+import React, { type ErrorInfo, type ReactNode } from "react";
 import { AbsoluteFill, Sequence } from "remotion";
 import type { TimelineSpec, ComponentRegistry, Clip } from "./types";
 
@@ -32,6 +33,50 @@ export const standardComponents: ComponentRegistry = {
   LogoBug,
   VideoClip,
 };
+
+// ---------------------------------------------------------------------------
+// ClipErrorBoundary – catches rendering errors in individual clips so
+// a single bad clip never crashes the entire composition.
+// ---------------------------------------------------------------------------
+
+interface ClipErrorBoundaryProps {
+  clipId: string;
+  component: string;
+  children: ReactNode;
+}
+
+interface ClipErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ClipErrorBoundary extends React.Component<
+  ClipErrorBoundaryProps,
+  ClipErrorBoundaryState
+> {
+  constructor(props: ClipErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): ClipErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error(
+      `[json-render/remotion] Rendering error in clip "${this.props.clipId}" (<${this.props.component}>):`,
+      error,
+      info.componentStack,
+    );
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 interface RendererProps {
   /** The timeline spec to render */
@@ -102,7 +147,9 @@ export function Renderer({
         from={clip.from}
         durationInFrames={clip.durationInFrames}
       >
-        <Component clip={clip} />
+        <ClipErrorBoundary clipId={clip.id} component={clip.component}>
+          <Component clip={clip} />
+        </ClipErrorBoundary>
       </Sequence>
     );
   };
