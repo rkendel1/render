@@ -14,6 +14,13 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog as DialogPrimitive,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -145,6 +152,23 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   Divider: () => <Separator className="my-3" />,
+
+  Dialog: ({ props, children }) => {
+    const [open, setOpen] = useStateBinding<boolean>(props.openPath);
+    return (
+      <DialogPrimitive open={open ?? false} onOpenChange={(v) => setOpen(v)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{props.title}</DialogTitle>
+            {props.description && (
+              <DialogDescription>{props.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          {children}
+        </DialogContent>
+      </DialogPrimitive>
+    );
+  },
 
   // Form Inputs
   Input: ({ props, emit }) => {

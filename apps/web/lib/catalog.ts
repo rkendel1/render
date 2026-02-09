@@ -60,6 +60,17 @@ export const playgroundCatalog = defineCatalog(schema, {
       description: "Horizontal separator line",
     },
 
+    Dialog: {
+      props: z.object({
+        title: z.string(),
+        description: z.string().nullable(),
+        openPath: z.string(),
+      }),
+      slots: ["default"],
+      description:
+        "Modal dialog controlled by state. Set openPath to a boolean state path (e.g. '/showDialog'). Use setState to toggle it open/closed. Children render inside the dialog body.",
+    },
+
     // Form Inputs
     Input: {
       props: z.object({
