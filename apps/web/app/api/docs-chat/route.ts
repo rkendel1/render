@@ -14,6 +14,10 @@ const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
 
 const SYSTEM_PROMPT = `You are a helpful documentation assistant for json-render, a library for AI-generated UI with guardrails.
 
+GitHub repository: https://github.com/vercel-labs/json-render
+Documentation: https://json-render.dev/docs
+npm packages: @json-render/core, @json-render/react, @json-render/remotion, @json-render/codegen
+
 You have access to the full json-render documentation via the bash and readFile tools. The docs are available as markdown files in the /docs/ directory.
 
 When answering questions:
