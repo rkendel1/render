@@ -138,12 +138,57 @@ const SIMULATION_STAGES: SimulationStage[] = [
 
 type Mode = "simulation" | "interactive";
 type Phase = "typing" | "streaming" | "complete";
-type Tab = "stream" | "json" | "catalog";
+type Tab = "stream" | "json" | "nested" | "catalog";
 type RenderView = "dynamic" | "static";
 
 interface DemoProps {
   fullscreen?: boolean;
   skipSimulation?: boolean;
+}
+
+/**
+ * Convert a flat Spec into a nested tree structure that is easier for humans
+ * to read. Children keys are resolved recursively into inline objects.
+ */
+function specToNested(spec: Spec): Record<string, unknown> {
+  function resolve(key: string): Record<string, unknown> {
+    const el = spec.elements[key];
+    if (!el) return { _key: key, _missing: true };
+
+    const node: Record<string, unknown> = { type: el.type };
+
+    if (el.props && Object.keys(el.props).length > 0) {
+      node.props = el.props;
+    }
+
+    if (el.visible !== undefined) {
+      node.visible = el.visible;
+    }
+
+    if (el.on && Object.keys(el.on).length > 0) {
+      node.on = el.on;
+    }
+
+    if (el.repeat) {
+      node.repeat = el.repeat;
+    }
+
+    if (el.children && el.children.length > 0) {
+      node.children = el.children.map(resolve);
+    }
+
+    return node;
+  }
+
+  const result: Record<string, unknown> = {};
+
+  if (spec.state && Object.keys(spec.state).length > 0) {
+    result.state = spec.state;
+  }
+
+  result.elements = resolve(spec.root);
+
+  return result;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -374,6 +419,11 @@ export function Demo({
   const jsonCode = currentTree
     ? JSON.stringify(currentTree, null, 2)
     : "// waiting...";
+
+  const nestedCode = useMemo(() => {
+    if (!currentTree || !currentTree.root) return "// waiting...";
+    return JSON.stringify(specToNested(currentTree), null, 2);
+  }, [currentTree]);
 
   // Generate all export files for Next.js project
   const exportedFiles = useMemo(() => {
@@ -1104,7 +1154,7 @@ Open [http://localhost:3000](http://localhost:3000) to view.
         {/* Tabbed code/stream/json panel */}
         <div className={`min-w-0 ${fullscreen ? "flex flex-col" : ""}`}>
           <div className="flex items-center gap-4 mb-2 h-6 shrink-0">
-            {(["json", "stream", "catalog"] as const).map((tab) => (
+            {(["json", "nested", "stream", "catalog"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1125,7 +1175,11 @@ Open [http://localhost:3000](http://localhost:3000) to view.
               <div className="absolute top-2 right-2 z-10">
                 <CopyButton
                   text={
-                    activeTab === "stream" ? streamLines.join("\n") : jsonCode
+                    activeTab === "stream"
+                      ? streamLines.join("\n")
+                      : activeTab === "nested"
+                        ? nestedCode
+                        : jsonCode
                   }
                   className="opacity-0 group-hover:opacity-100 text-muted-foreground"
                 />
@@ -1161,6 +1215,16 @@ Open [http://localhost:3000](http://localhost:3000) to view.
             >
               <CodeBlock
                 code={jsonCode}
+                lang="json"
+                fillHeight
+                hideCopyButton
+              />
+            </div>
+            <div
+              className={`overflow-auto ${activeTab === "nested" ? "" : "hidden"}`}
+            >
+              <CodeBlock
+                code={nestedCode}
                 lang="json"
                 fillHeight
                 hideCopyButton
