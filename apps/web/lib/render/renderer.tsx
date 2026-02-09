@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import {
   Renderer,
   type Spec,
@@ -25,6 +26,29 @@ const fallbackRenderer = (renderProps: { element: { type: string } }) => (
   <Fallback type={renderProps.element.type} />
 );
 
+/**
+ * Action handlers for the playground preview.
+ * These are passed to ActionProvider so custom actions (buttonClick, formSubmit,
+ * linkClick) work when triggered from the rendered UI.
+ */
+const actionHandlers: Record<
+  string,
+  (params: Record<string, unknown>) => void
+> = {
+  buttonClick: (params) => {
+    const message = (params?.message as string) || "Button clicked!";
+    toast.success(message);
+  },
+  formSubmit: (params) => {
+    const formName = (params?.formName as string) || "Form";
+    toast.success(`${formName} submitted successfully!`);
+  },
+  linkClick: (params) => {
+    const href = (params?.href as string) || "#";
+    toast.info(`Navigating to: ${href}`);
+  },
+};
+
 export function PlaygroundRenderer({
   spec,
   data,
@@ -35,7 +59,7 @@ export function PlaygroundRenderer({
   return (
     <StateProvider initialState={data ?? spec.state}>
       <VisibilityProvider>
-        <ActionProvider>
+        <ActionProvider handlers={actionHandlers}>
           <Renderer
             spec={spec}
             registry={registry}
