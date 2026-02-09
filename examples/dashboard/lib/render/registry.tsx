@@ -157,7 +157,7 @@ export const { registry, handlers, executeAction } = defineRegistry(
         );
       },
 
-      Form: ({ props, children, emit }) => (
+      Form: ({ children, emit }) => (
         <form
           onSubmit={(e) => {
             e.preventDefault();
