@@ -4,6 +4,125 @@ export const metadata = { title: "Changelog" }
 
 Notable changes and updates to json-render.
 
+## v0.5.0
+
+February 2026
+
+### New: @json-render/react-native
+
+Full React Native renderer with 25+ standard components, data binding, visibility, actions, and dynamic props. Build AI-generated native mobile UIs with the same catalog-driven approach as web.
+
+```tsx
+import { defineCatalog } from "@json-render/core";
+import { schema } from "@json-render/react-native/schema";
+import {
+  standardComponentDefinitions,
+  standardActionDefinitions,
+} from "@json-render/react-native/catalog";
+import { defineRegistry, Renderer } from "@json-render/react-native";
+
+const catalog = defineCatalog(schema, {
+  components: { ...standardComponentDefinitions },
+  actions: standardActionDefinitions,
+});
+
+const { registry } = defineRegistry(catalog, { components: {} });
+
+<Renderer spec={spec} registry={registry} />
+```
+
+Includes standard components for layout (Container, Row, Column, ScrollContainer, SafeArea, Pressable, Spacer, Divider), content (Heading, Paragraph, Label, Image, Avatar, Badge, Chip), input (Button, TextInput, Switch, Checkbox, Slider, SearchBar), feedback (Spinner, ProgressBar), and composite (Card, ListItem, Modal).
+
+### New: Event System
+
+Components now use `emit` to fire named events instead of directly dispatching actions. The element's `on` field maps events to action bindings, decoupling component logic from action handling.
+
+```tsx
+// Component emits a named event
+Button: ({ props, emit }) => (
+  <button onClick={() => emit?.("press")}>{props.label}</button>
+),
+
+// Element spec maps events to actions
+{
+  "type": "Button",
+  "props": { "label": "Submit" },
+  "on": { "press": { "action": "submit", "params": { "formId": "main" } } }
+}
+```
+
+### New: Repeat/List Rendering
+
+Elements can now iterate over state arrays using the `repeat` field. Child elements use `$item` and `$index` tokens in `$path` expressions to reference the current item.
+
+```json
+{
+  "type": "Column",
+  "repeat": { "path": "/posts", "key": "id" },
+  "children": ["post-card"]
+}
+```
+
+```json
+{
+  "type": "Card",
+  "props": { "title": { "$path": "$item/title" } }
+}
+```
+
+### New: User Prompt Builder
+
+Build structured user prompts with optional spec refinement and state context:
+
+```typescript
+import { buildUserPrompt } from "@json-render/core";
+
+// Fresh generation
+buildUserPrompt({ prompt: "create a todo app" });
+
+// Refinement (patch-only mode)
+buildUserPrompt({ prompt: "add a toggle", currentSpec: spec });
+
+// With runtime state
+buildUserPrompt({ prompt: "show data", state: { todos: [] } });
+```
+
+### New: Spec Validation
+
+Validate spec structure and auto-fix common issues:
+
+```typescript
+import { validateSpec, autoFixSpec } from "@json-render/core";
+
+const { valid, issues } = validateSpec(spec, catalog);
+const fixed = autoFixSpec(spec);
+```
+
+### Improved: State Management
+
+`DataProvider` has been renamed to `StateProvider` with a clearer API. State is now a first-class part of specs -- elements can bind to state via `$path` expressions, and the built-in `setState` action updates state directly.
+
+### Improved: AI Prompts
+
+Schema prompts now include streaming best practices, repeat/list examples, and state patching guidance. Schemas can also define `defaultRules` that are always included in generated prompts.
+
+### Improved: Documentation
+
+- All documentation pages migrated to MDX
+- AI-powered documentation chat
+- Dynamic Open Graph images for all docs pages
+- Improved playground
+
+### Breaking Changes
+
+- `DataProvider` renamed to `StateProvider`
+- `useData` renamed to `useStateStore`, `useDataValue` to `useStateValue`, `useDataBinding` to `useStateBinding`
+- `onAction` renamed to `emit` in component context
+- `DataModel` type renamed to `StateModel`
+- `Action` type renamed to `ActionBinding` (old name still available but deprecated)
+
+---
+
 ## v0.4.0
 
 February 2026

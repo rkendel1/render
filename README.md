@@ -6,6 +6,8 @@ Let end users generate dashboards, widgets, apps, and videos from prompts — sa
 
 ```bash
 npm install @json-render/core @json-render/react
+# or for mobile
+npm install @json-render/core @json-render/react-native
 # or for video
 npm install @json-render/core @json-render/remotion
 ```
@@ -75,8 +77,8 @@ const { registry } = defineRegistry(catalog, {
         <span>{format(props.value, props.format)}</span>
       </div>
     ),
-    Button: ({ props, onAction }) => (
-      <button onClick={() => onAction?.({ name: props.action })}>
+    Button: ({ props, emit }) => (
+      <button onClick={() => emit?.("press")}>
         {props.label}
       </button>
     ),
@@ -126,6 +128,27 @@ const spec = {
 
 // defineRegistry creates a type-safe component registry
 const { registry } = defineRegistry(catalog, { components });
+<Renderer spec={spec} registry={registry} />
+```
+
+### React Native (Mobile)
+
+```tsx
+import { defineCatalog } from "@json-render/core";
+import { schema } from "@json-render/react-native/schema";
+import {
+  standardComponentDefinitions,
+  standardActionDefinitions,
+} from "@json-render/react-native/catalog";
+import { defineRegistry, Renderer } from "@json-render/react-native";
+
+// 25+ standard components included
+const catalog = defineCatalog(schema, {
+  components: { ...standardComponentDefinitions },
+  actions: standardActionDefinitions,
+});
+
+const { registry } = defineRegistry(catalog, { components: {} });
 <Renderer spec={spec} registry={registry} />
 ```
 
@@ -229,7 +252,7 @@ Components can trigger actions, including the built-in `setState` action:
 }
 ```
 
-The `setState` action updates the data model directly, which re-evaluates visibility conditions and dynamic prop expressions.
+The `setState` action updates the state model directly, which re-evaluates visibility conditions and dynamic prop expressions.
 
 ---
 
@@ -242,9 +265,10 @@ pnpm install
 pnpm dev
 ```
 
-- http://localhost:3000 — Docs & Playground
-- http://localhost:3001 — Example Dashboard
-- http://localhost:3002 — Remotion Video Example
+- http://localhost:3000 -- Docs & Playground
+- http://localhost:3001 -- Example Dashboard
+- http://localhost:3002 -- Remotion Video Example
+- React Native example: run `npx expo start` in `examples/react-native`
 
 ## How It Works
 

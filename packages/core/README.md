@@ -213,7 +213,7 @@ Any prop value can be a dynamic expression that resolves based on data state at 
 
 ### Data Binding (`$path`)
 
-Read a value directly from the data model:
+Read a value directly from the state model:
 
 ```json
 {

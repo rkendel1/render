@@ -1,0 +1,167 @@
+export const metadata = { title: "@json-render/react-native API" }
+
+# @json-render/react-native
+
+React Native renderer with standard components, providers, and hooks.
+
+## Standard Components
+
+### Layout
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| `Container` | `padding`, `background`, `borderRadius`, `borderColor`, `flex` | Basic wrapper with styling |
+| `Row` | `gap`, `align`, `justify`, `flex`, `wrap` | Horizontal flex layout |
+| `Column` | `gap`, `align`, `justify`, `flex` | Vertical flex layout |
+| `ScrollContainer` | `direction` | Scrollable area (vertical or horizontal) |
+| `SafeArea` | `edges` | Safe area insets for notch/home indicator |
+| `Pressable` | `action`, `actionParams` | Touchable wrapper that triggers actions |
+| `Spacer` | `size`, `flex` | Fixed or flexible spacing |
+| `Divider` | `color`, `thickness` | Thin line separator |
+
+### Content
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| `Heading` | `text`, `level`, `align`, `color` | Heading text (levels 1-6) |
+| `Paragraph` | `text`, `align`, `color` | Body text |
+| `Label` | `text`, `color`, `bold` | Small label text |
+| `Image` | `uri`, `width`, `height`, `resizeMode`, `borderRadius` | Image display |
+| `Avatar` | `uri`, `size`, `fallback` | Circular avatar |
+| `Badge` | `label`, `color`, `textColor` | Status badge |
+| `Chip` | `label`, `selected`, `color` | Tag/chip |
+
+### Input
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| `Button` | `label`, `variant`, `size`, `disabled`, `action`, `actionParams` | Pressable button |
+| `TextInput` | `placeholder`, `statePath`, `secure`, `keyboardType`, `multiline` | Text input field |
+| `Switch` | `statePath`, `label` | Toggle switch |
+| `Checkbox` | `statePath`, `label` | Checkbox with label |
+| `Slider` | `statePath`, `min`, `max`, `step` | Range slider |
+| `SearchBar` | `placeholder`, `statePath` | Search input |
+
+### Feedback
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| `Spinner` | `size`, `color` | Loading indicator |
+| `ProgressBar` | `progress`, `color`, `trackColor` | Progress indicator |
+
+### Composite
+
+| Component | Props | Description |
+|-----------|-------|-------------|
+| `Card` | `title`, `subtitle`, `padding` | Card container |
+| `ListItem` | `title`, `subtitle`, `leading`, `trailing`, `action`, `actionParams` | List row |
+| `Modal` | `visible`, `title` | Bottom sheet modal |
+
+## Providers
+
+### StateProvider
+
+```tsx
+<StateProvider initialState={object}>
+  {children}
+</StateProvider>
+```
+
+### ActionProvider
+
+```tsx
+<ActionProvider handlers={Record<string, ActionHandler>}>
+  {children}
+</ActionProvider>
+```
+
+### VisibilityProvider
+
+```tsx
+<VisibilityProvider>
+  {children}
+</VisibilityProvider>
+```
+
+### ValidationProvider
+
+```tsx
+<ValidationProvider>
+  {children}
+</ValidationProvider>
+```
+
+## defineRegistry
+
+Create a type-safe component registry. Standard components are built-in -- only register custom components.
+
+```tsx
+import { defineRegistry, type Components } from '@json-render/react-native';
+
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Icon: ({ props }) => <Ionicons name={props.name} size={props.size ?? 24} />,
+  } as Components<typeof catalog>,
+});
+```
+
+## Hooks
+
+### useUIStream
+
+```typescript
+const {
+  spec,         // Spec | null - current UI state
+  isStreaming,  // boolean - true while streaming
+  error,        // Error | null
+  send,         // (prompt: string) => Promise<void>
+  clear,        // () => void - reset spec and error
+} = useUIStream({
+  api: string,
+  onComplete?: (spec: Spec) => void,
+  onError?: (error: Error) => void,
+});
+```
+
+### useStateStore
+
+```typescript
+const { state, get, set, update } = useStateStore();
+```
+
+### useStateValue
+
+```typescript
+const value = useStateValue(path: string);
+```
+
+### useStateBinding
+
+```typescript
+const [value, setValue] = useStateBinding(path: string);
+```
+
+### useActions
+
+```typescript
+const { execute } = useActions();
+```
+
+### useIsVisible
+
+```typescript
+const isVisible = useIsVisible(condition?: VisibilityCondition);
+```
+
+## Catalog Exports
+
+```typescript
+import { standardComponentDefinitions, standardActionDefinitions } from "@json-render/react-native/catalog";
+import { schema } from "@json-render/react-native/schema";
+```
+
+| Export | Purpose |
+|--------|---------|
+| `standardComponentDefinitions` | Catalog definitions for all 25+ standard components |
+| `standardActionDefinitions` | Catalog definitions for standard actions (setState, navigate) |
+| `schema` | React Native element tree schema |

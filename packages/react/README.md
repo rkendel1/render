@@ -63,8 +63,8 @@ export const { registry } = defineRegistry(catalog, {
         {children}
       </div>
     ),
-    Button: ({ props, onAction }) => (
-      <button onClick={() => onAction?.({ name: props.action })}>
+    Button: ({ props, emit }) => (
+      <button onClick={() => emit?.("press")}>
         {props.label}
       </button>
     ),
@@ -274,7 +274,7 @@ See [@json-render/core](../core/README.md) for full expression syntax.
 
 ## Built-in Actions
 
-The `setState` action is handled automatically by `ActionProvider`. It updates the data model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
+The `setState` action is handled automatically by `ActionProvider`. It updates the state model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
 
 ```json
 {
@@ -295,7 +295,7 @@ When using `defineRegistry`, components receive these props:
 interface ComponentContext<P> {
   props: P;                    // Typed props from the catalog
   children?: React.ReactNode;  // Rendered children
-  onAction?: (action: { name: string; params?: Record<string, unknown> }) => void;
+  emit?: (event: string) => void;  // Emit a named event
   loading?: boolean;           // Whether the parent is loading
 }
 ```

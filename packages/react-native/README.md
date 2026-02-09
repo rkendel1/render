@@ -158,7 +158,7 @@ The `Pressable` component wraps children and triggers an action on press. It's e
 
 ## Built-in Actions
 
-The `setState` action is handled automatically by `ActionProvider`. It updates the data model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
+The `setState` action is handled automatically by `ActionProvider`. It updates the state model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
 
 ```json
 {

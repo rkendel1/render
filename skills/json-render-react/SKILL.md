@@ -85,7 +85,7 @@ The React schema uses an element tree format:
 | Provider | Purpose |
 |----------|---------|
 | `StateProvider` | Share state across components (JSON Pointer paths) |
-| `ActionProvider` | Handle actions dispatched from components |
+| `ActionProvider` | Handle actions dispatched via the event system |
 | `VisibilityProvider` | Enable conditional rendering based on state |
 | `ValidationProvider` | Form field validation |
 
@@ -108,9 +108,28 @@ Any prop value can be a data-driven expression resolved by the renderer before c
 
 Components receive already-resolved props -- no changes needed to component implementations.
 
+## Event System
+
+Components use `emit` to fire named events. The element's `on` field maps events to action bindings:
+
+```tsx
+// Component emits a named event
+Button: ({ props, emit }) => (
+  <button onClick={() => emit?.("press")}>{props.label}</button>
+),
+```
+
+```json
+{
+  "type": "Button",
+  "props": { "label": "Submit" },
+  "on": { "press": { "action": "submit" } }
+}
+```
+
 ## Built-in Actions
 
-The `setState` action is handled automatically by `ActionProvider` and updates the data model directly, which re-evaluates visibility conditions and dynamic prop expressions:
+The `setState` action is handled automatically by `ActionProvider` and updates the state model directly, which re-evaluates visibility conditions and dynamic prop expressions:
 
 ```json
 { "action": "setState", "actionParams": { "path": "/activeTab", "value": "home" } }
@@ -123,9 +142,9 @@ The `setState` action is handled automatically by `ActionProvider` and updates t
 | `defineRegistry` | Create a type-safe component registry from a catalog |
 | `Renderer` | Render a spec using a registry |
 | `schema` | Element tree schema |
-| `useStateStore` | Access data context |
-| `useStateValue` | Get single value from data |
-| `useStateBinding` | Two-way data binding |
+| `useStateStore` | Access state context |
+| `useStateValue` | Get single value from state |
+| `useStateBinding` | Two-way state binding |
 | `useActions` | Access actions context |
 | `useAction` | Get a single action dispatch function |
 | `useUIStream` | Stream specs from an API endpoint |

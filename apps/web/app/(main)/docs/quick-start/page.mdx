@@ -53,7 +53,7 @@ export const catalog = defineCatalog(schema, {
 
 ## 2. Define your components
 
-Use `defineRegistry` to map catalog types to React components. Each component receives type-safe `props`, `children`, and `onAction`:
+Use `defineRegistry` to map catalog types to React components. Each component receives type-safe `props`, `children`, and `emit`:
 
 ```tsx
 // lib/registry.tsx
@@ -71,10 +71,10 @@ export const { registry } = defineRegistry(catalog, {
         {children}
       </div>
     ),
-    Button: ({ props, onAction }) => (
+    Button: ({ props, emit }) => (
       <button
         className="px-4 py-2 bg-blue-500 text-white rounded"
-        onClick={() => onAction?.({ name: props.action })}
+        onClick={() => emit?.("press")}
       >
         {props.label}
       </button>

@@ -127,7 +127,7 @@ Components receive already-resolved props -- no changes needed to component impl
 
 ## Built-in Actions
 
-The `setState` action is handled automatically by `ActionProvider` and updates the data model directly, which re-evaluates visibility conditions and dynamic prop expressions:
+The `setState` action is handled automatically by `ActionProvider` and updates the state model directly, which re-evaluates visibility conditions and dynamic prop expressions:
 
 ```json
 { "action": "setState", "actionParams": { "path": "/activeTab", "value": "home" } }
