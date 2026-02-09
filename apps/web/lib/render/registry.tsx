@@ -823,7 +823,12 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
       const [localValue, setLocalValue] = useState<string>("");
       const value = props.statePath ? (boundValue ?? "") : localValue;
       const setValue = props.statePath ? setBoundValue! : setLocalValue;
-      const options = props.options ?? [];
+      const rawOptions = props.options ?? [];
+      // Coerce options to strings – AI may produce objects/numbers instead of
+      // plain strings which would cause duplicate `[object Object]` keys.
+      const options = rawOptions.map((opt) =>
+        typeof opt === "string" ? opt : String(opt ?? ""),
+      );
 
       return (
         <div className="space-y-2">
@@ -839,8 +844,11 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
               <SelectValue placeholder={props.placeholder ?? "Select..."} />
             </SelectTrigger>
             <SelectContent>
-              {options.map((opt) => (
-                <SelectItem key={opt} value={opt}>
+              {options.map((opt, idx) => (
+                <SelectItem
+                  key={`${idx}-${opt}`}
+                  value={opt || `option-${idx}`}
+                >
                   {opt}
                 </SelectItem>
               ))}
@@ -876,7 +884,10 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
     },
 
     Radio: ({ props, emit }) => {
-      const options = props.options ?? [];
+      const rawOptions = props.options ?? [];
+      const options = rawOptions.map((opt) =>
+        typeof opt === "string" ? opt : String(opt ?? ""),
+      );
       const [boundValue, setBoundValue] = props.statePath
         ? useStateBinding<string>(props.statePath) // eslint-disable-line react-hooks/rules-of-hooks
         : [undefined, undefined];
@@ -894,11 +905,17 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
               emit?.("change");
             }}
           >
-            {options.map((opt) => (
-              <div key={opt} className="flex items-center space-x-2">
-                <RadioGroupItem value={opt} id={`${props.name}-${opt}`} />
+            {options.map((opt, idx) => (
+              <div
+                key={`${idx}-${opt}`}
+                className="flex items-center space-x-2"
+              >
+                <RadioGroupItem
+                  value={opt || `option-${idx}`}
+                  id={`${props.name}-${idx}-${opt}`}
+                />
                 <Label
-                  htmlFor={`${props.name}-${opt}`}
+                  htmlFor={`${props.name}-${idx}-${opt}`}
                   className="cursor-pointer"
                 >
                   {opt}

@@ -2,6 +2,7 @@
 
 import React, {
   type ComponentType,
+  type ErrorInfo,
   type ReactNode,
   useCallback,
   useMemo,
@@ -75,6 +76,51 @@ export interface RendererProps {
   loading?: boolean;
   /** Fallback component for unknown types */
   fallback?: ComponentRenderer;
+}
+
+// ---------------------------------------------------------------------------
+// ElementErrorBoundary – catches rendering errors in individual elements so
+// a single bad component never crashes the whole page.
+// ---------------------------------------------------------------------------
+
+interface ElementErrorBoundaryProps {
+  elementType: string;
+  children: ReactNode;
+}
+
+interface ElementErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ElementErrorBoundary extends React.Component<
+  ElementErrorBoundaryProps,
+  ElementErrorBoundaryState
+> {
+  constructor(props: ElementErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): ElementErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(
+      `[json-render] Rendering error in <${this.props.elementType}>:`,
+      error,
+      info.componentStack,
+    );
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Render nothing – the element silently disappears rather than
+      // crashing the entire application.
+      return null;
+    }
+    return this.props.children;
+  }
 }
 
 /**
@@ -210,9 +256,11 @@ function ElementRenderer({
   );
 
   return (
-    <Component element={resolvedElement} emit={emit} loading={loading}>
-      {children}
-    </Component>
+    <ElementErrorBoundary elementType={resolvedElement.type}>
+      <Component element={resolvedElement} emit={emit} loading={loading}>
+        {children}
+      </Component>
+    </ElementErrorBoundary>
   );
 }
 
