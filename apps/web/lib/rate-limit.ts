@@ -21,7 +21,10 @@ const noopRateLimiter = {
   limit: async () => ({ success: true, limit: 0, remaining: 0, reset: 0 }),
 };
 
-// 10 requests per minute (sliding window)
+const MINUTE_LIMIT = Number(process.env.RATE_LIMIT_PER_MINUTE) || 10;
+const DAILY_LIMIT = Number(process.env.RATE_LIMIT_PER_DAY) || 100;
+
+// Requests per minute (sliding window)
 export const minuteRateLimit = {
   limit: async (identifier: string) => {
     if (!_minuteRateLimit) {
@@ -29,7 +32,7 @@ export const minuteRateLimit = {
       if (!redis) return noopRateLimiter.limit();
       _minuteRateLimit = new Ratelimit({
         redis,
-        limiter: Ratelimit.slidingWindow(10, "1 m"),
+        limiter: Ratelimit.slidingWindow(MINUTE_LIMIT, "1 m"),
         prefix: "ratelimit:minute",
       });
     }
@@ -37,7 +40,7 @@ export const minuteRateLimit = {
   },
 };
 
-// 100 requests per day (fixed window)
+// Requests per day (fixed window)
 export const dailyRateLimit = {
   limit: async (identifier: string) => {
     if (!_dailyRateLimit) {
@@ -45,7 +48,7 @@ export const dailyRateLimit = {
       if (!redis) return noopRateLimiter.limit();
       _dailyRateLimit = new Ratelimit({
         redis,
-        limiter: Ratelimit.fixedWindow(100, "1 d"),
+        limiter: Ratelimit.fixedWindow(DAILY_LIMIT, "1 d"),
         prefix: "ratelimit:daily",
       });
     }

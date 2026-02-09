@@ -28,6 +28,7 @@
   --border: oklch(0.85 0 0);
   --input: oklch(0.85 0 0);
   --ring: oklch(0.6 0 0);
+  --chat-bg: oklch(0.95 0 0);
 }
 
 .dark {
@@ -52,6 +53,7 @@
   --border: oklch(0.25 0 0);
   --input: oklch(0.25 0 0);
   --ring: oklch(0.4 0 0);
+  --chat-bg: oklch(0.25 0 0);
 }
 
 @theme inline {
@@ -116,11 +118,11 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-background;
+    @apply bg-border;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded;
+    @apply bg-background rounded;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -130,6 +132,33 @@
 
 button {
   cursor: pointer;
+}
+
+/* Tool call shimmer animation */
+@keyframes tool-shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.animate-tool-shimmer {
+  animation: tool-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Dark mode: use page bg color for borders in chat message content */
+.dark .docs-chat-content * {
+  border-color: var(--background);
+}
+
+/* Fix list rendering in chat content */
+.docs-chat-content ul,
+.docs-chat-content ol {
+  list-style-position: outside;
+  padding-left: 1.25em;
+}
+
+.docs-chat-content li > p {
+  display: inline;
 }
 
 /* Shiki dual theme support */

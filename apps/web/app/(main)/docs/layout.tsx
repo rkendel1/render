@@ -1,7 +1,6 @@
 import { DocsMobileNav } from "@/components/docs-mobile-nav";
 import { DocsSidebar } from "@/components/docs-sidebar";
 import { CopyPageButton } from "@/components/copy-page-button";
-import { DocsChat } from "@/components/docs-chat";
 
 export default function DocsLayout({
   children,
@@ -25,7 +24,6 @@ export default function DocsLayout({
           <article>{children}</article>
         </div>
       </div>
-      <DocsChat />
     </>
   );
 }
