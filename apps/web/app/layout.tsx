@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://json-render.dev",
     siteName: "json-render",
-    title: "json-render | The framework for User-Generated Interfaces (UGI)",
+    title: "json-render | The framework for User-Generated Interfaces",
     description:
       "The framework for User-Generated Interfaces (UGI). Let users generate dashboards, widgets, and apps from prompts — safely constrained to components you define.",
     images: [
@@ -50,13 +50,13 @@ export const metadata: Metadata = {
         url: "/og",
         width: 1200,
         height: 630,
-        alt: "json-render - The framework for User-Generated Interfaces (UGI)",
+        alt: "json-render - The framework for User-Generated Interfaces",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "json-render | The framework for User-Generated Interfaces (UGI)",
+    title: "json-render | The framework for User-Generated Interfaces",
     description:
       "The framework for User-Generated Interfaces (UGI). Let users generate dashboards, widgets, and apps from prompts — safely constrained to components you define.",
     images: ["/og"],
