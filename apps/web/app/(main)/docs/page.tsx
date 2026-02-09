@@ -1,5 +1,7 @@
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Introduction | json-render",
+  title: PAGE_TITLES["docs"],
 };
 
 export default function DocsPage() {

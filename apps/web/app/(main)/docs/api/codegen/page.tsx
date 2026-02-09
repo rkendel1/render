@@ -1,7 +1,9 @@
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "@json-render/codegen API | json-render",
+  title: PAGE_TITLES["docs/api/codegen"],
 };
 
 export default function CodegenApiPage() {

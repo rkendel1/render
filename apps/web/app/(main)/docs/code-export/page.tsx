@@ -1,7 +1,9 @@
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Code Export | json-render",
+  title: PAGE_TITLES["docs/code-export"],
 };
 
 export default function CodeExportPage() {

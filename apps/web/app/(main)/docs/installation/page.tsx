@@ -1,7 +1,9 @@
 import { PackageInstall } from "@/components/package-install";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Installation | json-render",
+  title: PAGE_TITLES["docs/installation"],
 };
 
 export default function InstallationPage() {

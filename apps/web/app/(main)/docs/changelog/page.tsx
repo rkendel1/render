@@ -1,7 +1,9 @@
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Changelog | json-render",
+  title: PAGE_TITLES["docs/changelog"],
 };
 
 export default function ChangelogPage() {

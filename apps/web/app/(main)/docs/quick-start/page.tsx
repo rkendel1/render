@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Quick Start | json-render",
+  title: PAGE_TITLES["docs/quick-start"],
 };
 
 export default function QuickStartPage() {

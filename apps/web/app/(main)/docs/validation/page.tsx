@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Validation | json-render",
+  title: PAGE_TITLES["docs/validation"],
 };
 
 export default function ValidationPage() {

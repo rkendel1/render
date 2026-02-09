@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Visibility | json-render",
+  title: PAGE_TITLES["docs/visibility"],
 };
 
 export default function VisibilityPage() {

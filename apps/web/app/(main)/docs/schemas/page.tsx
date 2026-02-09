@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Schemas | json-render",
+  title: PAGE_TITLES["docs/schemas"],
 };
 
 export default function SchemasPage() {

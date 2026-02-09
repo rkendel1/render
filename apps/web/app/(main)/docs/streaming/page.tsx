@@ -1,7 +1,9 @@
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Streaming | json-render",
+  title: PAGE_TITLES["docs/streaming"],
 };
 
 export default function StreamingPage() {

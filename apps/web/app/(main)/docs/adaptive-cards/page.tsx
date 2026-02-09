@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Code } from "@/components/code";
 
+import { PAGE_TITLES } from "@/lib/page-titles";
+
 export const metadata = {
-  title: "Adaptive Cards Integration | json-render",
+  title: PAGE_TITLES["docs/adaptive-cards"],
 };
 
 export default function AdaptiveCardsPage() {

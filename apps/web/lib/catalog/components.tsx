@@ -80,14 +80,16 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
       <div
         className={`border border-border rounded-lg p-4 bg-card text-card-foreground overflow-hidden ${maxWidthClass} ${centeredClass}`}
       >
-        {props.title && (
-          <div className="font-semibold text-sm mb-1 text-left">
-            {props.title}
-          </div>
-        )}
-        {props.description && (
-          <div className="text-xs text-muted-foreground mb-3 text-left">
-            {props.description}
+        {(props.title || props.description) && (
+          <div className="mb-4">
+            {props.title && (
+              <h3 className="font-semibold text-lg text-left">{props.title}</h3>
+            )}
+            {props.description && (
+              <p className="text-sm text-muted-foreground mt-1 text-left">
+                {props.description}
+              </p>
+            )}
           </div>
         )}
         <div className="space-y-3">{children}</div>
