@@ -71,6 +71,20 @@ export const playgroundCatalog = defineCatalog(schema, {
         "Modal dialog controlled by state. Set openPath to a boolean state path (e.g. '/showDialog'). Use setState to toggle it open/closed. Children render inside the dialog body.",
     },
 
+    Accordion: {
+      props: z.object({
+        items: z.array(
+          z.object({
+            title: z.string(),
+            content: z.string(),
+          }),
+        ),
+        type: z.enum(["single", "multiple"]).nullable(),
+      }),
+      description:
+        "Collapsible accordion with expandable sections. Pass items as an array of {title, content} objects. Type 'single' allows one open at a time (default), 'multiple' allows several.",
+    },
+
     // Form Inputs
     Input: {
       props: z.object({

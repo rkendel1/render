@@ -21,6 +21,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Accordion as AccordionPrimitive,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -167,6 +173,33 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
           {children}
         </DialogContent>
       </DialogPrimitive>
+    );
+  },
+
+  Accordion: ({ props }) => {
+    const accordionType = props.type ?? "single";
+    // Radix requires different props for single vs multiple
+    if (accordionType === "multiple") {
+      return (
+        <AccordionPrimitive type="multiple" className="w-full">
+          {props.items.map((item, i) => (
+            <AccordionItem key={i} value={`item-${i}`}>
+              <AccordionTrigger>{item.title}</AccordionTrigger>
+              <AccordionContent>{item.content}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </AccordionPrimitive>
+      );
+    }
+    return (
+      <AccordionPrimitive type="single" collapsible className="w-full">
+        {props.items.map((item, i) => (
+          <AccordionItem key={i} value={`item-${i}`}>
+            <AccordionTrigger>{item.title}</AccordionTrigger>
+            <AccordionContent>{item.content}</AccordionContent>
+          </AccordionItem>
+        ))}
+      </AccordionPrimitive>
     );
   },
 
