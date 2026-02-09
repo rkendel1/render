@@ -6,7 +6,7 @@ import {
 } from "./visibility";
 
 describe("evaluateLogicExpression", () => {
-  const emptyContext = { dataModel: {} };
+  const emptyContext = { stateModel: {} };
 
   describe("comparison operators", () => {
     it("evaluates eq expression", () => {
@@ -108,7 +108,7 @@ describe("evaluateLogicExpression", () => {
 
   describe("path expressions", () => {
     it("evaluates truthy path values", () => {
-      const ctx = { dataModel: { isAdmin: true, count: 5, name: "John" } };
+      const ctx = { stateModel: { isAdmin: true, count: 5, name: "John" } };
 
       expect(evaluateLogicExpression({ path: "/isAdmin" }, ctx)).toBe(true);
       expect(evaluateLogicExpression({ path: "/count" }, ctx)).toBe(true);
@@ -117,7 +117,7 @@ describe("evaluateLogicExpression", () => {
 
     it("evaluates falsy path values", () => {
       const ctx = {
-        dataModel: { isAdmin: false, count: 0, name: "", nothing: null },
+        stateModel: { isAdmin: false, count: 0, name: "", nothing: null },
       };
 
       expect(evaluateLogicExpression({ path: "/isAdmin" }, ctx)).toBe(false);
@@ -135,7 +135,7 @@ describe("evaluateLogicExpression", () => {
 
   describe("with dynamic path references", () => {
     it("resolves path references in comparisons", () => {
-      const ctx = { dataModel: { count: 5, limit: 10 } };
+      const ctx = { stateModel: { count: 5, limit: 10 } };
 
       expect(
         evaluateLogicExpression(
@@ -152,25 +152,25 @@ describe("evaluateLogicExpression", () => {
 
 describe("evaluateVisibility", () => {
   it("returns true for undefined condition", () => {
-    expect(evaluateVisibility(undefined, { dataModel: {} })).toBe(true);
+    expect(evaluateVisibility(undefined, { stateModel: {} })).toBe(true);
   });
 
   it("evaluates boolean literals", () => {
-    expect(evaluateVisibility(true, { dataModel: {} })).toBe(true);
-    expect(evaluateVisibility(false, { dataModel: {} })).toBe(false);
+    expect(evaluateVisibility(true, { stateModel: {} })).toBe(true);
+    expect(evaluateVisibility(false, { stateModel: {} })).toBe(false);
   });
 
   it("evaluates path conditions", () => {
     expect(
       evaluateVisibility(
         { path: "/visible" },
-        { dataModel: { visible: true } },
+        { stateModel: { visible: true } },
       ),
     ).toBe(true);
     expect(
       evaluateVisibility(
         { path: "/visible" },
-        { dataModel: { visible: false } },
+        { stateModel: { visible: false } },
       ),
     ).toBe(false);
   });
@@ -179,16 +179,16 @@ describe("evaluateVisibility", () => {
     expect(
       evaluateVisibility(
         { auth: "signedIn" },
-        { dataModel: {}, authState: { isSignedIn: true } },
+        { stateModel: {}, authState: { isSignedIn: true } },
       ),
     ).toBe(true);
     expect(
       evaluateVisibility(
         { auth: "signedIn" },
-        { dataModel: {}, authState: { isSignedIn: false } },
+        { stateModel: {}, authState: { isSignedIn: false } },
       ),
     ).toBe(false);
-    expect(evaluateVisibility({ auth: "signedIn" }, { dataModel: {} })).toBe(
+    expect(evaluateVisibility({ auth: "signedIn" }, { stateModel: {} })).toBe(
       false,
     );
   });
@@ -197,23 +197,23 @@ describe("evaluateVisibility", () => {
     expect(
       evaluateVisibility(
         { auth: "signedOut" },
-        { dataModel: {}, authState: { isSignedIn: false } },
+        { stateModel: {}, authState: { isSignedIn: false } },
       ),
     ).toBe(true);
     expect(
       evaluateVisibility(
         { auth: "signedOut" },
-        { dataModel: {}, authState: { isSignedIn: true } },
+        { stateModel: {}, authState: { isSignedIn: true } },
       ),
     ).toBe(false);
   });
 
   it("evaluates logic expressions", () => {
-    expect(evaluateVisibility({ eq: [1, 1] }, { dataModel: {} })).toBe(true);
+    expect(evaluateVisibility({ eq: [1, 1] }, { stateModel: {} })).toBe(true);
     expect(
       evaluateVisibility(
         { and: [{ eq: [1, 1] }, { eq: [2, 2] }] },
-        { dataModel: {} },
+        { stateModel: {} },
       ),
     ).toBe(true);
   });

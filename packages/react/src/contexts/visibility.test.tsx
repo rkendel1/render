@@ -26,7 +26,7 @@ describe("useVisibility", () => {
       wrapper: createWrapper({ test: true }),
     });
 
-    expect(result.current.ctx.dataModel).toEqual({ test: true });
+    expect(result.current.ctx.stateModel).toEqual({ test: true });
   });
 });
 
