@@ -242,11 +242,12 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
 
   Accordion: ({ props }) => {
     const accordionType = props.type ?? "single";
+    const items = props.items ?? [];
     // Radix requires different props for single vs multiple
     if (accordionType === "multiple") {
       return (
         <AccordionPrimitive type="multiple" className="w-full">
-          {props.items.map((item, i) => (
+          {items.map((item, i) => (
             <AccordionItem key={i} value={`item-${i}`}>
               <AccordionTrigger>{item.title}</AccordionTrigger>
               <AccordionContent>{item.content}</AccordionContent>
@@ -257,7 +258,7 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
     }
     return (
       <AccordionPrimitive type="single" collapsible className="w-full">
-        {props.items.map((item, i) => (
+        {items.map((item, i) => (
           <AccordionItem key={i} value={`item-${i}`}>
             <AccordionTrigger>{item.title}</AccordionTrigger>
             <AccordionContent>{item.content}</AccordionContent>
@@ -268,16 +269,17 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   ButtonGroup: ({ props, emit }) => {
+    const buttons = props.buttons ?? [];
     const [boundValue, setBoundValue] = props.statePath
       ? useStateBinding<string>(props.statePath)
       : [undefined, undefined];
-    const [localValue, setLocalValue] = useState(props.buttons[0]?.value ?? "");
+    const [localValue, setLocalValue] = useState(buttons[0]?.value ?? "");
     const value = props.statePath ? (boundValue ?? "") : localValue;
     const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
     return (
       <div className="inline-flex rounded-md border border-border">
-        {props.buttons.map((btn, i) => (
+        {buttons.map((btn, i) => (
           <button
             key={btn.value}
             className={`px-3 py-1.5 text-sm transition-colors ${
@@ -286,7 +288,7 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
                 : "bg-background hover:bg-muted"
             } ${i > 0 ? "border-l border-border" : ""} ${
               i === 0 ? "rounded-l-md" : ""
-            } ${i === props.buttons.length - 1 ? "rounded-r-md" : ""}`}
+            } ${i === buttons.length - 1 ? "rounded-r-md" : ""}`}
             onClick={() => {
               setValue(btn.value);
               emit?.("change");
@@ -300,10 +302,11 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   Carousel: ({ props }) => {
+    const items = props.items ?? [];
     return (
       <CarouselPrimitive className="w-full">
         <CarouselContent>
-          {props.items.map((item, i) => (
+          {items.map((item, i) => (
             <CarouselItem
               key={i}
               className="basis-3/4 md:basis-1/2 lg:basis-1/3"
@@ -355,21 +358,24 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   Table: ({ props }) => {
+    const columns = props.columns ?? [];
+    const rows = props.rows ?? [];
+
     return (
       <div className="rounded-md border border-border overflow-hidden">
         <TablePrimitive>
           {props.caption && <TableCaption>{props.caption}</TableCaption>}
           <TableHeader>
             <TableRow>
-              {props.columns.map((col) => (
+              {columns.map((col) => (
                 <TableHead key={col}>{col}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {props.rows.map((row, i) => (
+            {rows.map((row, i) => (
               <TableRow key={i}>
-                {row.map((cell, j) => (
+                {(row ?? []).map((cell, j) => (
                   <TableCell key={j}>{cell}</TableCell>
                 ))}
               </TableRow>
@@ -398,13 +404,14 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   DropdownMenu: ({ props, emit }) => {
+    const items = props.items ?? [];
     return (
       <DropdownMenuPrimitive>
         <DropdownMenuTrigger asChild>
           <Button variant="outline">{props.label}</Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          {props.items.map((item) => (
+          {items.map((item) => (
             <DropdownMenuItem key={item.value} onClick={() => emit?.("select")}>
               {item.label}
             </DropdownMenuItem>
@@ -572,14 +579,15 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
   },
 
   Tabs: ({ props, emit }) => {
+    const tabs = props.tabs ?? [];
     const [boundValue, setBoundValue] = props.statePath
       ? useStateBinding<string>(props.statePath)
       : [undefined, undefined];
     const [localValue, setLocalValue] = useState(
-      props.defaultValue ?? props.tabs[0]?.value ?? "",
+      props.defaultValue ?? tabs[0]?.value ?? "",
     );
     const value = props.statePath
-      ? (boundValue ?? props.tabs[0]?.value ?? "")
+      ? (boundValue ?? tabs[0]?.value ?? "")
       : localValue;
     const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
@@ -592,7 +600,7 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
         }}
       >
         <TabsList>
-          {props.tabs.map((tab) => (
+          {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
             </TabsTrigger>
@@ -626,17 +634,18 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
 
   ToggleGroup: ({ props, emit }) => {
     const type = props.type ?? "single";
+    const items = props.items ?? [];
     const [boundValue, setBoundValue] = props.statePath
       ? useStateBinding<string>(props.statePath)
       : [undefined, undefined];
-    const [localValue, setLocalValue] = useState(props.items[0]?.value ?? "");
+    const [localValue, setLocalValue] = useState(items[0]?.value ?? "");
     const value = props.statePath ? (boundValue ?? "") : localValue;
     const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
     if (type === "multiple") {
       return (
         <ToggleGroup type="multiple">
-          {props.items.map((item) => (
+          {items.map((item) => (
             <ToggleGroupItem key={item.value} value={item.value}>
               {item.label}
             </ToggleGroupItem>
@@ -656,7 +665,7 @@ export const components: { [K in keyof CatalogComponents]: ComponentFn<K> } = {
           }
         }}
       >
-        {props.items.map((item) => (
+        {items.map((item) => (
           <ToggleGroupItem key={item.value} value={item.value}>
             {item.label}
           </ToggleGroupItem>
