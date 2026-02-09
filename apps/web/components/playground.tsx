@@ -17,7 +17,7 @@ import { Header } from "./header";
 import { PlaygroundRenderer } from "@/lib/render/renderer";
 import { playgroundCatalog } from "@/lib/render/catalog";
 
-type Tab = "json" | "stream" | "catalog";
+type Tab = "json" | "nested" | "stream" | "catalog";
 type RenderView = "preview" | "code";
 type MobilePane = "chat" | "code" | "preview";
 
@@ -28,6 +28,51 @@ interface Version {
   status: "generating" | "complete" | "error";
   usage: TokenUsage | null;
   rawLines: string[];
+}
+
+/**
+ * Convert a flat Spec into a nested tree structure that is easier for humans
+ * to read. Children keys are resolved recursively into inline objects.
+ */
+function specToNested(spec: Spec): Record<string, unknown> {
+  function resolve(key: string): Record<string, unknown> {
+    const el = spec.elements[key];
+    if (!el) return { _key: key, _missing: true };
+
+    const node: Record<string, unknown> = { type: el.type };
+
+    if (el.props && Object.keys(el.props).length > 0) {
+      node.props = el.props;
+    }
+
+    if (el.visible !== undefined) {
+      node.visible = el.visible;
+    }
+
+    if (el.on && Object.keys(el.on).length > 0) {
+      node.on = el.on;
+    }
+
+    if (el.repeat) {
+      node.repeat = el.repeat;
+    }
+
+    if (el.children && el.children.length > 0) {
+      node.children = el.children.map(resolve);
+    }
+
+    return node;
+  }
+
+  const result: Record<string, unknown> = {};
+
+  if (spec.state && Object.keys(spec.state).length > 0) {
+    result.state = spec.state;
+  }
+
+  result.elements = resolve(spec.root);
+
+  return result;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -180,6 +225,11 @@ export function Playground() {
   const jsonCode = currentTree
     ? JSON.stringify(currentTree, null, 2)
     : "// waiting...";
+
+  const nestedCode = useMemo(() => {
+    if (!currentTree || !currentTree.root) return "// waiting...";
+    return JSON.stringify(specToNested(currentTree), null, 2);
+  }, [currentTree]);
 
   const generatedCode = useMemo(() => {
     if (!currentTree || !currentTree.root) {
@@ -493,12 +543,14 @@ ${jsx}
       ? currentRawLines.join("\n")
       : activeTab === "json"
         ? jsonCode
-        : "";
+        : activeTab === "nested"
+          ? nestedCode
+          : "";
 
   const codePane = (
     <div className="h-full flex flex-col border-t border-border">
       <div className="border-b border-border px-3 h-9 flex items-center gap-3">
-        {(["json", "stream", "catalog"] as const).map((tab) => (
+        {(["json", "nested", "stream", "catalog"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -647,6 +699,8 @@ ${jsx}
               {isStreaming ? "streaming..." : "// waiting for generation"}
             </div>
           )
+        ) : activeTab === "nested" ? (
+          <CodeBlock code={nestedCode} lang="json" fillHeight hideCopyButton />
         ) : (
           <CodeBlock code={jsonCode} lang="json" fillHeight hideCopyButton />
         )}
