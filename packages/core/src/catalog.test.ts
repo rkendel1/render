@@ -560,4 +560,73 @@ describe("defineCatalog (new schema API)", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("does not include hardcoded component names in prompt (issue #88)", () => {
+    // When a catalog only has "Text", the generated prompt should NOT
+    // reference components like Stack, Grid, Heading, Card, Column,
+    // Button, or Pressable that are not in the catalog.
+    const catalog = defineCatalog(testSchema, {
+      components: {
+        Text: {
+          props: z.object({ content: z.string() }),
+          description: "Display text content",
+        },
+      },
+      actions: {},
+    });
+
+    const prompt = catalog.prompt();
+
+    // The prompt should contain the actual catalog component
+    expect(prompt).toContain("Text");
+    expect(prompt).toContain("Display text content");
+
+    // The prompt should NOT contain hardcoded component names not in the catalog
+    // Check that these don't appear as component types in JSON examples
+    const hardcodedComponents = [
+      "Stack",
+      "Grid",
+      "Heading",
+      "Card",
+      "Column",
+      "Pressable",
+    ];
+
+    for (const comp of hardcodedComponents) {
+      // Check for "type":"<ComponentName>" patterns in JSON examples
+      expect(prompt).not.toContain(`"type":"${comp}"`);
+      // Also check for "type": "<ComponentName>" with space
+      expect(prompt).not.toContain(`"type": "${comp}"`);
+    }
+  });
+
+  it("uses actual catalog component names in prompt examples", () => {
+    const catalog = defineCatalog(testSchema, {
+      components: {
+        MyBox: {
+          props: z.object({ padding: z.number() }),
+          description: "A box",
+        },
+        MyLabel: {
+          props: z.object({ text: z.string() }),
+          description: "A label",
+        },
+      },
+      actions: {},
+    });
+
+    const prompt = catalog.prompt();
+
+    // The example output should use MyBox and MyLabel, not hardcoded names
+    expect(prompt).toContain('"type":"MyBox"');
+    expect(prompt).toContain('"type":"MyLabel"');
+
+    // Should not contain any hardcoded component names in type fields
+    expect(prompt).not.toContain('"type":"Stack"');
+    expect(prompt).not.toContain('"type":"Grid"');
+    expect(prompt).not.toContain('"type":"Heading"');
+    expect(prompt).not.toContain('"type":"Column"');
+    expect(prompt).not.toContain('"type":"Button"');
+    expect(prompt).not.toContain('"type":"Pressable"');
+  });
 });

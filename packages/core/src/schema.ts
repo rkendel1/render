@@ -540,27 +540,32 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
   lines.push("");
 
   // Output format section - explain JSONL streaming patch format
-  lines.push("OUTPUT FORMAT:");
+  lines.push("OUTPUT FORMAT (JSONL, RFC 6902 JSON Patch):");
   lines.push(
-    "Output JSONL (one JSON object per line) with patches to build a UI tree.",
+    "Output JSONL (one JSON object per line) using RFC 6902 JSON Patch operations to build a UI tree.",
   );
   lines.push(
-    "Each line is a JSON patch operation. Start with /root, then stream /elements and /state patches interleaved so the UI fills in progressively as it streams.",
+    "Each line is a JSON patch operation (add, remove, replace). Start with /root, then stream /elements and /state patches interleaved so the UI fills in progressively as it streams.",
   );
   lines.push("");
   lines.push("Example output (each line is a separate JSON object):");
   lines.push("");
-  lines.push(`{"op":"add","path":"/root","value":"blog"}
-{"op":"add","path":"/elements/blog","value":{"type":"Stack","props":{"direction":"vertical","gap":"md"},"children":["heading","posts-grid"]}}
-{"op":"add","path":"/elements/heading","value":{"type":"Heading","props":{"text":"Blog","level":"h1"},"children":[]}}
-{"op":"add","path":"/elements/posts-grid","value":{"type":"Grid","props":{"columns":2,"gap":"md"},"repeat":{"path":"/posts","key":"id"},"children":["post-card"]}}
-{"op":"add","path":"/elements/post-card","value":{"type":"Card","props":{"title":{"$path":"$item/title"}},"children":["post-meta"]}}
-{"op":"add","path":"/elements/post-meta","value":{"type":"Text","props":{"text":{"$path":"$item/author"},"variant":"muted"},"children":[]}}
-{"op":"add","path":"/state/posts","value":[]}
-{"op":"add","path":"/state/posts/0","value":{"id":"1","title":"Getting Started","author":"Jane","date":"Jan 15"}}
-{"op":"add","path":"/state/posts/1","value":{"id":"2","title":"Advanced Tips","author":"Bob","date":"Feb 3"}}
 
-Note: state patches appear right after the elements that use them, so the UI fills in as it streams.`);
+  // Build example using actual catalog component names to avoid hallucinations
+  const cn = catalog.componentNames;
+  const comp1 = cn[0] || "Component";
+  const comp2 = cn.length > 1 ? cn[1]! : comp1;
+
+  lines.push(`{"op":"add","path":"/root","value":"main"}
+{"op":"add","path":"/elements/main","value":{"type":"${comp1}","props":{},"children":["title","list"]}}
+{"op":"add","path":"/elements/title","value":{"type":"${comp2}","props":{},"children":[]}}
+{"op":"add","path":"/elements/list","value":{"type":"${comp1}","props":{},"repeat":{"path":"/items","key":"id"},"children":["item"]}}
+{"op":"add","path":"/elements/item","value":{"type":"${comp2}","props":{"text":{"$path":"$item/title"}},"children":[]}}
+{"op":"add","path":"/state/items","value":[]}
+{"op":"add","path":"/state/items/0","value":{"id":"1","title":"First Item"}}
+{"op":"add","path":"/state/items/1","value":{"id":"2","title":"Second Item"}}
+
+Note: state patches appear right after the elements that use them, so the UI fills in as it streams. ONLY use component types from the AVAILABLE COMPONENTS list below.`);
   lines.push("");
 
   // Initial state section
@@ -601,7 +606,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     'The element itself renders once (as the container), and its children are expanded once per array item. "path" is the state array path. "key" is an optional field name on each item for stable React keys.',
   );
   lines.push(
-    'Example: { "type": "Column", "props": { "gap": 8 }, "repeat": { "path": "/todos", "key": "id" }, "children": ["todo-item"] }',
+    `Example: { "type": "${comp1}", "props": {}, "repeat": { "path": "/todos", "key": "id" }, "children": ["todo-item"] }`,
   );
   lines.push(
     'Inside children of a repeated element, use "$item/field" for per-item paths: statePath:"$item/completed", { "$path": "$item/title" }. Use "$index" for the current array index.',
@@ -694,7 +699,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
   lines.push("");
   lines.push("Example:");
   lines.push(
-    '  {"type":"Button","props":{"label":"Save"},"on":{"press":{"action":"setState","params":{"path":"/saved","value":true}}},"children":[]}',
+    `  {"type":"${comp1}","props":{},"on":{"press":{"action":"setState","params":{"path":"/saved","value":true}}},"children":[]}`,
   );
   lines.push("");
   lines.push(
@@ -711,7 +716,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     "Elements can have an optional `visible` field to conditionally show/hide based on data state. IMPORTANT: `visible` is a top-level field on the element object (sibling of type/props/children), NOT inside props.",
   );
   lines.push(
-    'Correct: {"type":"Column","props":{"gap":8},"visible":{"eq":[{"path":"/tab"},"home"]},"children":[...]}',
+    `Correct: {"type":"${comp1}","props":{},"visible":{"eq":[{"path":"/tab"},"home"]},"children":[...]}`,
   );
   lines.push(
     '- `{ "eq": [{ "path": "/statePath" }, "value"] }` - visible when state at path equals value',
@@ -726,10 +731,10 @@ Note: state patches appear right after the elements that use them, so the UI fil
   lines.push("- `true` / `false` - always visible/hidden");
   lines.push("");
   lines.push(
-    "Use the Pressable component with on.press bound to setState to update state and drive visibility.",
+    "Use a component with on.press bound to setState to update state and drive visibility.",
   );
   lines.push(
-    'Example: A Pressable with on: { "press": { "action": "setState", "params": { "path": "/activeTab", "value": "home" } } } sets state, then a container with visible: { "eq": [{ "path": "/activeTab" }, "home"] } shows only when that tab is active.',
+    `Example: A ${comp1} with on: { "press": { "action": "setState", "params": { "path": "/activeTab", "value": "home" } } } sets state, then a container with visible: { "eq": [{ "path": "/activeTab" }, "home"] } shows only when that tab is active.`,
   );
   lines.push("");
 
