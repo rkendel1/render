@@ -5,6 +5,7 @@ import {
   VisibilityProvider,
   ActionProvider,
   ValidationProvider,
+  createStandardActionHandlers,
   type Spec,
 } from "@json-render/react-native";
 import { registry } from "./registry";
@@ -34,7 +35,7 @@ export function AppRenderer({ spec, loading }: AppRendererProps): ReactNode {
   return (
     <StateProvider initialState={initialState}>
       <VisibilityProvider>
-        <ActionProvider handlers={{}}>
+        <ActionProvider handlers={createStandardActionHandlers()}>
           <ValidationProvider>
             <Renderer spec={spec} registry={registry} loading={loading} />
           </ValidationProvider>
