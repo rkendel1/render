@@ -242,7 +242,7 @@ export function DocsChat() {
     if (error) setOpen(true);
   }, [error]);
 
-  const showMessages = open && (messages.length > 0 || !!error);
+  const showMessages = open && (messages.length > 0 || !!error || isLoading);
   const showSuggestions = focused && messages.length === 0 && !isLoading;
 
   return (
@@ -252,7 +252,7 @@ export function DocsChat() {
         className={`mx-auto px-4 pb-4 [&>*]:pointer-events-auto transition-all duration-300 ${focused || showMessages ? "max-w-xl" : "max-w-56"}`}
       >
         <div
-          className="border border-background rounded-lg overflow-hidden"
+          className={`border rounded-lg overflow-hidden ${focused || showMessages ? "border-background" : "border-[var(--chat-bg)]"}`}
           style={{ backgroundColor: "var(--chat-bg)" }}
         >
           {/* Suggestions panel */}
@@ -270,6 +270,7 @@ export function DocsChat() {
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault();
+                      setOpen(true);
                       sendMessage({ text: s });
                     }}
                     className="text-xs px-3 py-1.5 rounded-full border border-background bg-background font-medium text-muted-foreground hover:text-foreground transition-colors"
