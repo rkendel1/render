@@ -277,7 +277,7 @@ export default function HomeScreen() {
                 setConfirmingClear(false);
               }}
             >
-              <Text style={styles.menuButtonText}>...</Text>
+              <Text style={styles.menuButtonText}>···</Text>
             </Pressable>
           )}
           {isStreaming ? (
@@ -405,12 +405,12 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: "center",
     justifyContent: "center",
+    alignSelf: "center",
   },
   menuButtonText: {
     fontSize: 18,
     color: "#9ca3af",
     fontWeight: "700",
-    lineHeight: 20,
   },
   menuOverlay: {
     ...StyleSheet.absoluteFillObject,
