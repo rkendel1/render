@@ -332,7 +332,7 @@ export const List: FunctionComponent<ExtendedRenderProps> = ({
   emit,
 }) => {
   return (
-    <UIList onAction={emit ? (id) => emit("select") : undefined}>
+    <UIList onAction={emit ? (_id) => emit("select") : undefined}>
       {children}
     </UIList>
   );
@@ -423,7 +423,7 @@ export const Menu: FunctionComponent<ExtendedRenderProps> = ({
       trigger={
         <UIButton type="secondary">{String(triggerLabel || "Menu")}</UIButton>
       }
-      onAction={emit ? (id) => emit("select") : undefined}
+      onAction={emit ? (_id) => emit("select") : undefined}
     >
       {children}
     </UIMenu>
@@ -665,7 +665,7 @@ export const Button: FunctionComponent<ExtendedRenderProps> = ({
   const {
     label,
     action,
-    actionParams,
+    actionParams: _actionParams,
     type = "primary",
     size = "medium",
     disabled,

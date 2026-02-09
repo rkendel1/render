@@ -1374,15 +1374,15 @@ export const actionHandlers: Record<
     await actionHandlers.fetchCustomers({}, setState, {});
   },
 
-  refreshPayments: async (_, setState) => {
+  refreshPayments: async (_) => {
     await actionHandlers.fetchPayments({}, setData, {});
   },
 
-  refreshSubscriptions: async (_, setState) => {
+  refreshSubscriptions: async (_) => {
     await actionHandlers.fetchSubscriptions({}, setData, {});
   },
 
-  refreshInvoices: async (_, setState) => {
+  refreshInvoices: async (_) => {
     await actionHandlers.fetchInvoices({}, setData, {});
   },
 

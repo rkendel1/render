@@ -9,7 +9,6 @@ import {
 } from "@json-render/react";
 
 import { components, Fallback } from "./catalog/components";
-import { executeAction } from "./catalog/actions";
 
 // =============================================================================
 // Types
