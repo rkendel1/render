@@ -220,6 +220,7 @@ export function DocsChat() {
     if (!input.trim() || isLoading) return;
     sendMessage({ text: input });
     setInput("");
+    inputRef.current?.blur();
   };
 
   const handleClear = () => {
