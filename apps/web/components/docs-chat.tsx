@@ -179,11 +179,6 @@ export function DocsChat() {
     prevMessageCount.current = messages.length;
   }, [messages.length]);
 
-  // Scroll to bottom when messages change or error occurs
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, error]);
-
   // Cmd+K to focus prompt, Esc to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -218,6 +213,7 @@ export function DocsChat() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    setOpen(true);
     sendMessage({ text: input });
     setInput("");
     inputRef.current?.blur();
@@ -246,6 +242,49 @@ export function DocsChat() {
   const showMessages = open && (messages.length > 0 || !!error || isLoading);
   const showSuggestions = focused && messages.length === 0 && !isLoading;
 
+  // Delay rendering panels until after the expand animation completes.
+  // Skip the delay if the container is already expanded (e.g. clicking a suggestion).
+  const wasExpandedRef = useRef(false);
+  useEffect(() => {
+    wasExpandedRef.current = focused || showMessages;
+  });
+
+  const [messagesVisible, setMessagesVisible] = useState(false);
+  useEffect(() => {
+    if (!showMessages) {
+      setMessagesVisible(false);
+      return;
+    }
+    if (wasExpandedRef.current) {
+      setMessagesVisible(true);
+      return;
+    }
+    const timer = setTimeout(() => setMessagesVisible(true), 300);
+    return () => clearTimeout(timer);
+  }, [showMessages]);
+
+  const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+  useEffect(() => {
+    if (!showSuggestions) {
+      setSuggestionsVisible(false);
+      return;
+    }
+    const timer = setTimeout(() => setSuggestionsVisible(true), 300);
+    return () => clearTimeout(timer);
+  }, [showSuggestions]);
+
+  // Re-focus input after both animations complete (expand + slide-in)
+  useEffect(() => {
+    if (!messagesVisible) return;
+    const timer = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => clearTimeout(timer);
+  }, [messagesVisible]);
+
+  // Scroll to bottom when messages change, error occurs, or panel opens
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, error, messagesVisible]);
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <div
@@ -253,12 +292,12 @@ export function DocsChat() {
         className={`mx-auto px-4 pb-4 [&>*]:pointer-events-auto transition-all duration-300 ${focused || showMessages ? "max-w-xl" : "max-w-56"}`}
       >
         <div
-          className={`border rounded-lg overflow-hidden flex flex-col max-h-[50dvh] ${focused || showMessages ? "border-background" : "border-[var(--chat-bg)]"}`}
+          className="border rounded-lg overflow-hidden flex flex-col max-h-[50dvh] border-[var(--chat-bg)]"
           style={{ backgroundColor: "var(--chat-bg)" }}
         >
           {/* Suggestions panel */}
-          {showSuggestions && (
-            <div>
+          {suggestionsVisible && (
+            <div className="animate-chat-slide-up">
               <div className="flex items-center px-4 py-2 border-b border-background shrink-0">
                 <span className="text-xs font-medium text-muted-foreground">
                   json-render Docs
@@ -283,8 +322,8 @@ export function DocsChat() {
             </div>
           )}
           {/* Messages panel */}
-          {showMessages && (
-            <div className="flex-1 min-h-0 flex flex-col">
+          {messagesVisible && (
+            <div className="flex-1 min-h-0 flex flex-col animate-chat-slide-up">
               <div className="flex items-center justify-between px-4 py-2 border-b border-background shrink-0">
                 <span className="text-xs font-medium text-muted-foreground">
                   json-render Docs
@@ -371,7 +410,7 @@ export function DocsChat() {
           <form
             onSubmit={handleSubmit}
             onClick={() => inputRef.current?.focus()}
-            className={`relative flex items-end gap-2 px-3 py-2 cursor-text${showMessages ? " border-t border-background" : ""}`}
+            className={`relative flex items-end gap-2 px-3 py-2 cursor-text${messagesVisible ? " border-t border-background" : ""}`}
           >
             {!input && (
               <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
