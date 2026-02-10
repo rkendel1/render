@@ -252,7 +252,7 @@ export function DocsChat() {
         className={`mx-auto px-4 pb-4 [&>*]:pointer-events-auto transition-all duration-300 ${focused || showMessages ? "max-w-xl" : "max-w-56"}`}
       >
         <div
-          className={`border rounded-lg overflow-hidden ${focused || showMessages ? "border-background" : "border-[var(--chat-bg)]"}`}
+          className={`border rounded-lg overflow-hidden flex flex-col max-h-[50dvh] ${focused || showMessages ? "border-background" : "border-[var(--chat-bg)]"}`}
           style={{ backgroundColor: "var(--chat-bg)" }}
         >
           {/* Suggestions panel */}
@@ -283,7 +283,7 @@ export function DocsChat() {
           )}
           {/* Messages panel */}
           {showMessages && (
-            <div className="max-h-[60vh] flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
               <div className="flex items-center justify-between px-4 py-2 border-b border-background shrink-0">
                 <span className="text-xs font-medium text-muted-foreground">
                   json-render Docs
@@ -297,7 +297,7 @@ export function DocsChat() {
                 </button>
               </div>
               <div
-                className="p-4 space-y-4 overflow-y-auto"
+                className="p-4 space-y-4 overflow-y-auto min-h-0 flex-1"
                 onClick={(e) => {
                   if ((e.target as HTMLElement).closest("a")) {
                     setOpen(false);
@@ -393,6 +393,7 @@ export function DocsChat() {
                 e.target.style.height = `${e.target.scrollHeight}px`;
               }}
               rows={1}
+              enterKeyHint="send"
               onFocus={() => {
                 setFocused(true);
                 if (messages.length > 0) setOpen(true);
