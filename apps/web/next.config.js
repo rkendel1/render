@@ -11,6 +11,11 @@ const nextConfig = {
         destination: "/docs/registry",
         permanent: true,
       },
+      {
+        source: "/docs/actions",
+        destination: "/docs/registry#action-handlers",
+        permanent: true,
+      },
     ];
   },
 };

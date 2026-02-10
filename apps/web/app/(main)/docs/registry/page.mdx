@@ -2,11 +2,19 @@ export const metadata = { title: "Registry" }
 
 # Registry
 
-Register React components and action handlers to bring your catalog to life.
+A registry maps your [catalog](/docs/catalog) definitions to platform-specific implementations. The catalog defines *what* AI can generate — the registry provides the *how*.
 
-## defineRegistry
+What a registry contains depends on the schema you use. Each package defines its own schema, which determines the shape of both the catalog and the registry.
 
-Use `defineRegistry` to create a type-safe registry from your catalog. Pass your components, actions, or both in a single call:
+- **`@json-render/react`** — Components (React elements) and action handlers
+- **`@json-render/react-native`** — Components (React Native elements) and action handlers
+- **`@json-render/remotion`** — Clip components, transitions, and effects
+
+## @json-render/react
+
+### defineRegistry
+
+Use `defineRegistry` to create a type-safe registry from your catalog. Pass your components, actions, or both:
 
 ```tsx
 import { defineRegistry } from '@json-render/react';
@@ -49,13 +57,13 @@ export const { registry, handlers, executeAction } = defineRegistry(myCatalog, {
 
 The returned object contains:
 
-- `registry` - component registry for `<Renderer />`
-- `handlers` - factory for ActionProvider-compatible handlers
-- `executeAction` - imperative action dispatch (for use outside the React tree)
+- `registry` — component registry for `<Renderer />`
+- `handlers` — factory for ActionProvider-compatible handlers
+- `executeAction` — imperative action dispatch (for use outside the React tree)
 
-## Component Props
+### Component Props
 
-Each component in the registry receives a `ComponentContext` object:
+Each component receives a `ComponentContext` object:
 
 ```typescript
 interface ComponentContext {
@@ -68,13 +76,11 @@ interface ComponentContext {
 
 Props are automatically inferred from your catalog, so `props.title` is typed as `string` if your catalog defines it that way.
 
-## Action Handlers
+### Action Handlers
 
 Instead of AI generating arbitrary code, it declares *intent* by name. Your application provides the implementation. This is a core guardrail.
 
-### Defining Actions
-
-Define available actions in your catalog:
+Actions are declared in your [catalog](/docs/catalog). The `@json-render/react` schema supports an `actions` key where you define what operations AI can trigger:
 
 ```typescript
 import { defineCatalog } from '@json-render/core';
@@ -104,8 +110,6 @@ const catalog = defineCatalog(schema, {
 });
 ```
 
-### Implementing Action Handlers
-
 Action handlers receive `(params, setState, data)` and are defined inside `defineRegistry`:
 
 ```tsx
@@ -132,7 +136,7 @@ export const { handlers, executeAction } = defineRegistry(catalog, {
 });
 ```
 
-## Using Data Binding
+### Data Binding
 
 Use hooks inside your registry components to read and write data:
 
@@ -168,7 +172,7 @@ TextField: ({ props }) => {
 },
 ```
 
-## Using the Renderer
+### Using the Renderer
 
 Wire everything together with providers and the `<Renderer />` component:
 
@@ -204,6 +208,55 @@ function App({ spec, data, setState }) {
   );
 }
 ```
+
+## @json-render/react-native
+
+`@json-render/react-native` uses the same `defineRegistry` API. The only difference is that components return React Native elements instead of HTML:
+
+```tsx
+import { defineRegistry } from '@json-render/react-native';
+import { View, Text, Pressable } from 'react-native';
+
+export const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) => (
+      <View style={styles.card}>
+        <Text style={styles.title}>{props.title}</Text>
+        {children}
+      </View>
+    ),
+
+    Button: ({ props, emit }) => (
+      <Pressable onPress={() => emit?.("press")}>
+        <Text>{props.label}</Text>
+      </Pressable>
+    ),
+  },
+});
+```
+
+See the [@json-render/react-native API reference](/docs/api/react-native) for the full API.
+
+## @json-render/remotion
+
+`@json-render/remotion` takes a different approach. Instead of `defineRegistry`, it uses a plain component registry with built-in standard components for video production:
+
+```tsx
+import { Renderer, standardComponents } from '@json-render/remotion';
+
+// Use the standard components directly
+<Renderer spec={timelineSpec} components={standardComponents} />
+
+// Or extend with your own
+const components = {
+  ...standardComponents,
+  CustomSlide: ({ clip }) => <AbsoluteFill>{/* ... */}</AbsoluteFill>,
+};
+```
+
+The Remotion schema also supports `transitions` and `effects` in the catalog rather than actions.
+
+See the [@json-render/remotion API reference](/docs/api/remotion) for the full API.
 
 ## Next
 
