@@ -6,6 +6,7 @@ import { DocsChat } from "@/components/docs-chat";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PAGE_TITLES } from "@/lib/page-titles";
+import { cookies } from "next/headers";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -72,17 +73,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const chatOpen = cookieStore.get("docs-chat-open")?.value === "true";
+  const chatWidth = Number(cookieStore.get("docs-chat-width")?.value) || 400;
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {chatOpen && (
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `@media(min-width:640px){body{padding-right:${chatWidth}px}}`,
+            }}
+          />
+        )}
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ThemeProvider>
           {children}
-          <DocsChat />
+          <DocsChat defaultOpen={chatOpen} defaultWidth={chatWidth} />
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
