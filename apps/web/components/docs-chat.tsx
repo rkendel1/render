@@ -213,6 +213,7 @@ export function DocsChat({
 
       const onPointerUp = () => {
         isDraggingRef.current = false;
+        document.documentElement.style.transition = "";
         document.removeEventListener("pointermove", onPointerMove);
         document.removeEventListener("pointerup", onPointerUp);
       };
