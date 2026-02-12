@@ -101,7 +101,7 @@ function MessageBubble({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="w-full flex flex-col gap-3">
       {/* Text content */}
       {text && (
         <div className="text-sm leading-relaxed [&_p+p]:mt-3 [&_ul]:mt-2 [&_ol]:mt-2 [&_pre]:mt-2">
@@ -121,7 +121,7 @@ function MessageBubble({
 
       {/* Rendered UI spec */}
       {hasSpec && (
-        <div className="w-full max-w-[800px] rounded-xl border bg-card p-4 shadow-sm">
+        <div className="w-full rounded-xl border bg-card p-4 shadow-sm">
           <ExplorerRenderer spec={spec} loading={isLast && isStreaming} />
         </div>
       )}
