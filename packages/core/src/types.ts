@@ -540,14 +540,17 @@ export function applySpecStreamPatch<T extends Record<string, unknown>>(
 
 /**
  * Apply a single RFC 6902 JSON Patch operation to a Spec.
- * Mutates the spec in place and returns it with proper typing.
+ * Mutates the spec in place and returns it.
  *
- * This is a convenience wrapper around `applySpecStreamPatch` that accepts
- * a `Spec` directly without requiring type casting.
+ * This is a typed convenience wrapper around `applySpecStreamPatch` that
+ * accepts a `Spec` directly without requiring a cast to `Record<string, unknown>`.
+ *
+ * Note: This mutates the spec. For React state updates, spread the result
+ * to create a new reference: `setSpec({ ...applySpecPatch(spec, patch) })`.
  *
  * @example
  * let spec: Spec = { root: "", elements: {} };
- * spec = applySpecPatch(spec, { op: "add", path: "/root", value: "main" });
+ * applySpecPatch(spec, { op: "add", path: "/root", value: "main" });
  */
 export function applySpecPatch(spec: Spec, patch: SpecStreamLine): Spec {
   applySpecStreamPatch(spec as unknown as Record<string, unknown>, patch);
@@ -697,13 +700,6 @@ export function createSpecStreamCompiler<T = Record<string, unknown>>(
 // =============================================================================
 // Mixed Stream Parser — for chat + GenUI (text interleaved with JSONL patches)
 // =============================================================================
-
-/**
- * Event emitted by MixedStreamParser when a line is classified.
- */
-export type MixedStreamEvent =
-  | { type: "patch"; patch: SpecStreamLine }
-  | { type: "text"; text: string };
 
 /**
  * Callbacks for the mixed stream parser.

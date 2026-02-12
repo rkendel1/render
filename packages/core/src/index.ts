@@ -19,7 +19,6 @@ export type {
   SpecStreamLine,
   SpecStreamCompiler,
   // Mixed stream types (chat + GenUI)
-  MixedStreamEvent,
   MixedStreamCallbacks,
   MixedStreamParser,
 } from "./types";
