@@ -70,12 +70,42 @@ Each component in the catalog has:
 ```typescript
 {
   props: z.object({...}),  // Zod schema for props (use .nullable() for optional)
-  slots?: string[],        // Named slots for children (e.g., ["default"])
+  slots?: string[],        // Named slots for children (e.g., ["default", "header", "footer"])
   description?: string,    // Help AI understand when to use it
 }
 ```
 
-Use `slots: ["default"]` for components that can contain children. The slot name corresponds to where child elements are rendered.
+### Named Slots
+
+Components can define multiple named slots:
+
+```typescript
+const catalog = defineCatalog(schema, {
+  components: {
+    // Simple component with just default slot
+    Card: {
+      props: z.object({ title: z.string() }),
+      slots: ["default"],
+      description: "Container card",
+    },
+    
+    // Component with multiple named slots
+    Layout: {
+      props: z.object({}),
+      slots: ["default", "header", "footer"],
+      description: "Full-page layout with header, main content, and footer",
+    },
+  },
+});
+```
+
+The `slots` array lists all available slots:
+- `"default"` - The main content slot, mapped from the `children` field in specs
+- Other names (e.g., `"header"`, `"footer"`) - Named slots, mapped from the `slots` field in specs
+
+When implementing the component in your registry, you'll receive:
+- `children` prop - Content for the default slot
+- `slots` prop - Object with content for named slots (e.g., `{ header: ReactNode, footer: ReactNode }`)
 
 ## Generating AI Prompts
 
