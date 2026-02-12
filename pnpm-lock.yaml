@@ -189,6 +189,9 @@ importers:
       '@ai-sdk/gateway':
         specifier: ^3.0.13
         version: 3.0.42(zod@4.3.5)
+      '@ai-sdk/react':
+        specifier: ^3.0.84
+        version: 3.0.84(react@19.2.4)(zod@4.3.5)
       '@json-render/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -794,6 +797,12 @@ packages:
 
   '@ai-sdk/react@3.0.79':
     resolution: {integrity: sha512-s/Y+/sISlsEX5Zo/by0jwOyA6vnQ7+CldpRYGv5hMmgnarZ1m5B6myw3Y1Bc2xnozUy+wrmwA6HttlmR4xOOEg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
+
+  '@ai-sdk/react@3.0.84':
+    resolution: {integrity: sha512-caX8dsXGHDctQsFGgq05sdaw9YD2C8Y9SfnOk0b0LPPi4J7/V54tq22MPTGVO9zS3LmsfFQf0GDM4WFZNC5XZA==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ~19.0.1 || ~19.1.2 || ^19.2.1
@@ -9669,6 +9678,16 @@ snapshots:
       ai: 6.0.77(zod@4.3.5)
       react: 19.2.3
       swr: 2.4.0(react@19.2.3)
+      throttleit: 2.1.0
+    transitivePeerDependencies:
+      - zod
+
+  '@ai-sdk/react@3.0.84(react@19.2.4)(zod@4.3.5)':
+    dependencies:
+      '@ai-sdk/provider-utils': 4.0.14(zod@4.3.5)
+      ai: 6.0.82(zod@4.3.5)
+      react: 19.2.4
+      swr: 2.4.0(react@19.2.4)
       throttleit: 2.1.0
     transitivePeerDependencies:
       - zod
@@ -20500,6 +20519,12 @@ snapshots:
       dequal: 2.0.3
       react: 19.2.3
       use-sync-external-store: 1.6.0(react@19.2.3)
+
+  swr@2.4.0(react@19.2.4):
+    dependencies:
+      dequal: 2.0.3
+      react: 19.2.4
+      use-sync-external-store: 1.6.0(react@19.2.4)
 
   symbol-tree@3.2.4: {}
 

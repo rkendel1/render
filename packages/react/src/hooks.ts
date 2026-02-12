@@ -419,6 +419,53 @@ export function flatToTree(elements: FlatElement[]): Spec {
 }
 
 // =============================================================================
+// buildSpecFromParts — Derive Spec from AI SDK data parts
+// =============================================================================
+
+/**
+ * A single part from the AI SDK's `message.parts` array. This is a minimal
+ * structural type so that `buildSpecFromParts` does not depend on the AI SDK.
+ * The `data` field is optional because not all part types carry data (e.g. text parts).
+ */
+export interface DataPart {
+  type: string;
+  data?: unknown;
+}
+
+/**
+ * Build a `Spec` by replaying all `data-jsonrender` parts from a message's
+ * parts array. Returns `null` if no `data-jsonrender` parts are present.
+ *
+ * This function is designed to work with the AI SDK's `UIMessage.parts` array.
+ * It picks out parts whose `type` is `"data-jsonrender"` and applies each
+ * one as a JSON Patch operation (via `applySpecPatch`) to build the final spec.
+ *
+ * The function has no AI SDK dependency — it operates on a generic array of
+ * `{ type: string; data: unknown }` objects.
+ *
+ * @example
+ * ```tsx
+ * const spec = buildSpecFromParts(message.parts);
+ * if (spec) {
+ *   return <MyRenderer spec={spec} />;
+ * }
+ * ```
+ */
+export function buildSpecFromParts(parts: DataPart[]): Spec | null {
+  const spec: Spec = { root: "", elements: {} };
+  let hasPatches = false;
+
+  for (const part of parts) {
+    if (part.type === "data-jsonrender") {
+      hasPatches = true;
+      applySpecPatch(spec, part.data as JsonPatch);
+    }
+  }
+
+  return hasPatches ? spec : null;
+}
+
+// =============================================================================
 // useChatUI — Chat + GenUI hook
 // =============================================================================
 

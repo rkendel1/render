@@ -1,10 +1,26 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { useChatUI, type ChatMessage } from "@json-render/react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import type { JsonPatch, Spec } from "@json-render/core";
+import { buildSpecFromParts } from "@json-render/react";
 import { ExplorerRenderer } from "@/lib/render/renderer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ArrowUp, Loader2, Sparkles, User, Bot, Trash2 } from "lucide-react";
+
+// =============================================================================
+// Types
+// =============================================================================
+
+type AppDataParts = { jsonrender: JsonPatch };
+type AppMessage = UIMessage<unknown, AppDataParts>;
+
+// =============================================================================
+// Transport
+// =============================================================================
+
+const transport = new DefaultChatTransport({ api: "/api/generate" });
 
 // =============================================================================
 // Suggestions (shown in empty state)
@@ -30,6 +46,14 @@ const SUGGESTIONS = [
 ];
 
 // =============================================================================
+// SpecFromParts — derives Spec from data-jsonrender parts via useMemo
+// =============================================================================
+
+function useSpecFromParts(parts: AppMessage["parts"]): Spec | null {
+  return useMemo(() => buildSpecFromParts(parts), [parts]);
+}
+
+// =============================================================================
 // Message Bubble
 // =============================================================================
 
@@ -38,19 +62,27 @@ function MessageBubble({
   isLast,
   isStreaming,
 }: {
-  message: ChatMessage;
+  message: AppMessage;
   isLast: boolean;
   isStreaming: boolean;
 }) {
   const isUser = message.role === "user";
-  const hasSpec =
-    message.spec && Object.keys(message.spec.elements || {}).length > 0;
+  const spec = useSpecFromParts(message.parts);
+
+  // Gather all text from text parts
+  const text = useMemo(
+    () =>
+      message.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join("")
+        .trim(),
+    [message.parts],
+  );
+
+  const hasSpec = spec && Object.keys(spec.elements || {}).length > 0;
   const showLoader =
-    isLast &&
-    isStreaming &&
-    message.role === "assistant" &&
-    !message.text &&
-    !hasSpec;
+    isLast && isStreaming && message.role === "assistant" && !text && !hasSpec;
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
@@ -70,7 +102,7 @@ function MessageBubble({
         className={`flex flex-col gap-2 min-w-0 max-w-[85%] ${isUser ? "items-end" : "items-start"}`}
       >
         {/* Text content */}
-        {message.text && (
+        {text && (
           <div
             className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
               isUser
@@ -78,7 +110,7 @@ function MessageBubble({
                 : "bg-muted rounded-tl-md"
             }`}
           >
-            {message.text}
+            {text}
           </div>
         )}
 
@@ -93,10 +125,7 @@ function MessageBubble({
         {/* Rendered UI spec */}
         {hasSpec && (
           <div className="w-full min-w-[400px] max-w-[800px] rounded-xl border bg-card p-4 shadow-sm">
-            <ExplorerRenderer
-              spec={message.spec}
-              loading={isLast && isStreaming}
-            />
+            <ExplorerRenderer spec={spec} loading={isLast && isStreaming} />
           </div>
         )}
       </div>
@@ -113,9 +142,10 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const { messages, isStreaming, error, send, clear } = useChatUI({
-    api: "/api/generate",
-  });
+  const { messages, sendMessage, setMessages, status, error } =
+    useChat<AppMessage>({ transport });
+
+  const isStreaming = status === "streaming" || status === "submitted";
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -127,9 +157,9 @@ export default function ChatPage() {
       const message = text || input;
       if (!message.trim() || isStreaming) return;
       setInput("");
-      await send(message);
+      await sendMessage({ text: message.trim() });
     },
-    [input, isStreaming, send],
+    [input, isStreaming, sendMessage],
   );
 
   const handleKeyDown = useCallback(
@@ -143,10 +173,10 @@ export default function ChatPage() {
   );
 
   const handleClear = useCallback(() => {
-    clear();
+    setMessages([]);
     setInput("");
     inputRef.current?.focus();
-  }, [clear]);
+  }, [setMessages]);
 
   const isEmpty = messages.length === 0;
 
