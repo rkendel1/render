@@ -7,7 +7,7 @@ import type { JsonPatch, Spec } from "@json-render/core";
 import { buildSpecFromParts } from "@json-render/react";
 import { ExplorerRenderer } from "@/lib/render/renderer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowUp, Loader2, Sparkles, User, Bot, Trash2 } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 
@@ -113,15 +113,14 @@ function MessageBubble({
 
       {/* Loading indicator */}
       {showLoader && (
-        <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          <span>Thinking...</span>
+        <div className="text-sm text-muted-foreground animate-shimmer">
+          Thinking...
         </div>
       )}
 
       {/* Rendered UI spec */}
       {hasSpec && (
-        <div className="w-full rounded-xl border bg-card p-4 shadow-sm">
+        <div className="w-full">
           <ExplorerRenderer spec={spec} loading={isLast && isStreaming} />
         </div>
       )}
@@ -190,11 +189,9 @@ export default function ChatPage() {
           {messages.length > 0 && (
             <button
               onClick={handleClear}
-              className="p-2 rounded-md border border-border bg-card hover:bg-accent transition-colors"
-              aria-label="New chat"
-              title="New chat"
+              className="px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
-              <Trash2 className="h-4 w-4" />
+              Start Over
             </button>
           )}
           <ThemeToggle />
