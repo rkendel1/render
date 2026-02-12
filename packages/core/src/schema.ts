@@ -110,11 +110,11 @@ export interface PromptOptions {
   /**
    * Output mode for the generated prompt.
    *
-   * - `"spec-only"` (default): The LLM should output only JSONL patches (no prose).
+   * - `"generate"` (default): The LLM should output only JSONL patches (no prose).
    * - `"chat"`: The LLM should respond conversationally first, then output JSONL patches.
    *   Includes rules about interleaving text with JSONL and not wrapping in code fences.
    */
-  mode?: "spec-only" | "chat";
+  mode?: "generate" | "chat";
 }
 
 /**
@@ -541,7 +541,7 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
   const {
     system = "You are a UI generator that outputs JSON.",
     customRules = [],
-    mode = "spec-only",
+    mode = "generate",
   } = options;
 
   const lines: string[] = [];

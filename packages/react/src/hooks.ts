@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import type {
   Spec,
   UIElement,
@@ -494,6 +494,38 @@ export function getTextFromParts(parts: DataPart[]): string {
     .map((p) => p.text.trim())
     .filter(Boolean)
     .join("\n\n");
+}
+
+// =============================================================================
+// useJsonRenderMessage — extract spec + text from message parts
+// =============================================================================
+
+/**
+ * Hook that extracts both the json-render spec and text content from a
+ * message's parts array. Combines `buildSpecFromParts` and `getTextFromParts`
+ * into a single call with memoized results.
+ *
+ * @example
+ * ```tsx
+ * import { useJsonRenderMessage } from "@json-render/react";
+ *
+ * function MessageBubble({ message }) {
+ *   const { spec, text, hasSpec } = useJsonRenderMessage(message.parts);
+ *
+ *   return (
+ *     <div>
+ *       {text && <Markdown>{text}</Markdown>}
+ *       {hasSpec && <MyRenderer spec={spec} />}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useJsonRenderMessage(parts: DataPart[]) {
+  const spec = useMemo(() => buildSpecFromParts(parts), [parts]);
+  const text = useMemo(() => getTextFromParts(parts), [parts]);
+  const hasSpec = spec !== null && Object.keys(spec.elements || {}).length > 0;
+  return { spec, text, hasSpec };
 }
 
 // =============================================================================

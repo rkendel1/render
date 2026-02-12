@@ -4,9 +4,8 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   type UIMessage,
-  type UIMessageChunk,
 } from "ai";
-import { createJsonRenderTransform } from "@json-render/core";
+import { pipeJsonRender } from "@json-render/core";
 
 export const maxDuration = 60;
 
@@ -24,23 +23,12 @@ export async function POST(req: Request) {
     );
   }
 
-  // Convert UIMessages (parts-based) to ModelMessages (content-based) for the agent
   const modelMessages = await convertToModelMessages(uiMessages);
-
   const result = await agent.stream({ messages: modelMessages });
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      writer.merge(
-        result
-          .toUIMessageStream()
-          .pipeThrough(
-            createJsonRenderTransform() as unknown as TransformStream<
-              UIMessageChunk,
-              UIMessageChunk
-            >,
-          ),
-      );
+      writer.merge(pipeJsonRender(result.toUIMessageStream()));
     },
   });
 

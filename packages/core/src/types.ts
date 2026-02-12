@@ -965,3 +965,40 @@ export function createJsonRenderTransform(): TransformStream<
     },
   });
 }
+
+/**
+ * The data part type name used by json-render in AI SDK streams.
+ * Use this when defining custom data part types for `useChat`.
+ *
+ * @example
+ * ```ts
+ * import { JSON_RENDER_DATA_PART, type JsonPatch } from "@json-render/core";
+ * type AppDataParts = { [JSON_RENDER_DATA_PART]: JsonPatch };
+ * ```
+ */
+export const JSON_RENDER_DATA_PART = "jsonrender" as const;
+
+/**
+ * Convenience wrapper that pipes an AI SDK UI message stream through the
+ * json-render transform, classifying text as prose or JSONL patches.
+ *
+ * Eliminates the need for manual `pipeThrough(createJsonRenderTransform())`
+ * and the associated type cast.
+ *
+ * @example
+ * ```ts
+ * import { pipeJsonRender } from "@json-render/core";
+ *
+ * const stream = createUIMessageStream({
+ *   execute: async ({ writer }) => {
+ *     writer.merge(pipeJsonRender(result.toUIMessageStream()));
+ *   },
+ * });
+ * return createUIMessageStreamResponse({ stream });
+ * ```
+ */
+export function pipeJsonRender<T extends ReadableStream<StreamChunk>>(
+  stream: T,
+): T {
+  return stream.pipeThrough(createJsonRenderTransform()) as T;
+}

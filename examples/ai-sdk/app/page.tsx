@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import type { JsonPatch, Spec } from "@json-render/core";
-import { buildSpecFromParts, getTextFromParts } from "@json-render/react";
+import { JSON_RENDER_DATA_PART, type JsonPatch } from "@json-render/core";
+import { useJsonRenderMessage } from "@json-render/react";
 import { ExplorerRenderer } from "@/lib/render/renderer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ArrowUp, Loader2, Sparkles } from "lucide-react";
@@ -15,7 +15,7 @@ import { code } from "@streamdown/code";
 // Types
 // =============================================================================
 
-type AppDataParts = { jsonrender: JsonPatch };
+type AppDataParts = { [JSON_RENDER_DATA_PART]: JsonPatch };
 type AppMessage = UIMessage<unknown, AppDataParts>;
 
 // =============================================================================
@@ -48,14 +48,6 @@ const SUGGESTIONS = [
 ];
 
 // =============================================================================
-// SpecFromParts — derives Spec from data-jsonrender parts via useMemo
-// =============================================================================
-
-function useSpecFromParts(parts: AppMessage["parts"]): Spec | null {
-  return useMemo(() => buildSpecFromParts(parts), [parts]);
-}
-
-// =============================================================================
 // Message Bubble
 // =============================================================================
 
@@ -69,11 +61,7 @@ function MessageBubble({
   isStreaming: boolean;
 }) {
   const isUser = message.role === "user";
-  const spec = useSpecFromParts(message.parts);
-
-  const text = useMemo(() => getTextFromParts(message.parts), [message.parts]);
-
-  const hasSpec = spec && Object.keys(spec.elements || {}).length > 0;
+  const { spec, text, hasSpec } = useJsonRenderMessage(message.parts);
   const showLoader =
     isLast && isStreaming && message.role === "assistant" && !text && !hasSpec;
 
