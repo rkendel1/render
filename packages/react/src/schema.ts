@@ -20,8 +20,10 @@ export const schema = defineSchema(
           type: s.ref("catalog.components"),
           /** Component props */
           props: s.propsOf("catalog.components"),
-          /** Child element keys (flat reference) */
+          /** Child element keys (flat reference) - maps to the 'default' slot */
           children: s.array(s.string()),
+          /** Named slots - maps slot names to arrays of child element keys */
+          slots: s.record(s.array(s.string())),
           /** Visibility condition */
           visible: s.any(),
         }),
@@ -72,6 +74,9 @@ export const schema = defineSchema(
       // Element integrity
       "CRITICAL INTEGRITY CHECK: Before outputting ANY element that references children, you MUST have already output (or will output) each child as its own element. If an element has children: ['a', 'b'], then elements 'a' and 'b' MUST exist. A missing child element causes that entire branch of the UI to be invisible.",
       "SELF-CHECK: After generating all elements, mentally walk the tree from root. Every key in every children array must resolve to a defined element. If you find a gap, output the missing element immediately.",
+
+      // Named slots
+      'Components may declare named slots in their catalog definition (e.g., slots: ["header", "footer"]). Example: {"type":"Layout","props":{},"slots":{"header":["h1"],"footer":["f1"]},"children":["main1"]}. Verify slot names exist in the component\'s catalog definition and all referenced child element keys exist.',
 
       // Field placement
       'CRITICAL: The "visible" field goes on the ELEMENT object, NOT inside "props". Correct: {"type":"<ComponentName>","props":{},"visible":{"$state":"/tab","eq":"home"},"children":[...]}.',

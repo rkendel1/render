@@ -44,7 +44,13 @@ export const catalog = defineCatalog(schema, {
     },
     Card: {
       props: z.object({ title: z.string() }),
+      slots: ["default"],
       description: "Card container with title",
+    },
+    Layout: {
+      props: z.object({}),
+      slots: ["default", "header", "footer"],
+      description: "Full-page layout with named slots",
     },
   },
 });
@@ -59,6 +65,13 @@ const { registry } = defineRegistry(catalog, {
       <div className="card">
         <h2>{props.title}</h2>
         {children}
+      </div>
+    ),
+    Layout: ({ children, slots }) => (
+      <div className="layout">
+        <header>{slots?.header}</header>
+        <main>{children}</main>
+        <footer>{slots?.footer}</footer>
       </div>
     ),
   },
@@ -80,6 +93,80 @@ The React schema uses an element tree format:
   }
 }
 ```
+
+## Named Slots
+
+Components can define multiple named slots for flexible content placement. The `children` field maps to the default slot, while the `slots` field provides explicit slot assignments.
+
+### Defining Components with Named Slots
+
+```typescript
+// In catalog - declare available slots
+export const catalog = defineCatalog(schema, {
+  components: {
+    Layout: {
+      props: z.object({}),
+      slots: ["default", "header", "footer"],
+      description: "Layout with header, main content, and footer",
+    },
+  },
+});
+
+// In registry - receive slots via props
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Layout: ({ children, slots }) => (
+      <div>
+        <header>{slots?.header}</header>
+        <main>{children}</main>
+        <footer>{slots?.footer}</footer>
+      </div>
+    ),
+  },
+});
+```
+
+### Using Named Slots in Specs
+
+```json
+{
+  "root": "layout",
+  "elements": {
+    "layout": {
+      "type": "Layout",
+      "props": {},
+      "slots": {
+        "header": ["nav-bar"],
+        "footer": ["footer-content", "footer-copyright"]
+      },
+      "children": ["main-content"]
+    },
+    "nav-bar": {
+      "type": "Text",
+      "props": { "text": "Navigation" }
+    },
+    "main-content": {
+      "type": "Text",
+      "props": { "text": "Main content" }
+    },
+    "footer-content": {
+      "type": "Text",
+      "props": { "text": "Footer" }
+    },
+    "footer-copyright": {
+      "type": "Text",
+      "props": { "text": "© 2026" }
+    }
+  }
+}
+```
+
+### Slot Assignment Rules
+
+- **`children`** → Maps to the default slot (always use this for default content)
+- **`slots.header`, `slots.footer`, etc.** → Named slots for specific placement
+- **Never use `slots.default`** → This is incorrect; use `children` instead
+- Components receive `children` prop (default slot) and `slots` prop (named slots)
 
 ## Visibility Conditions
 

@@ -49,8 +49,10 @@ import { RepeatScopeProvider, useRepeatScope } from "./contexts/repeat-scope";
 export interface ComponentRenderProps<P = Record<string, unknown>> {
   /** The element being rendered */
   element: UIElement<string, P>;
-  /** Rendered children */
+  /** Rendered children (default slot) */
   children?: ReactNode;
+  /** Named slots - maps slot names to rendered children */
+  slots?: Record<string, ReactNode>;
   /** Emit a named event. The renderer resolves the event to action binding(s) from the element's `on` field. Always provided by the renderer. */
   emit: (event: string) => void;
   /** Get an event handle with metadata (shouldPreventDefault, bound). Use when you need to inspect event bindings. */
@@ -75,7 +77,12 @@ export type ComponentRenderer<P = Record<string, unknown>> = ComponentType<
 /**
  * Registry of component renderers
  */
-export type ComponentRegistry = Record<string, ComponentRenderer<any>>;
+export type ComponentRegistry = Record<string, ComponentRenderer<any>> & {
+  /** Metadata about components (for validation) */
+  __metadata__?: {
+    components: Record<string, { slots?: string[] }>;
+  };
+};
 
 /**
  * Props for the Renderer component
@@ -252,22 +259,39 @@ const ElementRenderer = React.memo(function ElementRenderer({
     return null;
   }
 
-  // ---- Render children (with repeat support) ----
-  const children = resolvedElement.repeat ? (
-    <RepeatChildren
-      element={resolvedElement}
-      spec={spec}
-      registry={registry}
-      loading={loading}
-      fallback={fallback}
-    />
-  ) : (
-    resolvedElement.children?.map((childKey) => {
+  // Validate slots
+  if (resolvedElement.slots && registry.__metadata__) {
+    const componentMeta =
+      registry.__metadata__.components[resolvedElement.type];
+    if (componentMeta?.slots) {
+      const declaredSlots = new Set(componentMeta.slots);
+      for (const slotName of Object.keys(resolvedElement.slots)) {
+        if (slotName === "default") {
+          console.warn(
+            `[json-render] Component "${resolvedElement.type}" uses slots.default. ` +
+              `Use the "children" field instead for default slot content.`,
+          );
+        } else if (!declaredSlots.has(slotName)) {
+          console.warn(
+            `[json-render] Unknown slot "${slotName}" on component "${resolvedElement.type}". ` +
+              `Available slots: ${componentMeta.slots.join(", ")}`,
+          );
+        }
+      }
+    }
+  }
+
+  // ---- Render children (with repeat support) and named slots ----
+  const renderChildKeys = (childKeys: string[], slotName?: string) => {
+    return childKeys.map((childKey) => {
       const childElement = spec.elements[childKey];
       if (!childElement) {
         if (!loading) {
+          const location = slotName
+            ? `in slot "${slotName}" of "${resolvedElement.type}"`
+            : `as child of "${resolvedElement.type}"`;
           console.warn(
-            `[json-render] Missing element "${childKey}" referenced as child of "${resolvedElement.type}". This element will not render.`,
+            `[json-render] Missing element "${childKey}" referenced ${location}. This element will not render.`,
           );
         }
         return null;
@@ -282,8 +306,29 @@ const ElementRenderer = React.memo(function ElementRenderer({
           fallback={fallback}
         />
       );
-    })
-  );
+    });
+  };
+
+  const children = resolvedElement.repeat ? (
+    <RepeatChildren
+      element={resolvedElement}
+      spec={spec}
+      registry={registry}
+      loading={loading}
+      fallback={fallback}
+    />
+  ) : resolvedElement.children ? (
+    renderChildKeys(resolvedElement.children)
+  ) : undefined;
+
+  const slots = resolvedElement.slots
+    ? Object.fromEntries(
+        Object.entries(resolvedElement.slots).map(([slotName, childKeys]) => [
+          slotName,
+          renderChildKeys(childKeys, slotName),
+        ]),
+      )
+    : undefined;
 
   return (
     <ElementErrorBoundary elementType={resolvedElement.type}>
@@ -293,6 +338,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
         on={on}
         bindings={elementBindings}
         loading={loading}
+        slots={slots}
       >
         {children}
       </Component>
@@ -551,6 +597,7 @@ export function defineRegistry<C extends Catalog>(
       registry[name] = ({
         element,
         children,
+        slots,
         emit,
         on,
         bindings,
@@ -559,6 +606,7 @@ export function defineRegistry<C extends Catalog>(
         return (componentFn as DefineRegistryComponentFn)({
           props: element.props,
           children,
+          slots,
           emit,
           on,
           bindings,
@@ -566,6 +614,21 @@ export function defineRegistry<C extends Catalog>(
         });
       };
     }
+  }
+
+  // Attach metadata from catalog for slot validation
+  const catalogData = catalog.data as {
+    components?: Record<string, { slots?: string[] }>;
+  };
+  if (catalogData.components) {
+    registry.__metadata__ = {
+      components: Object.fromEntries(
+        Object.entries(catalogData.components).map(([name, def]) => [
+          name,
+          { slots: def.slots },
+        ]),
+      ),
+    };
   }
 
   // Build action helpers
@@ -616,6 +679,7 @@ export function defineRegistry<C extends Catalog>(
 type DefineRegistryComponentFn = (ctx: {
   props: unknown;
   children?: React.ReactNode;
+  slots?: Record<string, React.ReactNode>;
   emit: (event: string) => void;
   on: (event: string) => EventHandle;
   bindings?: Record<string, string>;
