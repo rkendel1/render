@@ -313,7 +313,7 @@ export const { registry, handlers } = defineRegistry(explorerCatalog, {
           )}
           <ChartContainer
             config={chartConfig}
-            className="min-h-[200px] w-full"
+            className="min-h-[200px] w-full [&_svg]:overflow-visible"
             style={{ height: props.height ?? 300 }}
           >
             <RechartsLineChart accessibilityLayer data={items}>
@@ -323,7 +323,6 @@ export const { registry, handlers } = defineRegistry(explorerCatalog, {
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
-                padding={{ left: 20, right: 20 }}
                 interval={
                   items.length > 12
                     ? Math.ceil(items.length / 8) - 1
