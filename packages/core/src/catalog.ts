@@ -298,11 +298,12 @@ export type InferCatalogComponentProps<
  * Internal Zod definition type for introspection
  */
 interface ZodDefInternal {
-  typeName?: string;
+  type?: string;
   value?: unknown;
   values?: unknown;
-  type?: z.ZodTypeAny;
-  shape?: () => Record<string, z.ZodTypeAny>;
+  entries?: Record<string, string>;
+  element?: z.ZodTypeAny;
+  shape?: Record<string, z.ZodTypeAny>;
   innerType?: z.ZodTypeAny;
   options?: z.ZodTypeAny[];
 }
@@ -312,77 +313,72 @@ interface ZodDefInternal {
  */
 function formatZodType(schema: z.ZodTypeAny, isOptional = false): string {
   const def = schema._def as unknown as ZodDefInternal;
-  const typeName = def.typeName ?? "";
+  const typeName = def.type ?? "";
 
   let result: string;
 
   switch (typeName) {
-    case "ZodString":
+    case "string":
       result = "string";
       break;
-    case "ZodNumber":
+    case "number":
       result = "number";
       break;
-    case "ZodBoolean":
+    case "boolean":
       result = "boolean";
       break;
-    case "ZodLiteral":
-      result = JSON.stringify(def.value);
+    case "literal":
+      result = (def.values as unknown[])
+        .map((v) => JSON.stringify(v))
+        .join(" | ");
       break;
-    case "ZodEnum":
-      result = (def.values as string[]).map((v) => `"${v}"`).join("|");
-      break;
-    case "ZodNativeEnum":
-      result = Object.values(def.values as Record<string, string>)
+    case "enum":
+      result = Object.values(def.entries as Record<string, string>)
         .map((v) => `"${v}"`)
-        .join("|");
+        .join(" | ");
       break;
-    case "ZodArray":
-      result = def.type
-        ? `Array<${formatZodType(def.type)}>`
+    case "array":
+      result = def.element
+        ? `Array<${formatZodType(def.element)}>`
         : "Array<unknown>";
       break;
-    case "ZodObject": {
+    case "object": {
       if (!def.shape) {
         result = "object";
         break;
       }
-      const shape = def.shape();
-      const props = Object.entries(shape)
+      const props = Object.entries(def.shape)
         .map(([key, value]) => {
           const innerDef = value._def as unknown as ZodDefInternal;
           const innerOptional =
-            innerDef.typeName === "ZodOptional" ||
-            innerDef.typeName === "ZodNullable";
+            innerDef.type === "optional" || innerDef.type === "nullable";
           return `${key}${innerOptional ? "?" : ""}: ${formatZodType(value)}`;
         })
         .join(", ");
       result = `{ ${props} }`;
       break;
     }
-    case "ZodOptional":
-      return def.innerType ? formatZodType(def.innerType, true) : "unknown?";
-    case "ZodNullable":
-      return def.innerType ? formatZodType(def.innerType, true) : "unknown?";
-    case "ZodDefault":
+    case "optional":
+    case "nullable":
+    case "default":
       return def.innerType
         ? formatZodType(def.innerType, isOptional)
         : "unknown";
-    case "ZodUnion":
+    case "union":
       result = def.options
-        ? def.options.map((opt) => formatZodType(opt)).join("|")
+        ? def.options.map((opt) => formatZodType(opt)).join(" | ")
         : "unknown";
       break;
-    case "ZodNull":
+    case "null":
       result = "null";
       break;
-    case "ZodUndefined":
+    case "undefined":
       result = "undefined";
       break;
-    case "ZodAny":
+    case "any":
       result = "any";
       break;
-    case "ZodUnknown":
+    case "unknown":
       result = "unknown";
       break;
     default:
@@ -399,18 +395,15 @@ function extractPropsFromSchema(
   schema: z.ZodTypeAny,
 ): Array<{ name: string; type: string; optional: boolean }> {
   const def = schema._def as unknown as ZodDefInternal;
-  const typeName = def.typeName ?? "";
 
-  if (typeName !== "ZodObject" || !def.shape) {
+  if (def.type !== "object" || !def.shape) {
     return [];
   }
 
-  const shape = def.shape();
-  return Object.entries(shape).map(([name, value]) => {
+  return Object.entries(def.shape).map(([name, value]) => {
     const innerDef = value._def as unknown as ZodDefInternal;
     const optional =
-      innerDef.typeName === "ZodOptional" ||
-      innerDef.typeName === "ZodNullable";
+      innerDef.type === "optional" || innerDef.type === "nullable";
     return {
       name,
       type: formatZodType(value),

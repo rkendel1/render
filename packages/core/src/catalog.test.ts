@@ -385,6 +385,68 @@ describe("generateSystemPrompt", () => {
     expect(prompt).toContain("phoneNumber");
     expect(prompt).toContain("zipCode");
   });
+
+  it("formats discriminatedUnion props with correct literal types", () => {
+    const catalog = createCatalog({
+      components: {
+        Container: {
+          props: z.object({
+            content: z.discriminatedUnion("type", [
+              z.object({
+                type: z.literal("text"),
+                text: z.string(),
+                variant: z.enum(["default", "heading", "caption"]).optional(),
+              }),
+              z.object({
+                type: z.literal("image"),
+                url: z.string(),
+                alt: z.string().optional(),
+              }),
+            ]),
+          }),
+          description: "A container",
+        },
+      },
+    });
+
+    const prompt = generateSystemPrompt(catalog);
+
+    // discriminator field should show literal values, not "undefined"
+    expect(prompt).toContain('type: "text"');
+    expect(prompt).toContain('type: "image"');
+    expect(prompt).not.toContain("type: undefined");
+
+    // other fields should still render correctly
+    expect(prompt).toContain("text: string");
+    expect(prompt).toContain("url: string");
+    expect(prompt).toContain("alt?: string");
+    expect(prompt).toContain('"default" | "heading" | "caption"');
+  });
+
+  it("formats nativeEnum props correctly", () => {
+    enum Status {
+      Active = "active",
+      Inactive = "inactive",
+      Pending = "pending",
+    }
+
+    const catalog = createCatalog({
+      components: {
+        Badge: {
+          props: z.object({
+            status: z.enum(Status),
+            label: z.string().optional(),
+          }),
+          description: "Status badge",
+        },
+      },
+    });
+
+    const prompt = generateSystemPrompt(catalog);
+
+    expect(prompt).toContain('"active" | "inactive" | "pending"');
+    expect(prompt).toContain("label?: string");
+  });
 });
 
 describe("defineCatalog (new schema API)", () => {
