@@ -1,6 +1,40 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+// =============================================================================
+// Helpers
+// =============================================================================
+
+function handleFetchError(res: Response, coinId: string) {
+  if (res.status === 404) {
+    return { error: `Cryptocurrency not found: ${coinId}` };
+  }
+  if (res.status === 429) {
+    return { error: "CoinGecko rate limit exceeded. Try again in a minute." };
+  }
+  return { error: `Failed to fetch crypto data: ${res.statusText}` };
+}
+
+function sampleTimeSeries(
+  prices: [number, number][],
+  maxPoints: number,
+): Array<{ date: string; price: number }> {
+  const step = Math.max(1, Math.floor(prices.length / maxPoints));
+  return prices
+    .filter((_, i) => i % step === 0)
+    .map(([timestamp, price]) => ({
+      date: new Date(timestamp).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      price: Math.round(price * 100) / 100,
+    }));
+}
+
+// =============================================================================
+// getCryptoPrice — current market data + 7-day sparkline
+// =============================================================================
+
 /**
  * Get cryptocurrency market data from CoinGecko.
  * Free public API, no API key required.
@@ -8,7 +42,7 @@ import { z } from "zod";
  */
 export const getCryptoPrice = tool({
   description:
-    "Get current price, market cap, 24h change, and 7-day price history for a cryptocurrency. Use coin IDs like 'bitcoin', 'ethereum', 'solana', 'dogecoin'.",
+    "Get current price, market cap, 24h change, and 7-day sparkline for a cryptocurrency. For longer price history (30d, 90d, 365d), use getCryptoPriceHistory instead.",
   inputSchema: z.object({
     coinId: z
       .string()
@@ -23,17 +57,7 @@ export const getCryptoPrice = tool({
       headers: { Accept: "application/json" },
     });
 
-    if (!res.ok) {
-      if (res.status === 404) {
-        return { error: `Cryptocurrency not found: ${coinId}` };
-      }
-      if (res.status === 429) {
-        return {
-          error: "CoinGecko rate limit exceeded. Try again in a minute.",
-        };
-      }
-      return { error: `Failed to fetch crypto data: ${res.statusText}` };
-    }
+    if (!res.ok) return handleFetchError(res, coinId);
 
     const data = (await res.json()) as {
       id: string;
@@ -59,16 +83,20 @@ export const getCryptoPrice = tool({
 
     const md = data.market_data;
 
-    // Sample sparkline to ~14 points for chart display
+    // Convert sparkline (hourly array) to dated points
+    const now = Date.now();
     const sparkline = md.sparkline_7d.price;
     const step = Math.max(1, Math.floor(sparkline.length / 14));
     const sparklineData = sparkline
       .filter((_, i) => i % step === 0)
       .map((price, i) => {
         const hourIndex = i * step;
-        const day = Math.floor(hourIndex / 24) + 1;
+        const ts = now - (sparkline.length - hourIndex) * 3600_000;
         return {
-          day: `Day ${day}`,
+          date: new Date(ts).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          }),
           price: Math.round(price * 100) / 100,
         };
       });
@@ -91,6 +119,47 @@ export const getCryptoPrice = tool({
       circulatingSupply: md.circulating_supply,
       totalSupply: md.total_supply,
       sparkline7d: sparklineData,
+    };
+  },
+});
+
+// =============================================================================
+// getCryptoPriceHistory — flexible date range price history
+// =============================================================================
+
+export const getCryptoPriceHistory = tool({
+  description:
+    "Get historical price data for a cryptocurrency over a specified number of days (e.g., 30, 90, 365). Returns date-labeled data points suitable for charting.",
+  inputSchema: z.object({
+    coinId: z
+      .string()
+      .describe("CoinGecko coin ID (e.g., 'bitcoin', 'ethereum', 'solana')"),
+    days: z
+      .number()
+      .int()
+      .min(1)
+      .max(365)
+      .describe("Number of days of history to fetch (e.g., 30, 90, 365)"),
+  }),
+  execute: async ({ coinId, days }) => {
+    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(coinId)}/market_chart?vs_currency=usd&days=${days}`;
+
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) return handleFetchError(res, coinId);
+
+    const data = (await res.json()) as {
+      prices: [number, number][];
+    };
+
+    const priceHistory = sampleTimeSeries(data.prices, 20);
+
+    return {
+      coinId,
+      days,
+      priceHistory,
     };
   },
 });

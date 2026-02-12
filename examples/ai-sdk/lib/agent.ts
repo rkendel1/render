@@ -3,7 +3,7 @@ import { gateway } from "@ai-sdk/gateway";
 import { explorerCatalog } from "./render/catalog";
 import { getWeather } from "./tools/weather";
 import { getGitHubRepo } from "./tools/github";
-import { getCryptoPrice } from "./tools/crypto";
+import { getCryptoPrice, getCryptoPriceHistory } from "./tools/crypto";
 import { getHackerNewsTop } from "./tools/hackernews";
 
 const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
@@ -44,6 +44,7 @@ export const agent = new ToolLoopAgent({
     getWeather,
     getGitHubRepo,
     getCryptoPrice,
+    getCryptoPriceHistory,
     getHackerNewsTop,
   },
   stopWhen: stepCountIs(5),
