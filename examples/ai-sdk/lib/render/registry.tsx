@@ -323,6 +323,7 @@ export const { registry, handlers } = defineRegistry(explorerCatalog, {
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
+                padding={{ left: 20, right: 20 }}
                 interval={
                   items.length > 12
                     ? Math.ceil(items.length / 8) - 1
