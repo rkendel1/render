@@ -1,20 +1,13 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useUIStream, type Spec } from "@json-render/react";
+import { useChatUI, type ChatMessage } from "@/lib/use-chat-ui";
 import { ExplorerRenderer } from "@/lib/render/renderer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ArrowUp, Loader2, Trash2, Clock, Sparkles } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles, User, Bot, Trash2 } from "lucide-react";
 
 // =============================================================================
-// Suggested Queries
+// Suggestions (shown in empty state)
 // =============================================================================
 
 const SUGGESTIONS = [
@@ -37,82 +30,106 @@ const SUGGESTIONS = [
 ];
 
 // =============================================================================
-// History
+// Message Bubble
 // =============================================================================
 
-interface HistoryEntry {
-  id: string;
-  prompt: string;
-  spec: Spec;
-  createdAt: string;
-}
+function MessageBubble({
+  message,
+  isLast,
+  isStreaming,
+}: {
+  message: ChatMessage;
+  isLast: boolean;
+  isStreaming: boolean;
+}) {
+  const isUser = message.role === "user";
+  const hasSpec =
+    message.spec && Object.keys(message.spec.elements || {}).length > 0;
+  const showLoader =
+    isLast &&
+    isStreaming &&
+    message.role === "assistant" &&
+    !message.text &&
+    !hasSpec;
 
-function loadHistory(): HistoryEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem("ai-sdk-explorer-history");
-    return raw ? (JSON.parse(raw) as HistoryEntry[]) : [];
-  } catch {
-    return [];
-  }
-}
+  return (
+    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
+      {/* Avatar */}
+      <div
+        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+          isUser
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-muted-foreground"
+        }`}
+      >
+        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+      </div>
 
-function saveHistory(entries: HistoryEntry[]) {
-  try {
-    // Keep only the last 20 entries
-    const trimmed = entries.slice(0, 20);
-    localStorage.setItem("ai-sdk-explorer-history", JSON.stringify(trimmed));
-  } catch {
-    // localStorage might be full or unavailable
-  }
+      {/* Content */}
+      <div
+        className={`flex flex-col gap-2 min-w-0 max-w-[85%] ${isUser ? "items-end" : "items-start"}`}
+      >
+        {/* Text content */}
+        {message.text && (
+          <div
+            className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+              isUser
+                ? "bg-primary text-primary-foreground rounded-tr-md"
+                : "bg-muted rounded-tl-md"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        {/* Loading indicator */}
+        {showLoader && (
+          <div className="bg-muted rounded-2xl rounded-tl-md px-4 py-2.5 text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Thinking...</span>
+          </div>
+        )}
+
+        {/* Rendered UI spec */}
+        {hasSpec && (
+          <div className="w-full min-w-[400px] max-w-[800px] rounded-xl border bg-card p-4 shadow-sm">
+            <ExplorerRenderer
+              spec={message.spec}
+              loading={isLast && isStreaming}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // =============================================================================
 // Page
 // =============================================================================
 
-export default function ExplorerPage() {
-  const [prompt, setPrompt] = useState("");
-  const [currentPrompt, setCurrentPrompt] = useState("");
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+export default function ChatPage() {
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load history on mount
-  useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
-
-  const { spec, isStreaming, error, send, clear } = useUIStream({
+  const { messages, isStreaming, error, send, clear } = useChatUI({
     api: "/api/generate",
-    onError: (err) => console.error("Explorer error:", err),
-    onComplete: (completedSpec) => {
-      if (completedSpec && currentPrompt) {
-        const entry: HistoryEntry = {
-          id: crypto.randomUUID(),
-          prompt: currentPrompt,
-          spec: completedSpec,
-          createdAt: new Date().toISOString(),
-        };
-        setHistory((prev) => {
-          const next = [entry, ...prev];
-          saveHistory(next);
-          return next;
-        });
-      }
-    },
   });
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isStreaming]);
 
   const handleSubmit = useCallback(
     async (text?: string) => {
-      const p = text || prompt;
-      if (!p.trim() || isStreaming) return;
-      setCurrentPrompt(p);
-      setPrompt("");
-      setShowHistory(false);
-      await send(p);
+      const message = text || input;
+      if (!message.trim() || isStreaming) return;
+      setInput("");
+      await send(message);
     },
-    [prompt, isStreaming, send],
+    [input, isStreaming, send],
   );
 
   const handleKeyDown = useCallback(
@@ -125,34 +142,18 @@ export default function ExplorerPage() {
     [handleSubmit],
   );
 
-  const handleLoadHistory = useCallback(
-    (entry: HistoryEntry) => {
-      setCurrentPrompt(entry.prompt);
-      setShowHistory(false);
-      // Re-run the query
-      handleSubmit(entry.prompt);
-    },
-    [handleSubmit],
-  );
-
-  const handleClearHistory = useCallback(() => {
-    setHistory([]);
-    saveHistory([]);
-  }, []);
-
   const handleClear = useCallback(() => {
     clear();
-    setCurrentPrompt("");
-    setPrompt("");
+    setInput("");
     inputRef.current?.focus();
   }, [clear]);
 
-  const hasResult = spec && Object.keys(spec.elements || {}).length > 0;
+  const isEmpty = messages.length === 0;
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b px-6 py-3 flex items-center justify-between">
+      <header className="border-b px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-semibold">AI Data Explorer</h1>
           <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">
@@ -160,27 +161,25 @@ export default function ExplorerPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {history.length > 0 && (
+          {messages.length > 0 && (
             <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="p-2 rounded-md border border-border bg-card hover:bg-accent transition-colors relative"
-              aria-label="History"
+              onClick={handleClear}
+              className="p-2 rounded-md border border-border bg-card hover:bg-accent transition-colors"
+              aria-label="New chat"
+              title="New chat"
             >
-              <Clock className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
-                {history.length}
-              </span>
+              <Trash2 className="h-4 w-4" />
             </button>
           )}
           <ThemeToggle />
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col">
-        {/* Empty state / prompt area */}
-        {!hasResult && !isStreaming && !error ? (
-          <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+      {/* Messages area */}
+      <main className="flex-1 overflow-auto">
+        {isEmpty ? (
+          /* Empty state */
+          <div className="h-full flex flex-col items-center justify-center px-6 py-12">
             <div className="max-w-2xl w-full space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-2xl font-semibold tracking-tight">
@@ -190,27 +189,6 @@ export default function ExplorerPage() {
                   Ask about weather, GitHub repos, crypto prices, or Hacker News
                   -- the agent will fetch real data and build a dashboard.
                 </p>
-              </div>
-
-              {/* Prompt input */}
-              <div className="relative">
-                <textarea
-                  ref={inputRef}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="e.g., Compare weather in NYC, London, and Tokyo..."
-                  rows={3}
-                  className="w-full resize-none rounded-xl border border-input bg-card px-4 py-3 pr-12 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  autoFocus
-                />
-                <button
-                  onClick={() => handleSubmit()}
-                  disabled={!prompt.trim() || isStreaming}
-                  className="absolute right-3 bottom-3 h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
               </div>
 
               {/* Suggestions */}
@@ -229,104 +207,59 @@ export default function ExplorerPage() {
             </div>
           </div>
         ) : (
-          /* Results area */
-          <div className="flex-1 flex flex-col">
-            {/* Current query bar */}
-            <div className="border-b px-6 py-3 flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{currentPrompt}</p>
-              </div>
-              {isStreaming && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Generating...</span>
-                </div>
-              )}
-              {!isStreaming && (
-                <button
-                  onClick={handleClear}
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  title="New query"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+          /* Message thread */
+          <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+            {messages.map((message, index) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                isLast={index === messages.length - 1}
+                isStreaming={isStreaming}
+              />
+            ))}
 
             {/* Error display */}
             {error && (
-              <div className="px-6 py-4">
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {error.message}
-                </div>
+              <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error.message}
               </div>
             )}
 
-            {/* Rendered dashboard */}
-            <div className="flex-1 overflow-auto px-6 py-6">
-              <ExplorerRenderer spec={spec} loading={isStreaming} />
-            </div>
-
-            {/* Follow-up input */}
-            {!isStreaming && hasResult && (
-              <div className="border-t px-6 py-3">
-                <div className="max-w-2xl mx-auto relative">
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask a follow-up or try a new query..."
-                    rows={2}
-                    className="w-full resize-none rounded-xl border border-input bg-card px-4 py-3 pr-12 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
-                  <button
-                    onClick={() => handleSubmit()}
-                    disabled={!prompt.trim()}
-                    className="absolute right-3 bottom-3 h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </main>
 
-      {/* History panel */}
-      {showHistory && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setShowHistory(false)}
+      {/* Input bar - always visible at bottom */}
+      <div className="border-t px-6 py-3 flex-shrink-0 bg-background">
+        <div className="max-w-4xl mx-auto relative">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              isEmpty
+                ? "e.g., Compare weather in NYC, London, and Tokyo..."
+                : "Ask a follow-up..."
+            }
+            rows={2}
+            className="w-full resize-none rounded-xl border border-input bg-card px-4 py-3 pr-12 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            autoFocus
           />
-          <div className="w-80 bg-background border-l flex flex-col">
-            <div className="px-4 py-3 border-b flex items-center justify-between">
-              <h3 className="font-medium text-sm">History</h3>
-              <button
-                onClick={handleClearHistory}
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-              >
-                Clear all
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto">
-              {history.map((entry) => (
-                <button
-                  key={entry.id}
-                  onClick={() => handleLoadHistory(entry)}
-                  className="w-full text-left px-4 py-3 border-b hover:bg-accent transition-colors"
-                >
-                  <p className="text-sm font-medium truncate">{entry.prompt}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(entry.createdAt).toLocaleString()}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
+          <button
+            onClick={() => handleSubmit()}
+            disabled={!input.trim() || isStreaming}
+            className="absolute right-3 bottom-3 h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isStreaming ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowUp className="h-4 w-4" />
+            )}
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
