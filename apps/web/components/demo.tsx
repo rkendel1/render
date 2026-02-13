@@ -33,7 +33,7 @@ const NAME_INPUT = {
     label: "Name",
     name: "name",
     statePath: "/form/name",
-    checks: [{ fn: "required", message: "Name is required" }],
+    checks: [{ type: "required", message: "Name is required" }],
   },
 } as const;
 
@@ -45,8 +45,8 @@ const EMAIL_INPUT = {
     type: "email",
     statePath: "/form/email",
     checks: [
-      { fn: "required", message: "Email is required" },
-      { fn: "email", message: "Please enter a valid email" },
+      { type: "required", message: "Email is required" },
+      { type: "email", message: "Please enter a valid email" },
     ],
   },
 } as const;
@@ -57,7 +57,7 @@ const MESSAGE_INPUT = {
     label: "Message",
     name: "message",
     statePath: "/form/message",
-    checks: [{ fn: "required", message: "Message is required" }],
+    checks: [{ type: "required", message: "Message is required" }],
   },
 } as const;
 
@@ -96,7 +96,7 @@ const SIMULATION_STAGES: SimulationStage[] = [
       },
     },
     stream:
-      '{"op":"add","path":"/elements/name","value":{"type":"Input","props":{"label":"Name","name":"name","statePath":"/form/name","checks":[{"fn":"required","message":"Name is required"}]}}}',
+      '{"op":"add","path":"/elements/name","value":{"type":"Input","props":{"label":"Name","name":"name","statePath":"/form/name","checks":[{"type":"required","message":"Name is required"}]}}}',
   },
   {
     tree: {
@@ -113,7 +113,7 @@ const SIMULATION_STAGES: SimulationStage[] = [
       },
     },
     stream:
-      '{"op":"add","path":"/elements/email","value":{"type":"Input","props":{"label":"Email","name":"email","type":"email","statePath":"/form/email","checks":[{"fn":"required","message":"Email is required"},{"fn":"email","message":"Please enter a valid email"}]}}}',
+      '{"op":"add","path":"/elements/email","value":{"type":"Input","props":{"label":"Email","name":"email","type":"email","statePath":"/form/email","checks":[{"type":"required","message":"Email is required"},{"type":"email","message":"Please enter a valid email"}]}}}',
   },
   {
     tree: {
@@ -131,7 +131,7 @@ const SIMULATION_STAGES: SimulationStage[] = [
       },
     },
     stream:
-      '{"op":"add","path":"/elements/message","value":{"type":"Textarea","props":{"label":"Message","name":"message","statePath":"/form/message","checks":[{"fn":"required","message":"Message is required"}]}}}',
+      '{"op":"add","path":"/elements/message","value":{"type":"Textarea","props":{"label":"Message","name":"message","statePath":"/form/message","checks":[{"type":"required","message":"Message is required"}]}}}',
   },
   {
     tree: {

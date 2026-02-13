@@ -203,8 +203,8 @@ Add field validation:
 // Use validation hooks:
 const { errors, validate } = useFieldValidation("/form/email", {
   checks: [
-    { fn: "required", message: "Email required" },
-    { fn: "email", message: "Invalid email" },
+    { type: "required", message: "Email required" },
+    { type: "email", message: "Invalid email" },
   ],
 });
 ```

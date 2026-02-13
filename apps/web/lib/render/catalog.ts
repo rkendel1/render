@@ -301,7 +301,7 @@ export const playgroundCatalog = defineCatalog(schema, {
         checks: z
           .array(
             z.object({
-              fn: z.string(),
+              type: z.string(),
               message: z.string(),
               args: z.record(z.string(), z.unknown()).optional(),
             }),
@@ -329,7 +329,7 @@ export const playgroundCatalog = defineCatalog(schema, {
         checks: z
           .array(
             z.object({
-              fn: z.string(),
+              type: z.string(),
               message: z.string(),
               args: z.record(z.string(), z.unknown()).optional(),
             }),
@@ -350,7 +350,7 @@ export const playgroundCatalog = defineCatalog(schema, {
         checks: z
           .array(
             z.object({
-              fn: z.string(),
+              type: z.string(),
               message: z.string(),
               args: z.record(z.string(), z.unknown()).optional(),
             }),

@@ -830,6 +830,52 @@ Note: state patches appear right after the elements that use them, so the UI fil
   );
   lines.push("");
 
+  // Validation section — only emit when at least one component has a `checks` prop
+  const hasChecksComponents = allComponents
+    ? Object.entries(allComponents).some(([, def]) => {
+        if (!def.props) return false;
+        const formatted = formatZodType(def.props);
+        return formatted.includes("checks");
+      })
+    : false;
+
+  if (hasChecksComponents) {
+    lines.push("VALIDATION:");
+    lines.push(
+      "Form components that accept a `checks` prop support client-side validation.",
+    );
+    lines.push(
+      'Each check is an object: { "type": "<name>", "message": "...", "args": { ... } }',
+    );
+    lines.push("");
+    lines.push("Built-in validation types:");
+    lines.push("  - required — value must be non-empty");
+    lines.push("  - email — valid email format");
+    lines.push('  - minLength — minimum string length (args: { "min": N })');
+    lines.push('  - maxLength — maximum string length (args: { "max": N })');
+    lines.push('  - pattern — match a regex (args: { "pattern": "regex" })');
+    lines.push('  - min — minimum numeric value (args: { "min": N })');
+    lines.push('  - max — maximum numeric value (args: { "max": N })');
+    lines.push("  - numeric — value must be a number");
+    lines.push("  - url — valid URL format");
+    lines.push(
+      '  - matches — must equal another field (args: { "other": "value" })',
+    );
+    lines.push("");
+    lines.push("Example:");
+    lines.push(
+      '  "checks": [{ "type": "required", "message": "Email is required" }, { "type": "email", "message": "Invalid email" }]',
+    );
+    lines.push("");
+    lines.push(
+      "IMPORTANT: When using checks, the component must also have a statePath for two-way binding.",
+    );
+    lines.push(
+      "Always include validation checks on form inputs for a good user experience (e.g. required, email, minLength).",
+    );
+    lines.push("");
+  }
+
   // Rules
   lines.push("RULES:");
   const baseRules =

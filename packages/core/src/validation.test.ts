@@ -192,11 +192,11 @@ describe("builtInValidationFunctions", () => {
 describe("runValidationCheck", () => {
   it("runs a validation check and returns result", () => {
     const result = runValidationCheck(
-      { fn: "required", message: "Required" },
+      { type: "required", message: "Required" },
       { value: "hello", dataModel: {} },
     );
 
-    expect(result.fn).toBe("required");
+    expect(result.type).toBe("required");
     expect(result.valid).toBe(true);
     expect(result.message).toBe("Required");
   });
@@ -204,7 +204,7 @@ describe("runValidationCheck", () => {
   it("resolves dynamic args from dataModel", () => {
     const result = runValidationCheck(
       {
-        fn: "minLength",
+        type: "minLength",
         args: { min: { path: "/minLen" } },
         message: "Too short",
       },
@@ -216,7 +216,7 @@ describe("runValidationCheck", () => {
 
   it("returns valid for unknown functions with warning", () => {
     const result = runValidationCheck(
-      { fn: "unknownFunction", message: "Unknown" },
+      { type: "unknownFunction", message: "Unknown" },
       { value: "test", dataModel: {} },
     );
 
@@ -230,7 +230,7 @@ describe("runValidationCheck", () => {
     };
 
     const result = runValidationCheck(
-      { fn: "startsWithA", message: "Must start with A" },
+      { type: "startsWithA", message: "Must start with A" },
       { value: "Apple", dataModel: {}, customFunctions },
     );
 
@@ -243,8 +243,8 @@ describe("runValidation", () => {
     const result = runValidation(
       {
         checks: [
-          { fn: "required", message: "Required" },
-          { fn: "email", message: "Invalid email" },
+          { type: "required", message: "Required" },
+          { type: "email", message: "Invalid email" },
         ],
       },
       { value: "test@example.com", dataModel: {} },
@@ -259,8 +259,8 @@ describe("runValidation", () => {
     const result = runValidation(
       {
         checks: [
-          { fn: "required", message: "Required" },
-          { fn: "email", message: "Invalid email" },
+          { type: "required", message: "Required" },
+          { type: "email", message: "Invalid email" },
         ],
       },
       { value: "", dataModel: {} },
@@ -274,7 +274,7 @@ describe("runValidation", () => {
   it("skips validation when enabled condition is false", () => {
     const result = runValidation(
       {
-        checks: [{ fn: "required", message: "Required" }],
+        checks: [{ type: "required", message: "Required" }],
         enabled: { eq: [1, 2] }, // Always false
       },
       { value: "", dataModel: {} },
@@ -287,7 +287,7 @@ describe("runValidation", () => {
   it("runs validation when enabled condition is true", () => {
     const result = runValidation(
       {
-        checks: [{ fn: "required", message: "Required" }],
+        checks: [{ type: "required", message: "Required" }],
         enabled: { eq: [1, 1] }, // Always true
       },
       { value: "", dataModel: {} },
@@ -309,7 +309,7 @@ describe("check helper", () => {
     it("creates required check with default message", () => {
       const c = check.required();
 
-      expect(c.fn).toBe("required");
+      expect(c.type).toBe("required");
       expect(c.message).toBe("This field is required");
     });
 
@@ -324,7 +324,7 @@ describe("check helper", () => {
     it("creates email check with default message", () => {
       const c = check.email();
 
-      expect(c.fn).toBe("email");
+      expect(c.type).toBe("email");
       expect(c.message).toBe("Invalid email address");
     });
   });
@@ -333,7 +333,7 @@ describe("check helper", () => {
     it("creates minLength check with args", () => {
       const c = check.minLength(5, "Too short");
 
-      expect(c.fn).toBe("minLength");
+      expect(c.type).toBe("minLength");
       expect(c.args).toEqual({ min: 5 });
       expect(c.message).toBe("Too short");
     });
@@ -349,7 +349,7 @@ describe("check helper", () => {
     it("creates maxLength check with args", () => {
       const c = check.maxLength(100);
 
-      expect(c.fn).toBe("maxLength");
+      expect(c.type).toBe("maxLength");
       expect(c.args).toEqual({ max: 100 });
     });
   });
@@ -358,7 +358,7 @@ describe("check helper", () => {
     it("creates pattern check", () => {
       const c = check.pattern("^[a-z]+$", "Letters only");
 
-      expect(c.fn).toBe("pattern");
+      expect(c.type).toBe("pattern");
       expect(c.args).toEqual({ pattern: "^[a-z]+$" });
       expect(c.message).toBe("Letters only");
     });
@@ -368,7 +368,7 @@ describe("check helper", () => {
     it("creates min check", () => {
       const c = check.min(0, "Must be positive");
 
-      expect(c.fn).toBe("min");
+      expect(c.type).toBe("min");
       expect(c.args).toEqual({ min: 0 });
     });
   });
@@ -377,7 +377,7 @@ describe("check helper", () => {
     it("creates max check", () => {
       const c = check.max(100);
 
-      expect(c.fn).toBe("max");
+      expect(c.type).toBe("max");
       expect(c.args).toEqual({ max: 100 });
     });
   });
@@ -386,7 +386,7 @@ describe("check helper", () => {
     it("creates url check", () => {
       const c = check.url("Must be a URL");
 
-      expect(c.fn).toBe("url");
+      expect(c.type).toBe("url");
       expect(c.message).toBe("Must be a URL");
     });
   });
@@ -395,7 +395,7 @@ describe("check helper", () => {
     it("creates matches check with path reference", () => {
       const c = check.matches("/password", "Passwords must match");
 
-      expect(c.fn).toBe("matches");
+      expect(c.type).toBe("matches");
       expect(c.args).toEqual({ other: { path: "/password" } });
       expect(c.message).toBe("Passwords must match");
     });
