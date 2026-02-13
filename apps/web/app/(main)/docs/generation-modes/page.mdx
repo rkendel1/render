@@ -87,11 +87,18 @@ This is ideal for:
 ### Setup
 
 ```typescript
+import { streamText } from "ai";
 import { pipeJsonRender } from "@json-render/core";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 
 // Enable chat mode
 const systemPrompt = catalog.prompt({ mode: "chat" });
+
+const result = streamText({
+  model: yourModel,
+  system: systemPrompt,
+  messages,
+});
 
 // In your API route, pipe the stream through pipeJsonRender
 // to separate text from JSONL patches

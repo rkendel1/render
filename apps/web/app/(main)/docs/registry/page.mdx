@@ -31,7 +31,7 @@ export const { registry, handlers, executeAction } = defineRegistry(myCatalog, {
     ),
 
     Button: ({ props, emit }) => (
-      <button onClick={() => emit?.("press")}>
+      <button onClick={() => emit("press")}>
         {props.label}
       </button>
     ),
@@ -169,16 +169,16 @@ import { useBoundProp } from '@json-render/react';
 
 // Inside defineRegistry components:
 
-Input: ({ element, bindings }) => {
+Input: ({ props, bindings }) => {
   const [value, setValue] = useBoundProp<string>(
-    element.props.value,
+    props.value,
     bindings?.value
   );
   return (
     <input
       value={value ?? ''}
       onChange={(e) => setValue(e.target.value)}
-      placeholder={element.props.placeholder}
+      placeholder={props.placeholder}
     />
   );
 },
@@ -241,7 +241,7 @@ export const { registry } = defineRegistry(catalog, {
     ),
 
     Button: ({ props, emit }) => (
-      <Pressable onPress={() => emit?.("press")}>
+      <Pressable onPress={() => emit("press")}>
         <Text>{props.label}</Text>
       </Pressable>
     ),

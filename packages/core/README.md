@@ -27,7 +27,7 @@ export const schema = defineSchema((s) => ({
     root: s.object({
       type: s.ref("catalog.components"),
       props: s.propsOf("catalog.components"),
-      children: s.array(s.self()),
+      children: s.array(s.string()), // Element keys (flat spec format)
     }),
   }),
   catalog: s.object({

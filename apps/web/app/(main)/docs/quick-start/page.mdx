@@ -74,7 +74,7 @@ export const { registry } = defineRegistry(catalog, {
     Button: ({ props, emit }) => (
       <button
         className="px-4 py-2 bg-blue-500 text-white rounded"
-        onClick={() => emit?.("press")}
+        onClick={() => emit("press")}
       >
         {props.label}
       </button>

@@ -438,8 +438,8 @@ export function flatToTree(elements: FlatElement[]): Spec {
  * ```tsx
  * import { useBoundProp } from "@json-render/react";
  *
- * const Input: ComponentRenderer = ({ element, bindings }) => {
- *   const [value, setValue] = useBoundProp<string>(element.props.value, bindings?.value);
+ * const Input: ComponentRenderer = ({ props, bindings }) => {
+ *   const [value, setValue] = useBoundProp<string>(props.value, bindings?.value);
  *   return <input value={value ?? ""} onChange={(e) => setValue(e.target.value)} />;
  * };
  * ```
@@ -678,6 +678,12 @@ export interface UseChatUIReturn {
 
 let chatMessageIdCounter = 0;
 function generateChatId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
   chatMessageIdCounter += 1;
   return `msg-${Date.now()}-${chatMessageIdCounter}`;
 }

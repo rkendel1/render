@@ -55,7 +55,7 @@ const { registry } = defineRegistry(catalog, {
   components: {
     Card: ({ props, children }) => <div>{props.title}{children}</div>,
     Button: ({ props, emit }) => (
-      <button onClick={() => emit?.("press")}>
+      <button onClick={() => emit("press")}>
         {props.label}
       </button>
     ),
@@ -87,7 +87,7 @@ type Registry = Record<string, React.ComponentType<ComponentRenderProps>>;
 interface ComponentContext<P> {
   props: P;                                // Typed props from catalog
   children?: React.ReactNode;              // Rendered children (for slot components)
-  emit?: (event: string) => void;          // Emit a named event
+  emit: (event: string) => void;           // Emit a named event
   loading?: boolean;
   bindings?: Record<string, string>;       // State paths from $bindState/$bindItem expressions
 }
@@ -188,6 +188,13 @@ const Input: ComponentRenderer = ({ props, bindings }) => {
   return <input value={value ?? ""} onChange={(e) => setValue(e.target.value)} />;
 };
 ```
+
+### Chat Hooks
+
+Two hooks are available for chat + GenUI, depending on your setup:
+
+- **`useChatUI`** -- Self-contained chat hook with its own message state, fetch logic, and mixed stream parsing. Use when you want a standalone chat experience without the Vercel AI SDK.
+- **`useJsonRenderMessage`** -- Extracts spec + text from an AI SDK `UIMessage.parts` array. Use with the Vercel AI SDK's `useChat` for full AI SDK integration.
 
 ### useChatUI
 

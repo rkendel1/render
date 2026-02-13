@@ -40,7 +40,7 @@ Components now use `emit` to fire named events instead of directly dispatching a
 ```tsx
 // Component emits a named event
 Button: ({ props, emit }) => (
-  <button onClick={() => emit?.("press")}>{props.label}</button>
+  <button onClick={() => emit("press")}>{props.label}</button>
 ),
 
 // Element spec maps events to actions

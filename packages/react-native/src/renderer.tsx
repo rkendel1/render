@@ -417,7 +417,7 @@ export interface JSONUIProviderProps {
   /** Initial state model */
   initialState?: Record<string, unknown>;
   /** Action handlers */
-  actionHandlers?: Record<
+  handlers?: Record<
     string,
     (params: Record<string, unknown>) => Promise<unknown> | unknown
   >;
@@ -439,7 +439,7 @@ export interface JSONUIProviderProps {
 export function JSONUIProvider({
   registry,
   initialState,
-  actionHandlers,
+  handlers,
   navigate,
   validationFunctions,
   onStateChange,
@@ -448,7 +448,7 @@ export function JSONUIProvider({
   return (
     <StateProvider initialState={initialState} onStateChange={onStateChange}>
       <VisibilityProvider>
-        <ActionProvider handlers={actionHandlers} navigate={navigate}>
+        <ActionProvider handlers={handlers} navigate={navigate}>
           <ValidationProvider customFunctions={validationFunctions}>
             {children}
             <ConfirmationDialogManager />

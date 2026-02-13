@@ -79,7 +79,7 @@ const { registry } = defineRegistry(catalog, {
       </div>
     ),
     Button: ({ props, emit }) => (
-      <button onClick={() => emit?.("press")}>
+      <button onClick={() => emit("press")}>
         {props.label}
       </button>
     ),
@@ -273,6 +273,7 @@ pnpm dev
 - http://localhost:3000 - Docs & Playground
 - http://localhost:3001 - Example Dashboard
 - http://localhost:3002 - Remotion Video Example
+- Chat Example: run `pnpm dev` in `examples/chat`
 - React Native example: run `npx expo start` in `examples/react-native`
 
 ## How It Works

@@ -112,13 +112,13 @@ function App() {
 
 ### Using in Components
 
-The `useFieldValidation` and `useStateBinding` hooks wire validation into your registry components. Validation uses the path from `bindings?.value` (the bound state path):
+The `useFieldValidation` and `useBoundProp` hooks wire validation into your registry components. Validation uses the path from `bindings?.value` (the bound state path):
 
 ```tsx
-import { useFieldValidation, useStateBinding } from '@json-render/react';
+import { useFieldValidation, useBoundProp } from '@json-render/react';
 
 function TextField({ props, bindings }) {
-  const [value, setValue] = useStateBinding(bindings?.value ?? null);
+  const [value, setValue] = useBoundProp(props.value, bindings?.value);
   const { errors, isValid, validate, touch, clear } = useFieldValidation(
     bindings?.value ?? null,
     { checks: props.checks, validateOn: props.validateOn }

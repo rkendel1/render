@@ -123,7 +123,7 @@ Components use `emit` to fire named events. The element's `on` field maps events
 ```tsx
 // Component emits a named event
 Button: ({ props, emit }) => (
-  <button onClick={() => emit?.("press")}>{props.label}</button>
+  <button onClick={() => emit("press")}>{props.label}</button>
 ),
 ```
 

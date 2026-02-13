@@ -131,7 +131,10 @@ function resolveBindItemPath(
   itemPath: string,
   ctx: PropResolutionContext,
 ): string {
-  if (ctx.repeatBasePath == null) return itemPath;
+  if (ctx.repeatBasePath == null) {
+    console.warn(`$bindItem used outside repeat scope: "${itemPath}"`);
+    return itemPath;
+  }
   if (itemPath === "") return ctx.repeatBasePath;
   return ctx.repeatBasePath + "/" + itemPath;
 }
