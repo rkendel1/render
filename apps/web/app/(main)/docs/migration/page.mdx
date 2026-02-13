@@ -23,20 +23,21 @@ import { DataProvider } from "@json-render/react";
 ```tsx
 import { StateProvider } from "@json-render/react";
 
-<StateProvider state={myData} get={getter} set={setter}>
+<StateProvider initialState={myData} onStateChange={(path, value) => console.log(path, value)}>
   {children}
 </StateProvider>
 ```
 
+`StateProvider` now manages state internally. Use `useStateStore()` to access `get`, `set`, and `update`.
+
 | Before | After |
 |--------|-------|
 | `DataProvider` | `StateProvider` |
-| `data` prop | `state` prop |
-| `getValue` | `get` |
-| `setValue` | `set` |
+| `data` prop | `initialState` prop |
+| `getValue` / `setValue` props | Removed (use `useStateStore()` hook for `get` / `set`) |
 | `useData` | `useStateStore` |
 | `useDataValue` | `useStateValue` |
-| `useDataBinding` | `useStateBinding` (deprecated, see below) |
+| `useDataBinding` | `useStateBinding` (deprecated, use `useBoundProp` instead) |
 | `DataModel` type | `StateModel` type |
 
 ## Dynamic Expressions
@@ -295,16 +296,65 @@ const prompt = catalog.prompt();
 const chatPrompt = catalog.prompt({ mode: "chat" });
 ```
 
+## Validation
+
+`ValidationCheck` now uses `type` instead of `fn`, `ValidationProvider` uses `customFunctions` instead of `functions`, and `useFieldValidation` takes a config object instead of a checks array.
+
+**Before:**
+
+```json
+{ "fn": "required", "message": "Required" }
+{ "fn": "minLength", "args": { "length": 8 }, "message": "Too short" }
+```
+
+**After:**
+
+```json
+{ "type": "required", "message": "Required" }
+{ "type": "minLength", "args": { "min": 8 }, "message": "Too short" }
+```
+
+| Before | After |
+|--------|-------|
+| `{ fn: "required" }` | `{ type: "required" }` |
+| `ValidationProvider functions={...}` | `ValidationProvider customFunctions={...}` |
+| `useFieldValidation(path, checks)` | `useFieldValidation(path, config)` where config is `{ checks, validateOn? }` |
+
+## Visibility Provider
+
+The `auth` prop has been removed from `VisibilityProvider`. Auth state should be modeled as regular state.
+
+**Before:**
+
+```tsx
+<VisibilityProvider auth={{ isSignedIn: true, role: "admin" }}>
+```
+
+```json
+{ "auth": "signedIn" }
+```
+
+**After:**
+
+```tsx
+<StateProvider initialState={{ auth: { isSignedIn: true, role: "admin" } }}>
+  <VisibilityProvider>
+```
+
+```json
+{ "$state": "/auth/isSignedIn" }
+```
+
 ## Codegen
 
-`SpecVisitor` has been renamed to `TreeVisitor`, and the visitor callback now receives a `key` parameter.
+`traverseTree` has been renamed to `traverseSpec`, `SpecVisitor` to `TreeVisitor`, and the visitor callback now receives a `key` parameter.
 
 **Before:**
 
 ```typescript
-import { traverseSpec } from "@json-render/codegen";
+import { traverseTree } from "@json-render/codegen";
 
-traverseSpec(spec, (element) => {
+traverseTree(tree, (element) => {
   // ...
 });
 ```
@@ -356,5 +406,7 @@ The following exports have been removed from `@json-render/core`:
 | `CatalogConfig` | Use `defineCatalog` parameters |
 | `SystemPromptOptions` | Use `PromptOptions` |
 | `LogicExpression` | Use `VisibilityCondition` |
+| `AuthState` | Model auth as regular state (e.g. `/auth/isSignedIn`) |
 | `evaluateLogicExpression` | Use `evaluateVisibility` |
 | `createRendererFromCatalog` | Use `defineRegistry` |
+| `traverseTree` (codegen) | Use `traverseSpec` |

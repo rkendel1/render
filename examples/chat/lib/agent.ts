@@ -37,7 +37,7 @@ DATA BINDING:
 - $state works on ANY prop at ANY nesting level. The renderer resolves expressions before components receive props.
 - Scalar binding: "title": { "$state": "/quiz/title" }
 - Array binding: "items": { "$state": "/quiz/questions" } (for Accordion, Timeline, etc.)
-- For Table, BarChart, LineChart, and PieChart, use the statePath prop (these components read state directly).
+- For Table, BarChart, LineChart, and PieChart, use { "$state": "/path" } on the data prop to bind read-only data from state.
 - Always emit /state patches BEFORE the elements that reference them, so data is available when the UI renders.
 - Always use the { "$state": "/foo" } object syntax for data binding.
 
@@ -81,7 +81,7 @@ ${explorerCatalog.prompt({
     "NEVER use viewport height classes (min-h-screen, h-screen) — the UI renders inside a fixed-size container.",
     "Prefer Grid with columns='2' or columns='3' for side-by-side layouts.",
     "Use Metric components for key numbers instead of plain Text.",
-    "Put chart data arrays in /state and reference them with statePath.",
+    "Put chart data arrays in /state and reference them with { $state: '/path' } on the data prop.",
     "Keep the UI clean and information-dense — no excessive padding or empty space.",
     "For educational prompts ('teach me about', 'explain', 'what is'), use a mix of Callout, Accordion, Timeline, and charts to make the content visually rich.",
   ],

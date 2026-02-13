@@ -65,7 +65,7 @@ export const dashboardCatalog = defineCatalog(schema, {
         "Text input field. Use value with $bindState for two-way binding",
       example: {
         label: "Email",
-        value: "/form/email",
+        value: { $bindState: "/form/email" },
         placeholder: "you@example.com",
         type: "email",
       },

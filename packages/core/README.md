@@ -192,7 +192,7 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 
 | Export | Purpose |
 |--------|---------|
-| `validateSpec(spec, catalog?)` | Validate spec structure and return issues |
+| `validateSpec(spec, options?)` | Validate spec structure and return issues |
 | `autoFixSpec(spec)` | Auto-fix common spec issues (returns corrected copy) |
 | `formatSpecIssues(issues)` | Format validation issues as readable strings |
 
@@ -374,7 +374,7 @@ Validate spec structure and auto-fix common issues:
 import { validateSpec, autoFixSpec, formatSpecIssues } from "@json-render/core";
 
 // Validate a spec
-const { valid, issues } = validateSpec(spec, catalog);
+const { valid, issues } = validateSpec(spec);
 
 // Format issues for display
 console.log(formatSpecIssues(issues));

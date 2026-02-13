@@ -94,7 +94,7 @@ Validate spec structure and auto-fix common issues:
 ```typescript
 import { validateSpec, autoFixSpec } from "@json-render/core";
 
-const { valid, issues } = validateSpec(spec, catalog);
+const { valid, issues } = validateSpec(spec);
 const fixed = autoFixSpec(spec);
 ```
 

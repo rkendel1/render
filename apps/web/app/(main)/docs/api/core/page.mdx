@@ -352,6 +352,24 @@ for await (const chunk of stream) {
 parser.flush();
 ```
 
+### pipeJsonRender
+
+Pipe an AI SDK `UIMessageStream` through the json-render transform. Lines that parse as JSONL patches are emitted as `data-spec` parts; everything else passes through as text. Used in Chat mode API routes.
+
+```typescript
+import { pipeJsonRender } from '@json-render/core';
+import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
+
+const stream = createUIMessageStream({
+  execute: async ({ writer }) => {
+    writer.merge(pipeJsonRender(result.toUIMessageStream()));
+  },
+});
+return createUIMessageStreamResponse({ stream });
+```
+
+See [Generation Modes](/docs/generation-modes) for full Chat mode setup.
+
 ### SpecStream Types
 
 Fully compliant with [RFC 6902](https://datatracker.ietf.org/doc/html/rfc6902):
@@ -414,6 +432,51 @@ import { findFormValue } from '@json-render/core';
 // Find form values regardless of path format
 // Checks: params.name, params["form.name"], state["form.name"], state.form.name
 const value = findFormValue("name", params, state);
+```
+
+## buildUserPrompt
+
+Build structured user prompts for AI generation, with support for refinement and state context.
+
+```typescript
+import { buildUserPrompt } from '@json-render/core';
+
+function buildUserPrompt(options: UserPromptOptions): string
+
+interface UserPromptOptions {
+  prompt: string;                        // The user's text prompt
+  currentSpec?: Spec | null;             // Existing spec to refine (triggers patch-only mode)
+  state?: Record<string, unknown> | null; // Runtime state context to include
+  maxPromptLength?: number;              // Max length for user text (truncates before wrapping)
+}
+```
+
+### Fresh generation
+
+```typescript
+const userPrompt = buildUserPrompt({ prompt: "create a todo app" });
+```
+
+### Refinement (patch-only mode)
+
+When `currentSpec` is provided, the prompt instructs the AI to output only the patches needed for the change, not recreate the entire spec:
+
+```typescript
+const userPrompt = buildUserPrompt({
+  prompt: "add a dark mode toggle",
+  currentSpec: existingSpec,
+});
+```
+
+### With state context
+
+Include runtime state so the AI knows what data is available:
+
+```typescript
+const userPrompt = buildUserPrompt({
+  prompt: "show my data",
+  state: { todos: [{ text: "Buy milk" }] },
+});
 ```
 
 ## evaluateVisibility
