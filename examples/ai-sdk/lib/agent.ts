@@ -41,17 +41,39 @@ DATA BINDING:
 - Always emit /state patches BEFORE the elements that reference them, so data is available when the UI renders.
 - Always use the { "$state": "/foo" } object syntax for data binding.
 
-RESTRICTIONS:
-- NEVER use repeat, visible, or on.press event handlers — they are not supported in this example.
-- NEVER use $cond/$then/$else conditional expressions.
-- Do NOT build stateful interactive applications (form inputs, step wizards, navigation buttons).
+INTERACTIVITY:
+- You can use visible, repeat, on.press, and $cond/$then/$else freely.
+- visible: Conditionally show/hide elements based on state. e.g. "visible": { "$state": "/q1/answer", "eq": "a" }
+- repeat: Iterate over state arrays. e.g. "repeat": { "path": "/items" }
+- on.press: Trigger actions on button clicks. e.g. "on": { "press": { "action": "setState", "params": { "path": "/submitted", "value": true } } }
+- $cond/$then/$else: Conditional prop values. e.g. { "$cond": { "$state": "/correct" }, "$then": "Correct!", "$else": "Try again" }
 
-PATTERN — QUIZZES & Q&A:
-When the user asks for a quiz, test, or Q&A:
-1. Put the questions array in state: {"op":"add","path":"/state/quiz","value":[{"title":"Q1: ...","content":"A) ...\n\nCorrect: A\n\nExplanation: ..."}]}
-2. Bind the Accordion items prop to state: {"type":"Accordion","props":{"items":{"$state":"/quiz"},"type":"multiple"}}
-3. Wrap in a Card with a title like "Quiz: [Topic]".
-4. Optionally group by subtopic using Tabs, with each tab containing its own Accordion bound to a different state path.
+BUILT-IN ACTIONS (use with on.press):
+- setState: Set a value at a path. params: { path: "/foo", value: "bar" }
+- pushState: Append to an array. params: { path: "/items", value: { ... } }
+- removeState: Remove by index. params: { path: "/items", index: 0 }
+
+INPUT COMPONENTS:
+- RadioGroup: Renders radio buttons. Writes selected value to statePath automatically.
+- SelectInput: Dropdown select. Writes selected value to statePath automatically.
+- TextInput: Text input field. Writes entered value to statePath automatically.
+- Button: Clickable button. Use on.press to trigger actions.
+
+PATTERN — INTERACTIVE QUIZZES:
+When the user asks for a quiz, test, or Q&A, build an interactive experience:
+1. Initialize state for each question's answer and submission status:
+   {"op":"add","path":"/state/q1","value":""}
+   {"op":"add","path":"/state/q1_submitted","value":false}
+2. For each question, use a Card with:
+   - A Heading or Text for the question
+   - A RadioGroup with the answer options, writing to /q1, /q2, etc.
+   - A Button with on.press to set the submitted flag: {"action":"setState","params":{"path":"/q1_submitted","value":true}}
+   - A Text (or Callout) showing feedback, using visible to show only after submission:
+     "visible": [{"$state":"/q1_submitted","eq":true},{"$state":"/q1","eq":"correct_value"}]
+   - Show correct/incorrect feedback using separate visible conditions on different elements.
+3. Example structure per question:
+   Card > Stack(vertical) > [Text(question), RadioGroup(options), Button(Check Answer), Text(Correct! visible when right), Callout(Wrong, visible when wrong & submitted)]
+4. You can also add a final score section that becomes visible when all questions are submitted.
 
 ${explorerCatalog.prompt({
   mode: "chat",

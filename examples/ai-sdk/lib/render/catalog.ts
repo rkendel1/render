@@ -273,6 +273,91 @@ export const explorerCatalog = defineCatalog(schema, {
       description:
         "Pie/donut chart for proportional data. statePath points to an array of objects. nameKey is the label field, valueKey is the numeric value field.",
     },
+
+    // Interactive / Input
+    RadioGroup: {
+      props: z.object({
+        label: z.string().nullable(),
+        statePath: z.string(),
+        options: z.array(
+          z.object({
+            value: z.string(),
+            label: z.string(),
+          }),
+        ),
+      }),
+      description:
+        "Radio button group for single selection. Writes the selected value to statePath. Use for multiple-choice questions, settings, or any single-select input.",
+      example: {
+        label: "Choose one",
+        statePath: "/answer",
+        options: [
+          { value: "a", label: "Option A" },
+          { value: "b", label: "Option B" },
+        ],
+      },
+    },
+
+    SelectInput: {
+      props: z.object({
+        label: z.string().nullable(),
+        statePath: z.string(),
+        placeholder: z.string().nullable(),
+        options: z.array(
+          z.object({
+            value: z.string(),
+            label: z.string(),
+          }),
+        ),
+      }),
+      description:
+        "Dropdown select input. Writes the selected value to statePath. Use when there are many options and a dropdown is more compact than radio buttons.",
+      example: {
+        label: "Country",
+        statePath: "/selectedCountry",
+        placeholder: "Select a country",
+        options: [
+          { value: "us", label: "United States" },
+          { value: "uk", label: "United Kingdom" },
+        ],
+      },
+    },
+
+    TextInput: {
+      props: z.object({
+        label: z.string().nullable(),
+        statePath: z.string(),
+        placeholder: z.string().nullable(),
+        type: z.enum(["text", "email", "number", "password", "url"]).nullable(),
+      }),
+      description:
+        "Text input field. Writes the entered value to statePath. Use for free-text entry like names, emails, search, etc.",
+      example: {
+        label: "Your name",
+        statePath: "/userName",
+        placeholder: "Enter your name",
+        type: "text",
+      },
+    },
+
+    Button: {
+      props: z.object({
+        label: z.string(),
+        variant: z
+          .enum(["default", "secondary", "destructive", "outline", "ghost"])
+          .nullable(),
+        size: z.enum(["default", "sm", "lg"]).nullable(),
+        disabled: z.boolean().nullable(),
+      }),
+      description:
+        "Clickable button. Use with on.press to trigger actions like setState, pushState, etc. Can be used for quiz submissions, form actions, navigation, and more.",
+      example: {
+        label: "Submit",
+        variant: "default",
+        size: "default",
+        disabled: null,
+      },
+    },
   },
 
   actions: {},

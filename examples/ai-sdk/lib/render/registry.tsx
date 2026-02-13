@@ -49,6 +49,17 @@ import {
 } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   TrendingUp,
   TrendingDown,
@@ -92,7 +103,7 @@ export const { registry, handlers } = defineRegistry(explorerCatalog, {
             )}
           </CardHeader>
         )}
-        <CardContent>{children}</CardContent>
+        <CardContent className="flex flex-col gap-4">{children}</CardContent>
       </Card>
     ),
 
@@ -605,6 +616,96 @@ export const { registry, handlers } = defineRegistry(explorerCatalog, {
         </div>
       );
     },
+
+    RadioGroup: ({ props }) => {
+      const { state, set } = useStateStore();
+      const path = props.statePath.replace(/\./g, "/");
+      const current = getByPath(state, path) as string | undefined;
+
+      return (
+        <div className="flex flex-col gap-2">
+          {props.label && (
+            <Label className="text-sm font-medium">{props.label}</Label>
+          )}
+          <RadioGroup
+            value={current ?? ""}
+            onValueChange={(value: string) => set(path, value)}
+          >
+            {(props.options ?? []).map((opt) => (
+              <div key={opt.value} className="flex items-center gap-2">
+                <RadioGroupItem value={opt.value} id={`${path}-${opt.value}`} />
+                <Label
+                  htmlFor={`${path}-${opt.value}`}
+                  className="font-normal cursor-pointer"
+                >
+                  {opt.label}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+      );
+    },
+
+    SelectInput: ({ props }) => {
+      const { state, set } = useStateStore();
+      const path = props.statePath.replace(/\./g, "/");
+      const current = getByPath(state, path) as string | undefined;
+
+      return (
+        <div className="flex flex-col gap-2">
+          {props.label && (
+            <Label className="text-sm font-medium">{props.label}</Label>
+          )}
+          <Select
+            value={current ?? ""}
+            onValueChange={(value: string) => set(path, value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={props.placeholder ?? "Select..."} />
+            </SelectTrigger>
+            <SelectContent>
+              {(props.options ?? []).map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    },
+
+    TextInput: ({ props }) => {
+      const { state, set } = useStateStore();
+      const path = props.statePath.replace(/\./g, "/");
+      const current = getByPath(state, path) as string | undefined;
+
+      return (
+        <div className="flex flex-col gap-2">
+          {props.label && (
+            <Label className="text-sm font-medium">{props.label}</Label>
+          )}
+          <Input
+            type={props.type ?? "text"}
+            placeholder={props.placeholder ?? ""}
+            value={current ?? ""}
+            onChange={(e) => set(path, e.target.value)}
+          />
+        </div>
+      );
+    },
+
+    Button: ({ props, emit }) => (
+      <Button
+        variant={props.variant ?? "default"}
+        size={props.size ?? "default"}
+        disabled={props.disabled ?? false}
+        onClick={() => emit?.("press")}
+      >
+        {props.label}
+      </Button>
+    ),
   },
 
   actions: {},
