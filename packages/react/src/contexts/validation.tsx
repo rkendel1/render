@@ -76,14 +76,32 @@ export function ValidationProvider({
 
   const registerField = useCallback(
     (path: string, config: ValidationConfig) => {
-      setFieldConfigs((prev) => ({ ...prev, [path]: config }));
+      setFieldConfigs((prev) => {
+        const existing = prev[path];
+        // Bail out (return same reference) if config is unchanged to avoid
+        // infinite re-render loops when callers pass a fresh object each render.
+        if (existing && JSON.stringify(existing) === JSON.stringify(config)) {
+          return prev;
+        }
+        return { ...prev, [path]: config };
+      });
     },
     [],
   );
 
   const validate = useCallback(
     (path: string, config: ValidationConfig): ValidationResult => {
-      const value = state[path.split("/").filter(Boolean).join(".")];
+      // Walk the nested state object using JSON Pointer segments
+      const segments = path.split("/").filter(Boolean);
+      let value: unknown = state;
+      for (const seg of segments) {
+        if (value != null && typeof value === "object") {
+          value = (value as Record<string, unknown>)[seg];
+        } else {
+          value = undefined;
+          break;
+        }
+      }
       const result = runValidation(config, {
         value,
         stateModel: state,

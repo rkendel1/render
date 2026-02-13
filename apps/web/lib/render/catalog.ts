@@ -298,9 +298,19 @@ export const playgroundCatalog = defineCatalog(schema, {
         type: z.enum(["text", "email", "password", "number"]).nullable(),
         placeholder: z.string().nullable(),
         statePath: z.string().nullable(),
+        checks: z
+          .array(
+            z.object({
+              fn: z.string(),
+              message: z.string(),
+              args: z.record(z.string(), z.unknown()).optional(),
+            }),
+          )
+          .nullable(),
       }),
       events: ["submit", "focus", "blur"],
-      description: "Text input field. Use statePath for two-way binding.",
+      description:
+        "Text input field. Use statePath for two-way binding. Use checks for validation (e.g. required, email, minLength).",
       example: {
         label: "Email",
         name: "email",
@@ -316,8 +326,18 @@ export const playgroundCatalog = defineCatalog(schema, {
         placeholder: z.string().nullable(),
         rows: z.number().nullable(),
         statePath: z.string().nullable(),
+        checks: z
+          .array(
+            z.object({
+              fn: z.string(),
+              message: z.string(),
+              args: z.record(z.string(), z.unknown()).optional(),
+            }),
+          )
+          .nullable(),
       }),
-      description: "Multi-line text input. Use statePath for binding.",
+      description:
+        "Multi-line text input. Use statePath for binding. Use checks for validation.",
     },
 
     Select: {
@@ -327,9 +347,19 @@ export const playgroundCatalog = defineCatalog(schema, {
         options: z.array(z.string()),
         placeholder: z.string().nullable(),
         statePath: z.string().nullable(),
+        checks: z
+          .array(
+            z.object({
+              fn: z.string(),
+              message: z.string(),
+              args: z.record(z.string(), z.unknown()).optional(),
+            }),
+          )
+          .nullable(),
       }),
       events: ["change"],
-      description: "Dropdown select input. Use statePath for binding.",
+      description:
+        "Dropdown select input. Use statePath for binding. Use checks for validation.",
     },
 
     Checkbox: {

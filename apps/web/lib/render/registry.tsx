@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { defineRegistry, useStateBinding } from "@json-render/react";
+import {
+  defineRegistry,
+  useStateBinding,
+  useFieldValidation,
+} from "@json-render/react";
 import { toast } from "sonner";
 
 import { playgroundCatalog } from "./catalog";
@@ -773,6 +777,11 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
       const value = props.statePath ? (boundValue ?? "") : localValue;
       const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
+      const hasValidation = !!(props.statePath && props.checks?.length);
+      const { errors, validate } = hasValidation
+        ? useFieldValidation(props.statePath!, { checks: props.checks! }) // eslint-disable-line react-hooks/rules-of-hooks
+        : { errors: [] as string[], validate: (() => {}) as () => void };
+
       return (
         <div className="space-y-2">
           {props.label && <Label htmlFor={props.name}>{props.label}</Label>}
@@ -787,8 +796,14 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
               if (e.key === "Enter") emit?.("submit");
             }}
             onFocus={() => emit?.("focus")}
-            onBlur={() => emit?.("blur")}
+            onBlur={() => {
+              if (hasValidation) validate();
+              emit?.("blur");
+            }}
           />
+          {errors.length > 0 && (
+            <p className="text-sm text-destructive">{errors[0]}</p>
+          )}
         </div>
       );
     },
@@ -801,6 +816,11 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
       const value = props.statePath ? (boundValue ?? "") : localValue;
       const setValue = props.statePath ? setBoundValue! : setLocalValue;
 
+      const hasValidation = !!(props.statePath && props.checks?.length);
+      const { errors, validate } = hasValidation
+        ? useFieldValidation(props.statePath!, { checks: props.checks! }) // eslint-disable-line react-hooks/rules-of-hooks
+        : { errors: [] as string[], validate: (() => {}) as () => void };
+
       return (
         <div className="space-y-2">
           {props.label && <Label htmlFor={props.name}>{props.label}</Label>}
@@ -811,7 +831,13 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
             rows={props.rows ?? 3}
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onBlur={() => {
+              if (hasValidation) validate();
+            }}
           />
+          {errors.length > 0 && (
+            <p className="text-sm text-destructive">{errors[0]}</p>
+          )}
         </div>
       );
     },
@@ -830,6 +856,11 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
         typeof opt === "string" ? opt : String(opt ?? ""),
       );
 
+      const hasValidation = !!(props.statePath && props.checks?.length);
+      const { errors, validate } = hasValidation
+        ? useFieldValidation(props.statePath!, { checks: props.checks! }) // eslint-disable-line react-hooks/rules-of-hooks
+        : { errors: [] as string[], validate: (() => {}) as () => void };
+
       return (
         <div className="space-y-2">
           <Label>{props.label}</Label>
@@ -837,6 +868,7 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
             value={value}
             onValueChange={(v) => {
               setValue(v);
+              if (hasValidation) validate();
               emit?.("change");
             }}
           >
@@ -854,6 +886,9 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
               ))}
             </SelectContent>
           </Select>
+          {errors.length > 0 && (
+            <p className="text-sm text-destructive">{errors[0]}</p>
+          )}
         </div>
       );
     },

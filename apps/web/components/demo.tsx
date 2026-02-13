@@ -24,10 +24,54 @@ interface SimulationStage {
   stream: string;
 }
 
+// Shared state & element definitions for the progressive simulation stages.
+const FORM_STATE = { form: { name: "", email: "", message: "" } };
+
+const NAME_INPUT = {
+  type: "Input",
+  props: {
+    label: "Name",
+    name: "name",
+    statePath: "/form/name",
+    checks: [{ fn: "required", message: "Name is required" }],
+  },
+} as const;
+
+const EMAIL_INPUT = {
+  type: "Input",
+  props: {
+    label: "Email",
+    name: "email",
+    type: "email",
+    statePath: "/form/email",
+    checks: [
+      { fn: "required", message: "Email is required" },
+      { fn: "email", message: "Please enter a valid email" },
+    ],
+  },
+} as const;
+
+const MESSAGE_INPUT = {
+  type: "Textarea",
+  props: {
+    label: "Message",
+    name: "message",
+    statePath: "/form/message",
+    checks: [{ fn: "required", message: "Message is required" }],
+  },
+} as const;
+
+const SUBMIT_BUTTON = {
+  type: "Button",
+  props: { label: "Send Message", variant: "primary" },
+  on: { press: { action: "formSubmit" } },
+} as const;
+
 const SIMULATION_STAGES: SimulationStage[] = [
   {
     tree: {
       root: "card",
+      state: FORM_STATE,
       elements: {
         card: {
           type: "Card",
@@ -41,99 +85,68 @@ const SIMULATION_STAGES: SimulationStage[] = [
   {
     tree: {
       root: "card",
+      state: FORM_STATE,
       elements: {
         card: {
           type: "Card",
           props: { title: "Contact Us", maxWidth: "md" },
           children: ["name"],
         },
-        name: {
-          type: "Input",
-          props: { label: "Name", name: "name" },
-        },
+        name: NAME_INPUT,
       },
     },
     stream:
-      '{"op":"add","path":"/elements/card","value":{"type":"Card","props":{"title":"Contact Us","maxWidth":"md"},"children":["name"]}}',
+      '{"op":"add","path":"/elements/name","value":{"type":"Input","props":{"label":"Name","name":"name","statePath":"/form/name","checks":[{"fn":"required","message":"Name is required"}]}}}',
   },
   {
     tree: {
       root: "card",
+      state: FORM_STATE,
       elements: {
         card: {
           type: "Card",
           props: { title: "Contact Us", maxWidth: "md" },
           children: ["name", "email"],
         },
-        name: {
-          type: "Input",
-          props: { label: "Name", name: "name" },
-        },
-        email: {
-          type: "Input",
-          props: { label: "Email", name: "email" },
-        },
+        name: NAME_INPUT,
+        email: EMAIL_INPUT,
       },
     },
     stream:
-      '{"op":"add","path":"/elements/email","value":{"type":"Input","props":{"label":"Email","name":"email"}}}',
+      '{"op":"add","path":"/elements/email","value":{"type":"Input","props":{"label":"Email","name":"email","type":"email","statePath":"/form/email","checks":[{"fn":"required","message":"Email is required"},{"fn":"email","message":"Please enter a valid email"}]}}}',
   },
   {
     tree: {
       root: "card",
+      state: FORM_STATE,
       elements: {
         card: {
           type: "Card",
           props: { title: "Contact Us", maxWidth: "md" },
           children: ["name", "email", "message"],
         },
-        name: {
-          type: "Input",
-          props: { label: "Name", name: "name" },
-        },
-        email: {
-          type: "Input",
-          props: { label: "Email", name: "email" },
-        },
-        message: {
-          type: "Textarea",
-          props: { label: "Message", name: "message" },
-        },
+        name: NAME_INPUT,
+        email: EMAIL_INPUT,
+        message: MESSAGE_INPUT,
       },
     },
     stream:
-      '{"op":"add","path":"/elements/message","value":{"type":"Textarea","props":{"label":"Message","name":"message"}}}',
+      '{"op":"add","path":"/elements/message","value":{"type":"Textarea","props":{"label":"Message","name":"message","statePath":"/form/message","checks":[{"fn":"required","message":"Message is required"}]}}}',
   },
   {
     tree: {
       root: "card",
+      state: FORM_STATE,
       elements: {
         card: {
           type: "Card",
           props: { title: "Contact Us", maxWidth: "md" },
           children: ["name", "email", "message", "submit"],
         },
-        name: {
-          type: "Input",
-          props: { label: "Name", name: "name" },
-        },
-        email: {
-          type: "Input",
-          props: { label: "Email", name: "email" },
-        },
-        message: {
-          type: "Textarea",
-          props: { label: "Message", name: "message" },
-        },
-        submit: {
-          type: "Button",
-          props: { label: "Send Message", variant: "primary" },
-          on: {
-            press: {
-              action: "formSubmit",
-            },
-          },
-        },
+        name: NAME_INPUT,
+        email: EMAIL_INPUT,
+        message: MESSAGE_INPUT,
+        submit: SUBMIT_BUTTON,
       },
     },
     stream:
