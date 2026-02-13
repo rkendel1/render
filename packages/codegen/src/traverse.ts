@@ -132,8 +132,18 @@ function collectPathsFromCondition(
     return;
   }
 
+  const cond = condition as Record<string, unknown>;
+
+  // $or: recurse into each child condition
+  if ("$or" in cond && Array.isArray(cond.$or)) {
+    for (const child of cond.$or) {
+      collectPathsFromCondition(child, paths);
+    }
+    return;
+  }
+
   // Single StateCondition
-  collectPathFromItem(condition as Record<string, unknown>, paths);
+  collectPathFromItem(cond, paths);
 }
 
 /**

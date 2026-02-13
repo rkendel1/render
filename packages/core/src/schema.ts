@@ -795,7 +795,14 @@ Note: state patches appear right after the elements that use them, so the UI fil
     '- `{ "$state": "/path", "neq": "value" }` - visible when state does not equal value',
   );
   lines.push(
+    '- `{ "$state": "/path", "gt": N }` / `gte` / `lt` / `lte` - numeric comparisons',
+  );
+  lines.push('- Any condition can add `"not": true` to invert its result');
+  lines.push(
     "- `[condition, condition]` - all conditions must be true (implicit AND)",
+  );
+  lines.push(
+    '- `{ "$or": [condition, condition] }` - at least one must be true (OR)',
   );
   lines.push("- `true` / `false` - always visible/hidden");
   lines.push("");

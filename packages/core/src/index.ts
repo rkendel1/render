@@ -9,7 +9,7 @@ export type {
   Spec,
   VisibilityCondition,
   StateCondition,
-  AuthState,
+  OrCondition,
   StateModel,
   ComponentSchema,
   ValidationMode,

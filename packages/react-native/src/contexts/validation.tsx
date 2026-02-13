@@ -64,7 +64,7 @@ export function ValidationProvider({
   customFunctions = {},
   children,
 }: ValidationProviderProps) {
-  const { state, authState } = useStateStore();
+  const { state } = useStateStore();
   const [fieldStates, setFieldStates] = useState<
     Record<string, FieldValidationState>
   >({});
@@ -86,7 +86,6 @@ export function ValidationProvider({
         value,
         stateModel: state,
         customFunctions,
-        authState,
       });
 
       setFieldStates((prev) => ({
@@ -100,7 +99,7 @@ export function ValidationProvider({
 
       return result;
     },
-    [state, customFunctions, authState],
+    [state, customFunctions],
   );
 
   const touch = useCallback((path: string) => {

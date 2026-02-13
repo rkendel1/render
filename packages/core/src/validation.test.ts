@@ -205,7 +205,7 @@ describe("runValidationCheck", () => {
     const result = runValidationCheck(
       {
         type: "minLength",
-        args: { min: { path: "/minLen" } },
+        args: { min: { $state: "/minLen" } },
         message: "Too short",
       },
       { value: "hi", dataModel: { minLen: 5 } },
@@ -396,7 +396,7 @@ describe("check helper", () => {
       const c = check.matches("/password", "Passwords must match");
 
       expect(c.type).toBe("matches");
-      expect(c.args).toEqual({ other: { path: "/password" } });
+      expect(c.args).toEqual({ other: { $state: "/password" } });
       expect(c.message).toBe("Passwords must match");
     });
   });

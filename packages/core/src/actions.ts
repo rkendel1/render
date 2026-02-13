@@ -169,7 +169,7 @@ export function interpolateString(
   stateModel: StateModel,
 ): string {
   return template.replace(/\$\{([^}]+)\}/g, (_, path) => {
-    const value = resolveDynamicValue({ path }, stateModel);
+    const value = resolveDynamicValue({ $state: path }, stateModel);
     return String(value ?? "");
   });
 }

@@ -1,5 +1,10 @@
 import { z } from "zod";
-import type { VisibilityCondition, StateCondition, StateModel } from "./types";
+import type {
+  VisibilityCondition,
+  StateCondition,
+  OrCondition,
+  StateModel,
+} from "./types";
 import { getByPath } from "./types";
 
 // =============================================================================
@@ -22,9 +27,18 @@ const StateConditionSchema = z.object({
 
 /**
  * Visibility condition schema.
+ *
+ * Lazy because `OrCondition` can recursively contain `VisibilityCondition`.
  */
-export const VisibilityConditionSchema: z.ZodType<VisibilityCondition> =
-  z.union([z.boolean(), StateConditionSchema, z.array(StateConditionSchema)]);
+export const VisibilityConditionSchema: z.ZodType<VisibilityCondition> = z.lazy(
+  () =>
+    z.union([
+      z.boolean(),
+      StateConditionSchema,
+      z.array(StateConditionSchema),
+      z.object({ $or: z.array(VisibilityConditionSchema) }),
+    ]),
+);
 
 // =============================================================================
 // Context
@@ -62,68 +76,83 @@ function resolveComparisonValue(
 
 /**
  * Evaluate a single state condition against the state model.
+ *
+ * When `not` is `true`, the final result is inverted — this applies to
+ * whichever operator is present (or to the truthiness check if no operator
+ * is given).  For example:
+ * - `{ $state: "/x", not: true }` → `!Boolean(value)`
+ * - `{ $state: "/x", gt: 5, not: true }` → `!(value > 5)`
  */
 function evaluateCondition(
   cond: StateCondition,
   stateModel: StateModel,
 ): boolean {
   const value = getByPath(stateModel, cond.$state);
+  let result: boolean;
 
   // Equality
   if (cond.eq !== undefined) {
     const rhs = resolveComparisonValue(cond.eq, stateModel);
-    return value === rhs;
+    result = value === rhs;
   }
-
   // Inequality
-  if (cond.neq !== undefined) {
+  else if (cond.neq !== undefined) {
     const rhs = resolveComparisonValue(cond.neq, stateModel);
-    return value !== rhs;
+    result = value !== rhs;
   }
-
   // Greater than
-  if (cond.gt !== undefined) {
+  else if (cond.gt !== undefined) {
     const rhs = resolveComparisonValue(cond.gt, stateModel);
-    if (typeof value === "number" && typeof rhs === "number") {
-      return value > rhs;
-    }
-    return false;
+    result =
+      typeof value === "number" && typeof rhs === "number"
+        ? value > rhs
+        : false;
   }
-
   // Greater than or equal
-  if (cond.gte !== undefined) {
+  else if (cond.gte !== undefined) {
     const rhs = resolveComparisonValue(cond.gte, stateModel);
-    if (typeof value === "number" && typeof rhs === "number") {
-      return value >= rhs;
-    }
-    return false;
+    result =
+      typeof value === "number" && typeof rhs === "number"
+        ? value >= rhs
+        : false;
   }
-
   // Less than
-  if (cond.lt !== undefined) {
+  else if (cond.lt !== undefined) {
     const rhs = resolveComparisonValue(cond.lt, stateModel);
-    if (typeof value === "number" && typeof rhs === "number") {
-      return value < rhs;
-    }
-    return false;
+    result =
+      typeof value === "number" && typeof rhs === "number"
+        ? value < rhs
+        : false;
   }
-
   // Less than or equal
-  if (cond.lte !== undefined) {
+  else if (cond.lte !== undefined) {
     const rhs = resolveComparisonValue(cond.lte, stateModel);
-    if (typeof value === "number" && typeof rhs === "number") {
-      return value <= rhs;
-    }
-    return false;
+    result =
+      typeof value === "number" && typeof rhs === "number"
+        ? value <= rhs
+        : false;
+  }
+  // Truthiness (no operator)
+  else {
+    result = Boolean(value);
   }
 
-  // Negation (truthiness inverted)
-  if (cond.not === true) {
-    return !Boolean(value);
-  }
+  // `not` inverts the result of any condition
+  return cond.not === true ? !result : result;
+}
 
-  // Truthiness
-  return Boolean(value);
+/**
+ * Type guard for OrCondition
+ */
+function isOrCondition(
+  condition: VisibilityCondition,
+): condition is OrCondition {
+  return (
+    typeof condition === "object" &&
+    condition !== null &&
+    !Array.isArray(condition) &&
+    "$or" in condition
+  );
 }
 
 /**
@@ -133,6 +162,7 @@ function evaluateCondition(
  * - `boolean` → that value
  * - `StateCondition` → evaluate single condition
  * - `StateCondition[]` → implicit AND (all must be true)
+ * - `OrCondition` → `{ $or: [...] }`, at least one must be true
  */
 export function evaluateVisibility(
   condition: VisibilityCondition | undefined,
@@ -151,6 +181,11 @@ export function evaluateVisibility(
   // Array = implicit AND
   if (Array.isArray(condition)) {
     return condition.every((c) => evaluateCondition(c, ctx.stateModel));
+  }
+
+  // OR condition
+  if (isOrCondition(condition)) {
+    return condition.$or.some((child) => evaluateVisibility(child, ctx));
   }
 
   // Single condition
@@ -213,6 +248,11 @@ export const visibility = {
     lte: value,
   }),
 
-  /** AND multiple conditions */
+  /** AND multiple conditions (implicit AND — array of conditions) */
   and: (...conditions: StateCondition[]): StateCondition[] => conditions,
+
+  /** OR multiple conditions */
+  or: (...conditions: VisibilityCondition[]): OrCondition => ({
+    $or: conditions,
+  }),
 };

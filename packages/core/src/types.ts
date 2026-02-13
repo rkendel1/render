@@ -2,9 +2,12 @@ import { z } from "zod";
 import type { ActionBinding } from "./actions";
 
 /**
- * Dynamic value - can be a literal or a path reference to state model
+ * Dynamic value - can be a literal or a `{ $state }` reference to the state model.
+ *
+ * Used in action params and validation args where values can either be
+ * hardcoded or resolved from state at runtime.
  */
-export type DynamicValue<T = unknown> = T | { path: string };
+export type DynamicValue<T = unknown> = T | { $state: string };
 
 /**
  * Dynamic string value
@@ -29,22 +32,22 @@ export const DynamicValueSchema = z.union([
   z.number(),
   z.boolean(),
   z.null(),
-  z.object({ path: z.string() }),
+  z.object({ $state: z.string() }),
 ]);
 
 export const DynamicStringSchema = z.union([
   z.string(),
-  z.object({ path: z.string() }),
+  z.object({ $state: z.string() }),
 ]);
 
 export const DynamicNumberSchema = z.union([
   z.number(),
-  z.object({ path: z.string() }),
+  z.object({ $state: z.string() }),
 ]);
 
 export const DynamicBooleanSchema = z.union([
   z.boolean(),
-  z.object({ path: z.string() }),
+  z.object({ $state: z.string() }),
 ]);
 
 /**
@@ -87,6 +90,9 @@ export interface FlatElement<
  * A single state-based condition.
  * Resolves `$state` to a value from the state model, then applies the operator.
  * Without an operator, checks truthiness.
+ *
+ * When `not` is `true`, the result of the entire condition is inverted.
+ * For example `{ $state: "/count", gt: 5, not: true }` means "NOT greater than 5".
  */
 export type StateCondition = {
   $state: string;
@@ -100,12 +106,22 @@ export type StateCondition = {
 };
 
 /**
+ * OR wrapper — at least one child condition must be true.
+ */
+export type OrCondition = { $or: VisibilityCondition[] };
+
+/**
  * Visibility condition types.
  * - `boolean` — always/never
  * - `StateCondition` — single condition
  * - `StateCondition[]` — implicit AND (all must be true)
+ * - `OrCondition` — `{ $or: [...] }`, at least one must be true
  */
-export type VisibilityCondition = boolean | StateCondition | StateCondition[];
+export type VisibilityCondition =
+  | boolean
+  | StateCondition
+  | StateCondition[]
+  | OrCondition;
 
 /**
  * Flat UI tree structure (optimized for LLM generation)
@@ -118,14 +134,6 @@ export interface Spec {
   /** Optional initial state to seed the state model.
    *  Components using statePath will read from / write to this state. */
   state?: Record<string, unknown>;
-}
-
-/**
- * Auth state for visibility evaluation
- */
-export interface AuthState {
-  isSignedIn: boolean;
-  user?: Record<string, unknown>;
 }
 
 /**
@@ -171,8 +179,10 @@ export function resolveDynamicValue<T>(
     return undefined;
   }
 
-  if (typeof value === "object" && "path" in value) {
-    return getByPath(stateModel, value.path) as T | undefined;
+  if (typeof value === "object" && "$state" in value) {
+    return getByPath(stateModel, (value as { $state: string }).$state) as
+      | T
+      | undefined;
   }
 
   return value as T;

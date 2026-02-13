@@ -391,8 +391,6 @@ export interface JSONUIProviderProps {
   registry?: ComponentRegistry;
   /** Initial state model */
   initialState?: Record<string, unknown>;
-  /** Auth state */
-  authState?: { isSignedIn: boolean; user?: Record<string, unknown> };
   /** Action handlers */
   actionHandlers?: Record<
     string,
@@ -416,7 +414,6 @@ export interface JSONUIProviderProps {
 export function JSONUIProvider({
   registry,
   initialState,
-  authState,
   actionHandlers,
   navigate,
   validationFunctions,
@@ -424,11 +421,7 @@ export function JSONUIProvider({
   children,
 }: JSONUIProviderProps) {
   return (
-    <StateProvider
-      initialState={initialState}
-      authState={authState}
-      onStateChange={onStateChange}
-    >
+    <StateProvider initialState={initialState} onStateChange={onStateChange}>
       <VisibilityProvider>
         <ActionProvider handlers={actionHandlers} navigate={navigate}>
           <ValidationProvider customFunctions={validationFunctions}>
@@ -638,8 +631,6 @@ export interface CreateRendererProps {
   onStateChange?: (path: string, value: unknown) => void;
   /** Whether the spec is currently loading/streaming */
   loading?: boolean;
-  /** Auth state for visibility conditions */
-  authState?: { isSignedIn: boolean; user?: Record<string, unknown> };
   /** Fallback component for unknown types */
   fallback?: ComponentRenderer;
 }
@@ -691,7 +682,6 @@ export function createRenderer<
     onAction,
     onStateChange,
     loading,
-    authState,
     fallback,
   }: CreateRendererProps) {
     // Wrap onAction to match internal API
@@ -709,11 +699,7 @@ export function createRenderer<
       : undefined;
 
     return (
-      <StateProvider
-        initialState={state}
-        authState={authState}
-        onStateChange={onStateChange}
-      >
+      <StateProvider initialState={state} onStateChange={onStateChange}>
         <VisibilityProvider>
           <ActionProvider handlers={actionHandlers}>
             <ValidationProvider>

@@ -8,12 +8,7 @@ import React, {
   useRef,
   type ReactNode,
 } from "react";
-import {
-  getByPath,
-  setByPath,
-  type StateModel,
-  type AuthState,
-} from "@json-render/core";
+import { getByPath, setByPath, type StateModel } from "@json-render/core";
 
 /**
  * State context value
@@ -21,8 +16,6 @@ import {
 export interface StateContextValue {
   /** The current state model */
   state: StateModel;
-  /** Auth state for visibility evaluation */
-  authState?: AuthState;
   /** Get a value by path */
   get: (path: string) => unknown;
   /** Set a value by path */
@@ -39,8 +32,6 @@ const StateContext = createContext<StateContextValue | null>(null);
 export interface StateProviderProps {
   /** Initial state model */
   initialState?: StateModel;
-  /** Auth state */
-  authState?: AuthState;
   /** Callback when state changes */
   onStateChange?: (path: string, value: unknown) => void;
   children: ReactNode;
@@ -51,7 +42,6 @@ export interface StateProviderProps {
  */
 export function StateProvider({
   initialState = {},
-  authState,
   onStateChange,
   children,
 }: StateProviderProps) {
@@ -102,12 +92,11 @@ export function StateProvider({
   const value = useMemo<StateContextValue>(
     () => ({
       state,
-      authState,
       get,
       set,
       update,
     }),
-    [state, authState, get, set, update],
+    [state, get, set, update],
   );
 
   return (

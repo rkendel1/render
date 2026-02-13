@@ -244,7 +244,7 @@ export function runValidationCheck(
  */
 export function runValidation(
   config: ValidationConfig,
-  ctx: ValidationContext & { authState?: { isSignedIn: boolean } },
+  ctx: ValidationContext,
 ): ValidationResult {
   const checks: ValidationCheckResult[] = [];
   const errors: string[] = [];
@@ -331,7 +331,7 @@ export const check = {
     message = "Fields must match",
   ): ValidationCheck => ({
     type: "matches",
-    args: { other: { path: otherPath } },
+    args: { other: { $state: otherPath } },
     message,
   }),
 };

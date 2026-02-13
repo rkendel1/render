@@ -272,6 +272,9 @@ export function generateCatalogPrompt<
     '- `{ "$state": "/path", "neq": value }` - Visible when state does not equal value',
   );
   lines.push("- `[condition, condition]` - All conditions must be true (AND)");
+  lines.push(
+    '- `{ "$or": [condition, condition] }` - At least one must be true (OR)',
+  );
   lines.push("");
 
   // Validation

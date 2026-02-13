@@ -630,6 +630,10 @@ export function useChatUI({
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Keep a ref to the latest messages so `send` always reads the
+  // current history, avoiding stale closure issues.
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const clear = useCallback(() => {
     setMessages([]);
@@ -664,9 +668,10 @@ export function useChatUI({
       setIsStreaming(true);
       setError(null);
 
-      // Build messages array for the API (full conversation history + new message)
+      // Build messages array for the API (full conversation history + new message).
+      // Read from ref to always get the latest messages (avoids stale closure).
       const historyForApi = [
-        ...messages.map((m) => ({
+        ...messagesRef.current.map((m) => ({
           role: m.role,
           content: m.text,
         })),
@@ -779,7 +784,7 @@ export function useChatUI({
         setIsStreaming(false);
       }
     },
-    [api, messages, onComplete, onError],
+    [api, onComplete, onError],
   );
 
   // Cleanup on unmount

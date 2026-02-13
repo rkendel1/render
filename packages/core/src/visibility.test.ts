@@ -96,6 +96,36 @@ describe("evaluateVisibility", () => {
         ),
       ).toBe(true);
     });
+
+    it("not inverts an eq condition", () => {
+      expect(
+        evaluateVisibility(
+          { $state: "/tab", eq: "home", not: true },
+          { stateModel: { tab: "home" } },
+        ),
+      ).toBe(false);
+      expect(
+        evaluateVisibility(
+          { $state: "/tab", eq: "home", not: true },
+          { stateModel: { tab: "settings" } },
+        ),
+      ).toBe(true);
+    });
+
+    it("not inverts a gt condition", () => {
+      expect(
+        evaluateVisibility(
+          { $state: "/count", gt: 5, not: true },
+          { stateModel: { count: 10 } },
+        ),
+      ).toBe(false);
+      expect(
+        evaluateVisibility(
+          { $state: "/count", gt: 5, not: true },
+          { stateModel: { count: 3 } },
+        ),
+      ).toBe(true);
+    });
   });
 
   describe("equality ($state + eq)", () => {
@@ -332,6 +362,77 @@ describe("evaluateVisibility", () => {
       ).toBe(false);
     });
   });
+
+  describe("$or condition", () => {
+    it("returns true when at least one child is true", () => {
+      expect(
+        evaluateVisibility(
+          { $or: [{ $state: "/isAdmin" }, { $state: "/isModerator" }] },
+          { stateModel: { isAdmin: false, isModerator: true } },
+        ),
+      ).toBe(true);
+    });
+
+    it("returns true when all children are true", () => {
+      expect(
+        evaluateVisibility(
+          { $or: [{ $state: "/isAdmin" }, { $state: "/isModerator" }] },
+          { stateModel: { isAdmin: true, isModerator: true } },
+        ),
+      ).toBe(true);
+    });
+
+    it("returns false when all children are false", () => {
+      expect(
+        evaluateVisibility(
+          { $or: [{ $state: "/isAdmin" }, { $state: "/isModerator" }] },
+          { stateModel: { isAdmin: false, isModerator: false } },
+        ),
+      ).toBe(false);
+    });
+
+    it("supports nested arrays (AND inside OR)", () => {
+      // OR( AND(isAdmin, tab=settings), isSuperUser )
+      expect(
+        evaluateVisibility(
+          {
+            $or: [
+              [{ $state: "/isAdmin" }, { $state: "/tab", eq: "settings" }],
+              { $state: "/isSuperUser" },
+            ],
+          },
+          {
+            stateModel: { isAdmin: true, tab: "settings", isSuperUser: false },
+          },
+        ),
+      ).toBe(true);
+      expect(
+        evaluateVisibility(
+          {
+            $or: [
+              [{ $state: "/isAdmin" }, { $state: "/tab", eq: "settings" }],
+              { $state: "/isSuperUser" },
+            ],
+          },
+          {
+            stateModel: { isAdmin: false, tab: "settings", isSuperUser: false },
+          },
+        ),
+      ).toBe(false);
+    });
+
+    it("supports booleans inside $or", () => {
+      expect(
+        evaluateVisibility(
+          { $or: [false, { $state: "/ok" }] },
+          { stateModel: { ok: true } },
+        ),
+      ).toBe(true);
+      expect(
+        evaluateVisibility({ $or: [false, false] }, { stateModel: {} }),
+      ).toBe(false);
+    });
+  });
 });
 
 describe("visibility helper", () => {
@@ -407,5 +508,15 @@ describe("visibility helper", () => {
       { $state: "/isAdmin" },
       { $state: "/tab", eq: "home" },
     ]);
+  });
+
+  it("or returns an $or wrapper", () => {
+    const result = visibility.or(
+      visibility.when("/isAdmin"),
+      visibility.when("/isModerator"),
+    );
+    expect(result).toEqual({
+      $or: [{ $state: "/isAdmin" }, { $state: "/isModerator" }],
+    });
   });
 });

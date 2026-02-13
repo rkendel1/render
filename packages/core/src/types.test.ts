@@ -110,16 +110,16 @@ describe("resolveDynamicValue", () => {
     expect(resolveDynamicValue(false, {})).toBe(false);
   });
 
-  it("resolves path references", () => {
+  it("resolves $state references", () => {
     const data = { user: { name: "Alice" } };
 
-    expect(resolveDynamicValue({ path: "/user/name" }, data)).toBe("Alice");
+    expect(resolveDynamicValue({ $state: "/user/name" }, data)).toBe("Alice");
   });
 
-  it("returns undefined for missing path references", () => {
+  it("returns undefined for missing $state references", () => {
     const data = { user: { name: "Alice" } };
 
-    expect(resolveDynamicValue({ path: "/missing" }, data)).toBeUndefined();
+    expect(resolveDynamicValue({ $state: "/missing" }, data)).toBeUndefined();
   });
 
   it("returns undefined for null value", () => {
