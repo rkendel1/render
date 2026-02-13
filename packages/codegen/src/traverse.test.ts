@@ -93,13 +93,13 @@ describe("collectStatePaths", () => {
       elements: {
         root: {
           type: "Text",
-          props: { content: { path: "user/name" } },
+          props: { content: { $state: "/user/name" } },
         },
       },
     };
 
     const paths = collectStatePaths(spec);
-    expect(paths).toEqual(new Set(["user/name"]));
+    expect(paths).toEqual(new Set(["/user/name"]));
   });
 });
 

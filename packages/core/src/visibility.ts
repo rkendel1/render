@@ -249,7 +249,9 @@ export const visibility = {
   }),
 
   /** AND multiple conditions (implicit AND — array of conditions) */
-  and: (...conditions: StateCondition[]): StateCondition[] => conditions,
+  and: (
+    ...conditions: (StateCondition | StateCondition[])[]
+  ): StateCondition[] => conditions.flat(),
 
   /** OR multiple conditions */
   or: (...conditions: VisibilityCondition[]): OrCondition => ({

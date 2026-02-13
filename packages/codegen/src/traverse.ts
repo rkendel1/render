@@ -75,14 +75,14 @@ export function collectStatePaths(spec: Spec): Set<string> {
         }
       }
 
-      // Check for dynamic value objects with path
+      // Check for dynamic value objects with $state
       if (
         propValue &&
         typeof propValue === "object" &&
-        "path" in propValue &&
-        typeof (propValue as { path: unknown }).path === "string"
+        "$state" in propValue &&
+        typeof (propValue as { $state: unknown }).$state === "string"
       ) {
-        paths.add((propValue as { path: string }).path);
+        paths.add((propValue as { $state: string }).$state);
       }
     }
 

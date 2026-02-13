@@ -49,8 +49,8 @@ serializePropValue("hello");
 serializePropValue(42);
 // { value: '42', needsBraces: true }
 
-serializePropValue({ path: 'user/name' });
-// { value: '{ path: "user/name" }', needsBraces: true }
+serializePropValue({ $state: '/user/name' });
+// { value: '{ $state: "/user/name" }', needsBraces: true }
 
 // Serialize props for JSX
 serializeProps({ title: "Dashboard", columns: 3, disabled: true });

@@ -53,9 +53,9 @@ function deepResolveValue(
     const obj = value as Record<string, unknown>;
     const keys = Object.keys(obj);
 
-    // { path: "/foo" } -> read from state (single-key object with "path")
-    if (keys.length === 1 && typeof obj.path === "string") {
-      return get(obj.path as string);
+    // { $state: "/foo" } -> read from state
+    if (keys.length === 1 && typeof obj.$state === "string") {
+      return get(obj.$state as string);
     }
 
     // { "$id": true } -> generate unique ID (single-key object)

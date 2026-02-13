@@ -697,13 +697,13 @@ Note: state patches appear right after the elements that use them, so the UI fil
     'Use action "pushState" to append items to arrays. Params: { path: "/arrayPath", value: { ...item }, clearPath: "/inputPath" }.',
   );
   lines.push(
-    'Values inside pushState can contain { "path": "/statePath" } references to read current state (e.g. the text from an input field).',
+    'Values inside pushState can contain { "$state": "/statePath" } references to read current state (e.g. the text from an input field).',
   );
   lines.push(
     'Use "$id" inside a pushState value to auto-generate a unique ID.',
   );
   lines.push(
-    'Example: on: { "press": { "action": "pushState", "params": { "path": "/todos", "value": { "id": "$id", "title": { "path": "/newTodoText" }, "completed": false }, "clearPath": "/newTodoText" } } }',
+    'Example: on: { "press": { "action": "pushState", "params": { "path": "/todos", "value": { "id": "$id", "title": { "$state": "/newTodoText" }, "completed": false }, "clearPath": "/newTodoText" } } }',
   );
   lines.push(
     'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a repeated element\'s children, use { "$index": true } for the current item index.',
@@ -767,7 +767,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
   );
   lines.push("");
   lines.push(
-    'Action params can use dynamic path references to read from state: { "path": "/statePath" }.',
+    'Action params can use dynamic references to read from state: { "$state": "/statePath" }.',
   );
   lines.push(
     "IMPORTANT: Do NOT put action/actionParams inside props. Always use the `on` field for event bindings.",

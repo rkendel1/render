@@ -186,7 +186,8 @@ function ElementRenderer({
   if (
     repeatScope &&
     typeof resolvedProps.statePath === "string" &&
-    resolvedProps.statePath.startsWith("$item")
+    (resolvedProps.statePath === "$item" ||
+      resolvedProps.statePath.startsWith("$item/"))
   ) {
     const suffix = resolvedProps.statePath.slice("$item".length); // e.g. "/completed"
     resolvedProps = {
