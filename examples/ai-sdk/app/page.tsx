@@ -51,15 +51,15 @@ const SUGGESTIONS = [
 // Tool Call Display
 // =============================================================================
 
-/** Readable labels for tool names */
-const TOOL_LABELS: Record<string, string> = {
-  getWeather: "Getting weather data",
-  getGitHubRepo: "Fetching GitHub repo",
-  getGitHubPullRequests: "Fetching pull requests",
-  getCryptoPrice: "Looking up crypto price",
-  getCryptoPriceHistory: "Fetching price history",
-  getHackerNewsTop: "Loading Hacker News",
-  webSearch: "Searching the web",
+/** Readable labels for tool names: [loading, done] */
+const TOOL_LABELS: Record<string, [string, string]> = {
+  getWeather: ["Getting weather data", "Got weather data"],
+  getGitHubRepo: ["Fetching GitHub repo", "Fetched GitHub repo"],
+  getGitHubPullRequests: ["Fetching pull requests", "Fetched pull requests"],
+  getCryptoPrice: ["Looking up crypto price", "Looked up crypto price"],
+  getCryptoPriceHistory: ["Fetching price history", "Fetched price history"],
+  getHackerNewsTop: ["Loading Hacker News", "Loaded Hacker News"],
+  webSearch: ["Searching the web", "Searched the web"],
 };
 
 function ToolCallDisplay({
@@ -76,7 +76,8 @@ function ToolCallDisplay({
     state !== "output-available" &&
     state !== "output-error" &&
     state !== "output-denied";
-  const label = TOOL_LABELS[toolName] ?? toolName;
+  const labels = TOOL_LABELS[toolName];
+  const label = labels ? (isLoading ? labels[0] : labels[1]) : toolName;
 
   return (
     <div className="text-sm group">
@@ -89,7 +90,6 @@ function ToolCallDisplay({
           className={`text-muted-foreground ${isLoading ? "animate-shimmer" : ""}`}
         >
           {label}
-          {isLoading ? "..." : ""}
         </span>
         {!isLoading && (
           <ChevronRight
