@@ -266,7 +266,7 @@ export default function Page() {
               },
               {
                 title: "Data Binding",
-                desc: "Two-way state binding with dynamic prop expressions",
+                desc: "Connect props to state with $state, $item, $index, and two-way binding",
               },
               {
                 title: "Code Export",
