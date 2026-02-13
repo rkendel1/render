@@ -32,7 +32,7 @@ function generateUniqueId(): string {
  * Deep-resolve dynamic value references within an object.
  *
  * Supported tokens:
- * - `{ path: "/statePath" }` - read a value from state
+ * - `{ $state: "/statePath" }` - read a value from state
  * - `"$id"` (string) or `{ "$id": true }` - generate a unique ID
  *
  * This allows pushState values to contain references to current state

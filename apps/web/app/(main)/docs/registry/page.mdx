@@ -188,19 +188,19 @@ import {
 } from '@json-render/react';
 import { registry, handlers } from './registry';
 
-function App({ spec, data, setState }) {
-  const dataRef = useRef(data);
+function App({ spec, state, setState }) {
+  const stateRef = useRef(state);
   const setStateRef = useRef(setState);
-  dataRef.current = data;
+  stateRef.current = state;
   setStateRef.current = setState;
 
   const actionHandlers = useMemo(
-    () => handlers(() => setStateRef.current, () => dataRef.current),
+    () => handlers(() => setStateRef.current, () => stateRef.current),
     [],
   );
 
   return (
-    <StateProvider initialState={data}>
+    <StateProvider initialState={state}>
       <VisibilityProvider>
         <ActionProvider handlers={actionHandlers}>
           <Renderer spec={spec} registry={registry} />

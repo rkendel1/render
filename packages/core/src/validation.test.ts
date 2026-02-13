@@ -193,7 +193,7 @@ describe("runValidationCheck", () => {
   it("runs a validation check and returns result", () => {
     const result = runValidationCheck(
       { type: "required", message: "Required" },
-      { value: "hello", dataModel: {} },
+      { value: "hello", stateModel: {} },
     );
 
     expect(result.type).toBe("required");
@@ -201,14 +201,14 @@ describe("runValidationCheck", () => {
     expect(result.message).toBe("Required");
   });
 
-  it("resolves dynamic args from dataModel", () => {
+  it("resolves dynamic args from stateModel", () => {
     const result = runValidationCheck(
       {
         type: "minLength",
         args: { min: { $state: "/minLen" } },
         message: "Too short",
       },
-      { value: "hi", dataModel: { minLen: 5 } },
+      { value: "hi", stateModel: { minLen: 5 } },
     );
 
     expect(result.valid).toBe(false);
@@ -217,7 +217,7 @@ describe("runValidationCheck", () => {
   it("returns valid for unknown functions with warning", () => {
     const result = runValidationCheck(
       { type: "unknownFunction", message: "Unknown" },
-      { value: "test", dataModel: {} },
+      { value: "test", stateModel: {} },
     );
 
     expect(result.valid).toBe(true);
@@ -231,7 +231,7 @@ describe("runValidationCheck", () => {
 
     const result = runValidationCheck(
       { type: "startsWithA", message: "Must start with A" },
-      { value: "Apple", dataModel: {}, customFunctions },
+      { value: "Apple", stateModel: {}, customFunctions },
     );
 
     expect(result.valid).toBe(true);
@@ -247,7 +247,7 @@ describe("runValidation", () => {
           { type: "email", message: "Invalid email" },
         ],
       },
-      { value: "test@example.com", dataModel: {} },
+      { value: "test@example.com", stateModel: {} },
     );
 
     expect(result.valid).toBe(true);
@@ -263,7 +263,7 @@ describe("runValidation", () => {
           { type: "email", message: "Invalid email" },
         ],
       },
-      { value: "", dataModel: {} },
+      { value: "", stateModel: {} },
     );
 
     expect(result.valid).toBe(false);
@@ -297,7 +297,7 @@ describe("runValidation", () => {
   });
 
   it("returns valid when no checks defined", () => {
-    const result = runValidation({}, { value: "", dataModel: {} });
+    const result = runValidation({}, { value: "", stateModel: {} });
 
     expect(result.valid).toBe(true);
     expect(result.checks).toHaveLength(0);

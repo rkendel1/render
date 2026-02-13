@@ -203,18 +203,18 @@ Pre-built Zod schemas for common json-render types:
 
 ```typescript
 import {
-  DynamicValueSchema,    // string | number | boolean | null | { path: string }
-  DynamicStringSchema,   // string | { path: string }
-  DynamicNumberSchema,   // number | { path: string }
-  DynamicBooleanSchema,  // boolean | { path: string }
+  DynamicValueSchema,    // string | number | boolean | null | { $state: string }
+  DynamicStringSchema,   // string | { $state: string }
+  DynamicNumberSchema,   // number | { $state: string }
+  DynamicBooleanSchema,  // boolean | { $state: string }
 } from '@json-render/core';
 
-// Dynamic values can be literals or data path references
-type DynamicValue<T> = T | { path: string };
+// Dynamic values can be literals or state path references
+type DynamicValue<T> = T | { $state: string };
 
-// Example: a prop that can be a literal or bound to data
+// Example: a prop that can be a literal or bound to state
 const schema = z.object({
-  label: DynamicStringSchema,  // "Hello" or { path: "/user/name" }
+  label: DynamicStringSchema,  // "Hello" or { $state: "/user/name" }
 });
 ```
 
@@ -329,10 +329,10 @@ interface SpecStreamCompiler<T> {
 import { getByPath, setByPath } from '@json-render/core';
 
 // Get value by JSON Pointer path
-const value = getByPath(data, '/user/name');  // "Alice"
+const value = getByPath(state, '/user/name');  // "Alice"
 
 // Set value by path (mutates object)
-setByPath(data, '/user/email', 'alice@example.com');
+setByPath(state, '/user/email', 'alice@example.com');
 ```
 
 ### resolveDynamicValue
@@ -340,9 +340,9 @@ setByPath(data, '/user/email', 'alice@example.com');
 ```typescript
 import { resolveDynamicValue } from '@json-render/core';
 
-// Resolve a dynamic value against data
-const name = resolveDynamicValue("Hello", data);        // "Hello"
-const name2 = resolveDynamicValue({ path: "/user/name" }, data);  // "Alice"
+// Resolve a dynamic value against state
+const name = resolveDynamicValue("Hello", state);        // "Hello"
+const name2 = resolveDynamicValue({ $state: "/user/name" }, state);  // "Alice"
 ```
 
 ### findFormValue
@@ -435,7 +435,7 @@ interface ValidationSchema {
 }
 
 interface ValidationCheck {
-  fn: string;
+  type: string;
   args?: Record<string, unknown>;
   message: string;
 }

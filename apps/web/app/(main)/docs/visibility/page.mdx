@@ -111,6 +111,22 @@ Place multiple conditions in an array for implicit AND:
 
 All conditions must be true for the element to be visible.
 
+## OR Conditions
+
+Use `$or` when at least one condition should be true:
+
+```json
+{
+  "type": "SpecialOffer",
+  "visible": { "$or": [
+    { "$state": "/user/isVIP" },
+    { "$state": "/cart/total", "gt": 200 }
+  ]}
+}
+```
+
+Visible when the user is VIP **or** the cart total exceeds 200. `$or` can contain any visibility conditions, including nested arrays (AND) and comparisons.
+
 ## Always / Never
 
 Use boolean literals for constant visibility:
@@ -190,6 +206,10 @@ Use boolean literals for constant visibility:
       <tr>
         <td>AND (multiple)</td>
         <td><code>{"[ condition, condition ]"}</code></td>
+      </tr>
+      <tr>
+        <td>OR (any)</td>
+        <td><code>{'{ "$or": [ condition, condition ] }'}</code></td>
       </tr>
       <tr>
         <td>Always</td>
