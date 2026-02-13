@@ -89,8 +89,8 @@ export function extractFields(zodObj: unknown): CatalogField[] {
  * Parses component definitions and action definitions into a
  * structured format suitable for rendering in the UI.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function buildCatalogDisplayData(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rawCatalogData: any,
 ): CatalogDisplayData {
   const components = Object.entries(rawCatalogData.components ?? {})

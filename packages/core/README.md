@@ -335,7 +335,7 @@ visibility.gt("/path", n)      // { $state: "/path", gt: n }
 visibility.gte("/path", n)     // { $state: "/path", gte: n }
 visibility.lt("/path", n)      // { $state: "/path", lt: n }
 visibility.lte("/path", n)     // { $state: "/path", lte: n }
-visibility.and(cond1, cond2)   // [cond1, cond2]
+visibility.and(cond1, cond2)   // { $and: [cond1, cond2] }
 ```
 
 ## User Prompt Builder

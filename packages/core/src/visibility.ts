@@ -336,10 +336,10 @@ export const visibility = {
     lte: value,
   }),
 
-  /** AND multiple conditions (implicit AND — array of conditions) */
-  and: (
-    ...conditions: (SingleCondition | SingleCondition[])[]
-  ): SingleCondition[] => conditions.flat(),
+  /** AND multiple conditions */
+  and: (...conditions: VisibilityCondition[]): AndCondition => ({
+    $and: conditions,
+  }),
 
   /** OR multiple conditions */
   or: (...conditions: VisibilityCondition[]): OrCondition => ({

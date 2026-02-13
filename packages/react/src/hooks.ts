@@ -503,13 +503,33 @@ export interface DataPart {
  * }
  * ```
  */
+/**
+ * Type guard that validates a data part payload looks like a valid
+ * {@link SpecDataPart} before we cast it. Returns `false` (and the
+ * part is silently skipped) for malformed payloads.
+ */
+function isSpecDataPart(data: unknown): data is SpecDataPart {
+  if (typeof data !== "object" || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  switch (obj.type) {
+    case "patch":
+      return typeof obj.patch === "object" && obj.patch !== null;
+    case "flat":
+    case "nested":
+      return typeof obj.spec === "object" && obj.spec !== null;
+    default:
+      return false;
+  }
+}
+
 export function buildSpecFromParts(parts: DataPart[]): Spec | null {
   const spec: Spec = { root: "", elements: {} };
   let hasSpec = false;
 
   for (const part of parts) {
     if (part.type === SPEC_DATA_PART_TYPE) {
-      const payload = part.data as SpecDataPart;
+      if (!isSpecDataPart(part.data)) continue;
+      const payload = part.data;
       if (payload.type === "patch") {
         hasSpec = true;
         applySpecPatch(spec, payload.patch);

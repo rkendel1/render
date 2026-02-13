@@ -2,11 +2,7 @@
 
 import { toast } from "sonner";
 import { findFormValue } from "@json-render/core";
-import {
-  useStateStore,
-  useBoundProp,
-  defineRegistry,
-} from "@json-render/react";
+import { useBoundProp, defineRegistry } from "@json-render/react";
 import {
   Bar,
   BarChart as RechartsBarChart,

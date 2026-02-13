@@ -52,7 +52,7 @@ export const catalog = defineCatalog(schema, {
 ### 2. Define Component Implementations
 
 ```tsx
-import { defineRegistry, useStateBinding } from "@json-render/react";
+import { defineRegistry, useBoundProp } from "@json-render/react";
 import { catalog } from "./catalog";
 
 export const { registry } = defineRegistry(catalog, {
@@ -70,7 +70,7 @@ export const { registry } = defineRegistry(catalog, {
       </button>
     ),
     Input: ({ props, bindings }) => {
-      const [value, setValue] = useStateBinding(bindings?.value ?? null);
+      const [value, setValue] = useBoundProp(props.value, bindings?.value);
       return (
         <label>
           {props.label}
@@ -268,7 +268,7 @@ visibility.when("/path")       // { $state: "/path" }
 visibility.unless("/path")     // { $state: "/path", not: true }
 visibility.eq("/path", val)    // { $state: "/path", eq: val }
 visibility.neq("/path", val)   // { $state: "/path", neq: val }
-visibility.and(cond1, cond2)  // [cond1, cond2]
+visibility.and(cond1, cond2)  // { $and: [cond1, cond2] }
 visibility.always             // true
 visibility.never              // false
 ```
@@ -291,7 +291,7 @@ Any prop value can use data-driven expressions that resolve at render time. The 
 }
 ```
 
-For two-way binding, use `{ "$bind": "/path" }` on the natural value prop (e.g. `value`, `checked`, `pressed`). Components receive resolved `bindings` with the state path for each bound prop; use `useStateBinding(bindings?.value)` to get `[value, setValue]`.
+For two-way binding, use `{ "$bind": "/path" }` on the natural value prop (e.g. `value`, `checked`, `pressed`). Components receive resolved `bindings` with the state path for each bound prop; use `useBoundProp(props.value, bindings?.value)` to get `[value, setValue]`.
 
 See [@json-render/core](../core/README.md) for full expression syntax.
 
@@ -327,7 +327,7 @@ interface ComponentContext<P> {
 }
 ```
 
-Use `bindings?.value`, `bindings?.checked`, etc. with `useStateBinding()` for two-way bound form components.
+Use `bindings?.value`, `bindings?.checked`, etc. with `useBoundProp()` for two-way bound form components.
 
 ## Generate AI Prompts
 

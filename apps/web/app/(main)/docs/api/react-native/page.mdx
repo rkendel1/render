@@ -36,11 +36,11 @@ React Native renderer with standard components, providers, and hooks.
 | Component | Props | Description |
 |-----------|-------|-------------|
 | `Button` | `label`, `variant`, `size`, `disabled`, `action`, `actionParams` | Pressable button |
-| `TextInput` | `placeholder`, `statePath`, `secure`, `keyboardType`, `multiline` | Text input field |
-| `Switch` | `statePath`, `label` | Toggle switch |
-| `Checkbox` | `statePath`, `label` | Checkbox with label |
-| `Slider` | `statePath`, `min`, `max`, `step` | Range slider |
-| `SearchBar` | `placeholder`, `statePath` | Search input |
+| `TextInput` | `placeholder`, `value` (use `$bind`), `secure`, `keyboardType`, `multiline` | Text input field |
+| `Switch` | `checked` (use `$bind`), `label` | Toggle switch |
+| `Checkbox` | `checked` (use `$bind`), `label` | Checkbox with label |
+| `Slider` | `value` (use `$bind`), `min`, `max`, `step` | Range slider |
+| `SearchBar` | `placeholder`, `value` (use `$bind`) | Search input |
 
 ### Feedback
 

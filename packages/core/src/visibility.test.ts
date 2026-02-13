@@ -705,15 +705,14 @@ describe("visibility helper", () => {
     });
   });
 
-  it("and returns an array of conditions", () => {
+  it("and returns an $and wrapper", () => {
     const result = visibility.and(
       visibility.when("/isAdmin"),
       visibility.eq("/tab", "home"),
     );
-    expect(result).toEqual([
-      { $state: "/isAdmin" },
-      { $state: "/tab", eq: "home" },
-    ]);
+    expect(result).toEqual({
+      $and: [{ $state: "/isAdmin" }, { $state: "/tab", eq: "home" }],
+    });
   });
 
   it("or returns an $or wrapper", () => {
