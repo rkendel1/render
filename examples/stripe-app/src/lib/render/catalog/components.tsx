@@ -467,13 +467,13 @@ export const TextField: FunctionComponent<ExtendedRenderProps> = ({
     placeholder,
     description,
     error,
-    valuePath,
+    statePath,
     size = "medium",
     disabled,
     required,
   } = element.props as Record<string, unknown>;
   const value =
-    getValue && valuePath ? (getValue(String(valuePath)) as string) : "";
+    getValue && statePath ? (getValue(String(statePath)) as string) : "";
 
   return (
     <UITextField
@@ -499,13 +499,13 @@ export const TextArea: FunctionComponent<ExtendedRenderProps> = ({
     placeholder,
     description,
     error,
-    valuePath,
+    statePath,
     rows = 3,
     disabled,
     required,
   } = element.props as Record<string, unknown>;
   const value =
-    getValue && valuePath ? (getValue(String(valuePath)) as string) : "";
+    getValue && statePath ? (getValue(String(statePath)) as string) : "";
 
   return (
     <UITextArea
@@ -530,14 +530,14 @@ export const Select: FunctionComponent<ExtendedRenderProps> = ({
     label,
     description,
     error,
-    valuePath,
+    statePath,
     options = [],
     size = "medium",
     disabled,
     required,
   } = element.props as Record<string, unknown>;
   const value =
-    getValue && valuePath ? (getValue(String(valuePath)) as string) : "";
+    getValue && statePath ? (getValue(String(statePath)) as string) : "";
   const opts = options as Array<{ value: string; label: string }>;
 
   return (
@@ -564,11 +564,11 @@ export const Checkbox: FunctionComponent<ExtendedRenderProps> = ({
   element,
   getValue,
 }) => {
-  const { label, description, error, valuePath, defaultChecked, disabled } =
+  const { label, description, error, statePath, defaultChecked, disabled } =
     element.props as Record<string, unknown>;
   const checked =
-    getValue && valuePath
-      ? (getValue(String(valuePath)) as boolean)
+    getValue && statePath
+      ? (getValue(String(statePath)) as boolean)
       : Boolean(defaultChecked);
 
   return (
@@ -587,10 +587,10 @@ export const Radio: FunctionComponent<ExtendedRenderProps> = ({
   element,
   getValue,
 }) => {
-  const { label, description, valuePath, value, name, disabled } =
+  const { label, description, statePath, value, name, disabled } =
     element.props as Record<string, unknown>;
   const currentValue =
-    getValue && valuePath ? (getValue(String(valuePath)) as string) : "";
+    getValue && statePath ? (getValue(String(statePath)) as string) : "";
 
   return (
     <UIRadio
@@ -609,11 +609,11 @@ export const Switch: FunctionComponent<ExtendedRenderProps> = ({
   element,
   getValue,
 }) => {
-  const { label, description, valuePath, defaultChecked, disabled } =
+  const { label, description, statePath, defaultChecked, disabled } =
     element.props as Record<string, unknown>;
   const checked =
-    getValue && valuePath
-      ? (getValue(String(valuePath)) as boolean)
+    getValue && statePath
+      ? (getValue(String(statePath)) as boolean)
       : Boolean(defaultChecked);
 
   return (
@@ -635,12 +635,12 @@ export const DateField: FunctionComponent<ExtendedRenderProps> = ({
     label,
     description,
     error,
-    valuePath,
+    statePath,
     size = "medium",
     disabled,
   } = element.props as Record<string, unknown>;
   const value =
-    getValue && valuePath ? (getValue(String(valuePath)) as string) : "";
+    getValue && statePath ? (getValue(String(statePath)) as string) : "";
 
   return (
     <UIDateField

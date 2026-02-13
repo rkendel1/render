@@ -23,7 +23,7 @@ json-render includes common validation functions:
   "type": "TextField",
   "props": {
     "label": "Email",
-    "valuePath": "/form/email",
+    "statePath": "/form/email",
     "checks": [
       { "fn": "required", "message": "Email is required" },
       { "fn": "email", "message": "Invalid email format" }
@@ -40,7 +40,7 @@ json-render includes common validation functions:
   "type": "TextField",
   "props": {
     "label": "Password",
-    "valuePath": "/form/password",
+    "statePath": "/form/password",
     "checks": [
       { "fn": "required", "message": "Password is required" },
       { 
@@ -113,7 +113,7 @@ import { useFieldValidation } from '@json-render/react';
 
 function TextField({ props }) {
   const { value, setValue, errors, validate } = useFieldValidation(
-    props.valuePath,
+    props.statePath,
     props.checks
   );
 

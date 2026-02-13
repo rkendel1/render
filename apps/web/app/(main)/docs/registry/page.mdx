@@ -150,7 +150,7 @@ import { getByPath } from '@json-render/core';
 
 Metric: ({ props }) => {
   const { data } = useStateStore();
-  const value = getByPath(data, props.valuePath);
+  const value = getByPath(data, props.statePath);
 
   return (
     <div className="metric">

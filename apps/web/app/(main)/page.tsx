@@ -115,7 +115,7 @@ export const catalog = createCatalog({
     Metric: {
       props: z.object({
         label: z.string(),
-        valuePath: z.string(),
+        statePath: z.string(),
         format: z.enum(['currency', 'percent']),
       }),
     },
@@ -144,7 +144,7 @@ export const catalog = createCatalog({
       "type": "Metric",
       "props": {
         "label": "Total Revenue",
-        "valuePath": "/metrics/revenue",
+        "statePath": "/metrics/revenue",
         "format": "currency"
       }
     }
@@ -183,7 +183,7 @@ export const catalog = createCatalog({
       "type": "Metric",
       "props": {
         "label": "Total Revenue",
-        "valuePath": "analytics/revenue",
+        "statePath": "analytics/revenue",
         "format": "currency"
       }
     },
@@ -223,7 +223,7 @@ export default function Page() {
       <Metric
         data={data}
         label="Total Revenue"
-        valuePath="analytics/revenue"
+        statePath="analytics/revenue"
         format="currency"
       />
       <Chart data={data} statePath="analytics/salesByRegion" />

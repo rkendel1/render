@@ -180,13 +180,15 @@ The condition uses the same [visibility](/docs/visibility) expression format.
 
 ## Quick Reference
 
-| Expression | Syntax | Resolves to | Context |
-|---|---|---|---|
-| `$state` | `{ "$state": "/path" }` | Value at path in state | Anywhere |
-| `$item` | `{ "$item": "/field" }` | Field from current repeat item | Inside `repeat` only |
-| `$index` | `{ "$index": true }` | Current array index (number) | Inside `repeat` only |
-| `$cond` | `{ "$cond": ..., "$then": ..., "$else": ... }` | Conditional value | Anywhere |
-| `statePath` | `"statePath": "/path"` | Two-way binding (read + write) | Form components |
+```
+Expression   Syntax                                         Context
+-----------  ---------------------------------------------  -------------------
+$state       { "$state": "/path" }                          Anywhere
+$item        { "$item": "/field" }                          Inside repeat only
+$index       { "$index": true }                             Inside repeat only
+$cond        { "$cond": ..., "$then": ..., "$else": ... }   Anywhere
+statePath    "statePath": "/path"                           Form components
+```
 
 ## Next
 

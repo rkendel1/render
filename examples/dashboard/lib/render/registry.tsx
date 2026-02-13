@@ -149,9 +149,9 @@ export const { registry, handlers, executeAction } = defineRegistry(
             {props.label ? <Label>{props.label}</Label> : null}
             <Input
               type={props.type ?? "text"}
-              value={(getByPath(state, props.valuePath) as string) ?? ""}
+              value={(getByPath(state, props.statePath) as string) ?? ""}
               placeholder={props.placeholder ?? ""}
-              onChange={(e) => set(props.valuePath, e.target.value)}
+              onChange={(e) => set(props.statePath, e.target.value)}
             />
           </div>
         );
@@ -196,18 +196,18 @@ export const { registry, handlers, executeAction } = defineRegistry(
       Checkbox: ({ props }) => {
         const { state, set } = useStateStore();
         const checked =
-          (getByPath(state, props.valuePath) as boolean) ??
+          (getByPath(state, props.statePath) as boolean) ??
           props.defaultChecked ??
           false;
         return (
           <div className="flex items-center gap-2">
             <Checkbox
-              id={props.valuePath}
+              id={props.statePath}
               checked={checked}
-              onCheckedChange={(value) => set(props.valuePath, value)}
+              onCheckedChange={(value) => set(props.statePath, value)}
             />
             {props.label ? (
-              <Label htmlFor={props.valuePath}>{props.label}</Label>
+              <Label htmlFor={props.statePath}>{props.label}</Label>
             ) : null}
           </div>
         );
@@ -306,13 +306,13 @@ export const { registry, handlers, executeAction } = defineRegistry(
       RadioGroup: ({ props }) => {
         const { state, set } = useStateStore();
         const value =
-          (getByPath(state, props.valuePath) as string) ??
+          (getByPath(state, props.statePath) as string) ??
           props.defaultValue ??
           "";
         return (
           <RadioGroup
             value={value}
-            onValueChange={(v) => set(props.valuePath, v)}
+            onValueChange={(v) => set(props.statePath, v)}
           >
             {props.options.map((option) => (
               <div key={option.value} className="flex items-center gap-2">
@@ -326,9 +326,9 @@ export const { registry, handlers, executeAction } = defineRegistry(
 
       Select: ({ props }) => {
         const { state, set } = useStateStore();
-        const value = (getByPath(state, props.valuePath) as string) ?? "";
+        const value = (getByPath(state, props.statePath) as string) ?? "";
         return (
-          <Select value={value} onValueChange={(v) => set(props.valuePath, v)}>
+          <Select value={value} onValueChange={(v) => set(props.statePath, v)}>
             <SelectTrigger>
               <SelectValue placeholder={props.placeholder ?? "Select..."} />
             </SelectTrigger>
@@ -362,18 +362,18 @@ export const { registry, handlers, executeAction } = defineRegistry(
       Switch: ({ props }) => {
         const { state, set } = useStateStore();
         const checked =
-          (getByPath(state, props.valuePath) as boolean) ??
+          (getByPath(state, props.statePath) as boolean) ??
           props.defaultChecked ??
           false;
         return (
           <div className="flex items-center gap-2">
             <Switch
-              id={props.valuePath}
+              id={props.statePath}
               checked={checked}
-              onCheckedChange={(value) => set(props.valuePath, value)}
+              onCheckedChange={(value) => set(props.statePath, value)}
             />
             {props.label ? (
-              <Label htmlFor={props.valuePath}>{props.label}</Label>
+              <Label htmlFor={props.statePath}>{props.label}</Label>
             ) : null}
           </div>
         );
@@ -402,10 +402,10 @@ export const { registry, handlers, executeAction } = defineRegistry(
           <div className="flex flex-col gap-2">
             {props.label ? <Label>{props.label}</Label> : null}
             <Textarea
-              value={(getByPath(state, props.valuePath) as string) ?? ""}
+              value={(getByPath(state, props.statePath) as string) ?? ""}
               placeholder={props.placeholder ?? ""}
               rows={props.rows ?? 3}
-              onChange={(e) => set(props.valuePath, e.target.value)}
+              onChange={(e) => set(props.statePath, e.target.value)}
             />
           </div>
         );

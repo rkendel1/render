@@ -64,7 +64,7 @@ export function collectStatePaths(spec: Spec): Set<string> {
   traverseSpec(spec, (element, _key) => {
     // Check props for data paths
     for (const [propName, propValue] of Object.entries(element.props)) {
-      // Check for path props (e.g., valuePath, dataPath, bindPath)
+      // Check for path props (e.g., statePath, dataPath, bindPath)
       if (typeof propValue === "string") {
         if (
           propName.endsWith("Path") ||

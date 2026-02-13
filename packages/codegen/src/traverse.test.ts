@@ -72,13 +72,13 @@ describe("collectUsedComponents", () => {
 });
 
 describe("collectStatePaths", () => {
-  it("collects paths from valuePath props", () => {
+  it("collects paths from statePath props", () => {
     const spec: Spec = {
       root: "root",
       elements: {
         root: {
           type: "Metric",
-          props: { valuePath: "analytics/revenue" },
+          props: { statePath: "analytics/revenue" },
         },
       },
     };

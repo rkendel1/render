@@ -57,14 +57,14 @@ export const dashboardCatalog = defineCatalog(schema, {
     Input: {
       props: z.object({
         label: z.string().nullable(),
-        valuePath: z.string(),
+        statePath: z.string(),
         placeholder: z.string().nullable(),
         type: z.enum(["text", "email", "password", "number", "tel"]).nullable(),
       }),
       description: "Text input field",
       example: {
         label: "Email",
-        valuePath: "/form/email",
+        statePath: "/form/email",
         placeholder: "you@example.com",
         type: "email",
       },
@@ -118,7 +118,7 @@ export const dashboardCatalog = defineCatalog(schema, {
     Checkbox: {
       props: z.object({
         label: z.string().nullable(),
-        valuePath: z.string(),
+        statePath: z.string(),
         defaultChecked: z.boolean().nullable(),
       }),
       description: "Checkbox input",
@@ -194,7 +194,7 @@ export const dashboardCatalog = defineCatalog(schema, {
 
     RadioGroup: {
       props: z.object({
-        valuePath: z.string(),
+        statePath: z.string(),
         options: z.array(
           z.object({
             value: z.string(),
@@ -208,7 +208,7 @@ export const dashboardCatalog = defineCatalog(schema, {
 
     Select: {
       props: z.object({
-        valuePath: z.string(),
+        statePath: z.string(),
         placeholder: z.string().nullable(),
         options: z.array(
           z.object({
@@ -238,7 +238,7 @@ export const dashboardCatalog = defineCatalog(schema, {
     Switch: {
       props: z.object({
         label: z.string().nullable(),
-        valuePath: z.string(),
+        statePath: z.string(),
         defaultChecked: z.boolean().nullable(),
       }),
       description: "Toggle switch",
@@ -269,7 +269,7 @@ export const dashboardCatalog = defineCatalog(schema, {
     Textarea: {
       props: z.object({
         label: z.string().nullable(),
-        valuePath: z.string(),
+        statePath: z.string(),
         placeholder: z.string().nullable(),
         rows: z.number().nullable(),
       }),
