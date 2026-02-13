@@ -92,8 +92,8 @@ export function Metric({ label, statePath, data }: MetricProps) {
 ```typescript
 import { traverseSpec } from '@json-render/codegen';
 
-traverseSpec(spec, (element, depth, parent) => {
-  console.log(' '.repeat(depth * 2) + element.type);
+traverseSpec(spec, (element, key, depth, parent) => {
+  console.log(' '.repeat(depth * 2) + `${key}: ${element.type}`);
 });
 ```
 

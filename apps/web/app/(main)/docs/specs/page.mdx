@@ -221,16 +221,19 @@ Control when elements appear using the `visible` property:
 
 ### Rendering a Spec
 
-```tsx
-import { Renderer } from '@json-render/react';
+Wrap the `Renderer` in a `StateProvider` to supply the state model:
 
-function MyApp({ spec, data }) {
+```tsx
+import { Renderer, StateProvider, VisibilityProvider } from '@json-render/react';
+import { registry } from './registry';
+
+function MyApp({ spec, initialState }) {
   return (
-    <Renderer
-      spec={spec}
-      data={data}
-      registry={registry}
-    />
+    <StateProvider initialState={initialState}>
+      <VisibilityProvider>
+        <Renderer spec={spec} registry={registry} />
+      </VisibilityProvider>
+    </StateProvider>
   );
 }
 ```
@@ -238,12 +241,12 @@ function MyApp({ spec, data }) {
 ### Validating a Spec
 
 ```typescript
-import { validate } from '@json-render/core';
+import { validateSpec } from '@json-render/core';
 
-const result = validate(spec, catalog);
+const result = validateSpec(spec);
 
 if (!result.valid) {
-  console.error('Invalid spec:', result.errors);
+  console.error('Invalid spec:', result.issues);
 }
 ```
 

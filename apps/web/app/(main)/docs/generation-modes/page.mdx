@@ -111,7 +111,7 @@ return createUIMessageStreamResponse({ stream });
 On the client, use `useJsonRenderMessage` from `@json-render/react` to extract the spec from a chat message's parts:
 
 ```tsx
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
 import { useJsonRenderMessage } from "@json-render/react";
 
 function Chat() {
@@ -128,7 +128,7 @@ function Chat() {
 }
 
 function ChatMessage({ message }) {
-  const { spec } = useJsonRenderMessage(message);
+  const { spec } = useJsonRenderMessage(message.parts);
 
   return (
     <div>

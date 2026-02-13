@@ -13,12 +13,12 @@ Walk the UI spec depth-first.
 ```typescript
 function traverseSpec(
   spec: Spec,
-  visitor: SpecVisitor,
+  visitor: TreeVisitor,
   startKey?: string
 ): void
 
-interface SpecVisitor {
-  (element: UIElement, depth: number, parent: UIElement | null): void;
+interface TreeVisitor {
+  (element: UIElement, key: string, depth: number, parent: UIElement | null): void;
 }
 ```
 

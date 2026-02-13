@@ -99,7 +99,7 @@ function App() {
   };
 
   return (
-    <ValidationProvider functions={customValidators}>
+    <ValidationProvider customFunctions={customValidators}>
       {/* Your UI */}
     </ValidationProvider>
   );
@@ -109,20 +109,22 @@ function App() {
 ## Using in Components
 
 ```tsx
-import { useFieldValidation } from '@json-render/react';
+import { useFieldValidation, useStateStore } from '@json-render/react';
 
 function TextField({ props }) {
-  const { value, setValue, errors, validate } = useFieldValidation(
+  const { state, set } = useStateStore();
+  const { errors, isValid, validate, touch, clear } = useFieldValidation(
     props.statePath,
-    props.checks
+    { checks: props.checks, validateOn: props.validateOn }
   );
+  const value = state[props.statePath] as string;
 
   return (
     <div>
       <label>{props.label}</label>
       <input
         value={value || ''}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => set(props.statePath, e.target.value)}
         onBlur={() => validate()}
       />
       {errors.map((error, i) => (

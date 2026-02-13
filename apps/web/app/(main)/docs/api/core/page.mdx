@@ -357,14 +357,17 @@ const value = findFormValue("name", params, data);
 
 ## evaluateVisibility
 
-Evaluates a visibility condition against data and auth state.
+Evaluates a visibility condition against the state model.
 
 ```typescript
 function evaluateVisibility(
   condition: VisibilityCondition | undefined,
-  data: Record<string, unknown>,
-  auth?: AuthState
+  ctx: VisibilityContext
 ): boolean
+
+interface VisibilityContext {
+  stateModel: StateModel;
+}
 
 type VisibilityCondition =
   | { $state: string }                                    // truthiness
@@ -385,14 +388,16 @@ type VisibilityCondition =
 
 ```typescript
 interface UIElement {
-  key: string;
   type: string;
   props: Record<string, unknown>;
   children?: string[];          // Keys of child elements
   visible?: VisibilityCondition;
-  validation?: ValidationSchema;
+  on?: Record<string, ActionBinding | ActionBinding[]>;  // Event bindings
+  repeat?: { path: string; key?: string };               // Repeat for arrays
 }
 ```
+
+Elements are stored in the `elements` map keyed by string IDs. The key comes from the map, not from the element itself.
 
 ### Spec (Element Tree)
 
@@ -405,12 +410,12 @@ interface Spec {
 
 Elements are stored as a flat map with string keys. The tree structure is built by following the `children` arrays.
 
-### Action
+### ActionBinding
 
 ```typescript
-interface Action {
-  name: string;
-  params?: Record<string, unknown>;
+interface ActionBinding {
+  action: string;
+  params?: Record<string, DynamicValue>;
   confirm?: {
     title: string;
     message: string;

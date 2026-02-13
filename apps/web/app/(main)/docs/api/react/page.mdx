@@ -27,26 +27,21 @@ type ActionHandler = (params: Record<string, unknown>) => void | Promise<void>;
 ### VisibilityProvider
 
 ```tsx
-<VisibilityProvider auth={AuthState}>
+<VisibilityProvider>
   {children}
 </VisibilityProvider>
-
-interface AuthState {
-  isSignedIn: boolean;
-  roles?: string[];
-}
 ```
 
-Conditions in specs use the `VisibilityCondition` format with `$state` paths (e.g. `{ "$state": "/path" }`, `{ "$state": "/path", "eq": value }`). See [visibility](/docs/visibility) for the full syntax.
+`VisibilityProvider` reads state from the parent `StateProvider` automatically. Conditions in specs use the `VisibilityCondition` format with `$state` paths (e.g. `{ "$state": "/path" }`, `{ "$state": "/path", "eq": value }`). See [visibility](/docs/visibility) for the full syntax.
 
 ### ValidationProvider
 
 ```tsx
-<ValidationProvider functions={Record<string, ValidatorFn>}>
+<ValidationProvider customFunctions={Record<string, ValidationFunction>}>
   {children}
 </ValidationProvider>
 
-type ValidatorFn = (value: unknown, args?: object) => boolean | Promise<boolean>;
+type ValidationFunction = (value: unknown, args?: object) => boolean | Promise<boolean>;
 ```
 
 ## defineRegistry
@@ -119,10 +114,10 @@ const {
 
 ```typescript
 const {
-  data,      // Record<string, unknown>
-  setState,   // (data: object) => void
-  getValue,  // (path: string) => unknown
-  setValue,  // (path: string, value: unknown) => void
+  state,   // StateModel (Record<string, unknown>)
+  get,     // (path: string) => unknown
+  set,     // (path: string, value: unknown) => void
+  update,  // (updates: Record<string, unknown>) => void
 } = useStateStore();
 ```
 
@@ -141,15 +136,15 @@ const [value, setValue] = useStateBinding(path: string);
 ### useActions
 
 ```typescript
-const { dispatch } = useActions();
-// dispatch(actionName: string, params: object)
+const { execute } = useActions();
+// execute(binding: ActionBinding) => Promise<void>
 ```
 
 ### useAction
 
 ```typescript
-const submitForm = useAction('submit_form');
-// submitForm(params: object)
+const { execute, isLoading } = useAction(binding: ActionBinding);
+// execute() => Promise<void>
 ```
 
 ### useIsVisible
@@ -162,10 +157,13 @@ const isVisible = useIsVisible(condition?: VisibilityCondition);
 
 ```typescript
 const {
-  value,     // unknown
-  setValue,  // (value: unknown) => void
+  state,     // FieldValidationState
+  validate,  // () => ValidationResult
+  touch,     // () => void
+  clear,     // () => void
   errors,    // string[]
-  validate,  // () => Promise<boolean>
   isValid,   // boolean
-} = useFieldValidation(path: string, checks: ValidationCheck[]);
+} = useFieldValidation(path: string, config?: ValidationConfig);
 ```
+
+`ValidationConfig` is `{ checks?: ValidationCheck[], validateOn?: 'change' | 'blur' | 'submit' }`.
