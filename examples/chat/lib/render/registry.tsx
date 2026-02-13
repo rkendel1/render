@@ -7,7 +7,6 @@ import {
   Bar,
   BarChart as RechartsBarChart,
   CartesianGrid,
-  Cell,
   Legend,
   Line,
   LineChart as RechartsLineChart,
