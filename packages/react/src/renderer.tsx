@@ -16,7 +16,11 @@ import type {
   LegacyCatalog,
   ComponentDefinition,
 } from "@json-render/core";
-import { resolveElementProps, getByPath } from "@json-render/core";
+import {
+  resolveElementProps,
+  getByPath,
+  type PropResolutionContext,
+} from "@json-render/core";
 import type {
   Components,
   Actions,
@@ -32,11 +36,7 @@ import { VisibilityProvider } from "./contexts/visibility";
 import { ActionProvider } from "./contexts/actions";
 import { ValidationProvider } from "./contexts/validation";
 import { ConfirmDialog } from "./contexts/actions";
-import {
-  RepeatScopeProvider,
-  useRepeatScope,
-  rewriteRepeatTokens,
-} from "./contexts/repeat-scope";
+import { RepeatScopeProvider, useRepeatScope } from "./contexts/repeat-scope";
 
 /**
  * Props passed to component renderers
@@ -143,50 +143,12 @@ function ElementRenderer({
   const { ctx } = useVisibility();
   const { execute } = useActions();
 
-  // ---- Rewrite $item / $index tokens when inside a repeat ----
-  let effectiveElement = element;
-  if (repeatScope) {
-    const rewrittenProps = rewriteRepeatTokens(
-      element.props,
-      repeatScope.basePath,
-      repeatScope.index,
-    );
-    const rewrittenVisible =
-      element.visible !== undefined
-        ? rewriteRepeatTokens(
-            element.visible,
-            repeatScope.basePath,
-            repeatScope.index,
-          )
-        : element.visible;
-    const rewrittenOn =
-      element.on !== undefined
-        ? rewriteRepeatTokens(
-            element.on,
-            repeatScope.basePath,
-            repeatScope.index,
-          )
-        : element.on;
-    if (
-      rewrittenProps !== element.props ||
-      rewrittenVisible !== element.visible ||
-      rewrittenOn !== element.on
-    ) {
-      effectiveElement = {
-        ...element,
-        props: rewrittenProps as Record<string, unknown>,
-        visible: rewrittenVisible as UIElement["visible"],
-        on: rewrittenOn as UIElement["on"],
-      };
-    }
-  }
-
-  // Evaluate visibility (after token rewriting so paths are absolute)
-  const isVisible = useIsVisible(effectiveElement.visible);
+  // Evaluate visibility
+  const isVisible = useIsVisible(element.visible);
 
   // Create emit function that resolves events to action bindings.
   // Must be called before any early return to satisfy Rules of Hooks.
-  const onBindings = effectiveElement.on;
+  const onBindings = element.on;
   const emit = useCallback(
     (eventName: string) => {
       const binding = onBindings?.[eventName];
@@ -204,15 +166,34 @@ function ElementRenderer({
     return null;
   }
 
-  // Resolve dynamic prop expressions ($state, $cond/$then/$else)
-  const resolvedProps = resolveElementProps(
-    effectiveElement.props as Record<string, unknown>,
-    ctx,
+  // Build prop resolution context (extends visibility context with repeat scope)
+  const propCtx: PropResolutionContext = repeatScope
+    ? { ...ctx, repeatItem: repeatScope.item, repeatIndex: repeatScope.index }
+    : ctx;
+
+  // Resolve dynamic prop expressions ($state, $item, $index, $cond/$then/$else)
+  let resolvedProps = resolveElementProps(
+    element.props as Record<string, unknown>,
+    propCtx,
   );
+  // Rewrite statePath for two-way binding inside repeat scope
+  // statePath:"$item/field" → statePath:"/todos/0/field"
+  if (
+    repeatScope &&
+    typeof resolvedProps.statePath === "string" &&
+    resolvedProps.statePath.startsWith("$item")
+  ) {
+    const suffix = resolvedProps.statePath.slice("$item".length); // e.g. "/completed"
+    resolvedProps = {
+      ...resolvedProps,
+      statePath: repeatScope.basePath + suffix,
+    };
+  }
+
   const resolvedElement =
-    resolvedProps !== effectiveElement.props
-      ? { ...effectiveElement, props: resolvedProps }
-      : effectiveElement;
+    resolvedProps !== element.props
+      ? { ...element, props: resolvedProps }
+      : element;
 
   // Get the component renderer
   const Component = registry[resolvedElement.type] ?? fallback;
@@ -290,18 +271,21 @@ function RepeatChildren({
 
   return (
     <>
-      {items.map((item, index) => {
+      {items.map((itemValue, index) => {
         // Use a stable key: prefer key field, fall back to index
         const key =
-          repeat.key && typeof item === "object" && item !== null
-            ? String((item as Record<string, unknown>)[repeat.key] ?? index)
+          repeat.key && typeof itemValue === "object" && itemValue !== null
+            ? String(
+                (itemValue as Record<string, unknown>)[repeat.key] ?? index,
+              )
             : String(index);
 
         return (
           <RepeatScopeProvider
             key={key}
-            basePath={`${statePath}/${index}`}
+            item={itemValue}
             index={index}
+            basePath={`${statePath}/${index}`}
           >
             {element.children?.map((childKey) => {
               const childElement = spec.elements[childKey];

@@ -39,7 +39,6 @@ export {
 export {
   RepeatScopeProvider,
   useRepeatScope,
-  rewriteRepeatTokens,
   type RepeatScopeValue,
 } from "./contexts/repeat-scope";
 

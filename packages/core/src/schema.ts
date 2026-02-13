@@ -590,7 +590,7 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
     ? findFirstStringProp(comp2Def.props)
     : null;
   const dynamicProps = dynamicPropName
-    ? { ...comp2Props, [dynamicPropName]: { $state: "$item/title" } }
+    ? { ...comp2Props, [dynamicPropName]: { $item: "/title" } }
     : comp2Props;
 
   const exampleOutput = [
@@ -648,7 +648,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     "Specs include a /state field to seed the state model. Components with statePath read from and write to this state, and $state expressions read from it.",
   );
   lines.push(
-    "CRITICAL: You MUST include state patches whenever your UI displays data via $state expressions, uses repeat to iterate over arrays, or uses statePath bindings. Without state, $state references resolve to nothing and repeat lists render zero items.",
+    "CRITICAL: You MUST include state patches whenever your UI displays data via $state, $item, or $index expressions, uses repeat to iterate over arrays, or uses statePath bindings. Without state, these references resolve to nothing and repeat lists render zero items.",
   );
   lines.push(
     "Output state patches right after the elements that reference them, so the UI fills in progressively as it streams.",
@@ -683,7 +683,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     `Example: ${JSON.stringify({ type: comp1, props: comp1Props, repeat: { path: "/todos", key: "id" }, children: ["todo-item"] })}`,
   );
   lines.push(
-    'Inside children of a repeated element, use "$item/field" for per-item paths: statePath:"$item/completed", { "$state": "$item/title" }. Use "$index" for the current array index.',
+    'Inside children of a repeated element, use { "$item": "/field" } to read a field from the current item, and { "$index": true } to get the current array index. For two-way binding use statePath:"$item/completed".',
   );
   lines.push(
     "ALWAYS use the repeat field for lists backed by state arrays. NEVER hardcode individual elements for each array item.",
@@ -706,7 +706,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     'Example: on: { "press": { "action": "pushState", "params": { "path": "/todos", "value": { "id": "$id", "title": { "path": "/newTodoText" }, "completed": false }, "clearPath": "/newTodoText" } } }',
   );
   lines.push(
-    'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a repeated element\'s children, use "$index" for the current item index.',
+    'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a repeated element\'s children, use { "$index": true } for the current item index.',
   );
   lines.push(
     "For lists where users can add/remove items (todos, carts, etc.), use pushState and removeState instead of hardcoding with setState.",
@@ -839,7 +839,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Write a brief conversational response before any JSONL output",
           'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
           'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
-          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, repeat, or statePath.",
+          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $item, $index, repeat, or statePath.",
           "ONLY use components listed above",
           "Each element value needs: type, props, children (array of child keys)",
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
@@ -848,7 +848,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Output ONLY JSONL patches - one JSON object per line, no markdown, no code fences",
           'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
           'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
-          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, repeat, or statePath.",
+          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $item, $index, repeat, or statePath.",
           "ONLY use components listed above",
           "Each element value needs: type, props, children (array of child keys)",
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",

@@ -711,7 +711,7 @@ describe("defineCatalog (new schema API)", () => {
 
     const prompt = catalog.prompt();
 
-    // In the repeat/item example, the first string prop should get a $state binding
-    expect(prompt).toContain('"title":{"$state":"$item/title"}');
+    // In the repeat/item example, the first string prop should get a $item binding
+    expect(prompt).toContain('"title":{"$item":"/title"}');
   });
 });

@@ -9,14 +9,17 @@ import { evaluateVisibility, type VisibilityContext } from "./visibility";
 /**
  * A prop expression that resolves to a value based on state.
  *
- * - `{ $state: string }` reads a value from the state model
+ * - `{ $state: string }` reads a value from the global state model
+ * - `{ $item: string }` reads a value from the current repeat item
+ * - `{ $index: true }` returns the current repeat array index
  * - `{ $cond, $then, $else }` conditionally picks a value
  * - Any other value is a literal (passthrough)
  */
 export type PropExpression<T = unknown> =
   | T
   | { $state: string }
-  | { $path: string } // deprecated alias for $state
+  | { $item: string }
+  | { $index: true }
   | {
       $cond: VisibilityCondition;
       $then: PropExpression<T>;
@@ -24,29 +27,47 @@ export type PropExpression<T = unknown> =
     };
 
 /**
- * Check if a value is a $state expression (or the deprecated $path alias)
+ * Context for resolving prop expressions.
+ * Extends VisibilityContext with optional repeat scope.
  */
-function isStateExpression(
-  value: unknown,
-): value is { $state: string } | { $path: string } {
-  if (typeof value !== "object" || value === null) return false;
-  const obj = value as Record<string, unknown>;
+export interface PropResolutionContext extends VisibilityContext {
+  /** The current repeat item object (set inside a repeat) */
+  repeatItem?: unknown;
+  /** The current repeat array index (set inside a repeat) */
+  repeatIndex?: number;
+}
+
+// =============================================================================
+// Type Guards
+// =============================================================================
+
+function isStateExpression(value: unknown): value is { $state: string } {
   return (
-    ("$state" in obj && typeof obj.$state === "string") ||
-    ("$path" in obj && typeof obj.$path === "string")
+    typeof value === "object" &&
+    value !== null &&
+    "$state" in value &&
+    typeof (value as Record<string, unknown>).$state === "string"
   );
 }
 
-/**
- * Get the path string from a $state or $path expression
- */
-function getStatePath(value: { $state?: string; $path?: string }): string {
-  return (value.$state ?? value.$path)!;
+function isItemExpression(value: unknown): value is { $item: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "$item" in value &&
+    typeof (value as Record<string, unknown>).$item === "string"
+  );
 }
 
-/**
- * Check if a value is a $cond expression
- */
+function isIndexExpression(value: unknown): value is { $index: true } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "$index" in value &&
+    (value as Record<string, unknown>).$index === true
+  );
+}
+
 function isCondExpression(
   value: unknown,
 ): value is { $cond: VisibilityCondition; $then: unknown; $else: unknown } {
@@ -65,19 +86,33 @@ function isCondExpression(
 
 /**
  * Resolve a single prop value that may contain expressions.
- * Recursively resolves $state/$path and $cond/$then/$else expressions.
+ * Handles $state, $item, $index, and $cond/$then/$else in a single pass.
  */
 export function resolvePropValue(
   value: unknown,
-  ctx: VisibilityContext,
+  ctx: PropResolutionContext,
 ): unknown {
   if (value === null || value === undefined) {
     return value;
   }
 
-  // $state (or deprecated $path): read from state model
+  // $state: read from global state model
   if (isStateExpression(value)) {
-    return getByPath(ctx.stateModel, getStatePath(value));
+    return getByPath(ctx.stateModel, value.$state);
+  }
+
+  // $item: read from current repeat item
+  if (isItemExpression(value)) {
+    if (ctx.repeatItem === undefined) return undefined;
+    // "/" means the whole item, "/field" means a field on the item
+    return value.$item === "/"
+      ? ctx.repeatItem
+      : getByPath(ctx.repeatItem, value.$item);
+  }
+
+  // $index: return current repeat array index
+  if (isIndexExpression(value)) {
+    return ctx.repeatIndex;
   }
 
   // $cond/$then/$else: evaluate condition and pick branch
@@ -110,7 +145,7 @@ export function resolvePropValue(
  */
 export function resolveElementProps(
   props: Record<string, unknown>,
-  ctx: VisibilityContext,
+  ctx: PropResolutionContext,
 ): Record<string, unknown> {
   const resolved: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
