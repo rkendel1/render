@@ -7,7 +7,7 @@ import { SPEC_DATA_PART, type SpecDataPart } from "@json-render/core";
 import { useJsonRenderMessage } from "@json-render/react";
 import { ExplorerRenderer } from "@/lib/render/renderer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowUp, Loader2, Sparkles } from "lucide-react";
+import { ArrowUp, ChevronRight, Loader2, Sparkles } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 
@@ -48,6 +48,69 @@ const SUGGESTIONS = [
 ];
 
 // =============================================================================
+// Tool Call Display
+// =============================================================================
+
+/** Readable labels for tool names */
+const TOOL_LABELS: Record<string, string> = {
+  getWeather: "Getting weather data",
+  getGitHubRepo: "Fetching GitHub repo",
+  getGitHubPullRequests: "Fetching pull requests",
+  getCryptoPrice: "Looking up crypto price",
+  getCryptoPriceHistory: "Fetching price history",
+  getHackerNewsTop: "Loading Hacker News",
+  webSearch: "Searching the web",
+};
+
+function ToolCallDisplay({
+  toolName,
+  state,
+  result,
+}: {
+  toolName: string;
+  state: string;
+  result: unknown;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isLoading =
+    state !== "output-available" &&
+    state !== "output-error" &&
+    state !== "output-denied";
+  const label = TOOL_LABELS[toolName] ?? toolName;
+
+  return (
+    <div className="text-sm group">
+      <button
+        type="button"
+        className="flex items-center gap-1.5"
+        onClick={() => setExpanded((e) => !e)}
+      >
+        <span
+          className={`text-muted-foreground ${isLoading ? "animate-shimmer" : ""}`}
+        >
+          {label}
+          {isLoading ? "..." : ""}
+        </span>
+        {!isLoading && (
+          <ChevronRight
+            className={`h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all ${expanded ? "rotate-90" : ""}`}
+          />
+        )}
+      </button>
+      {expanded && !isLoading && result != null && (
+        <div className="mt-1 max-h-64 overflow-auto">
+          <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-all">
+            {typeof result === "string"
+              ? result
+              : JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
 // Message Bubble
 // =============================================================================
 
@@ -62,8 +125,63 @@ function MessageBubble({
 }) {
   const isUser = message.role === "user";
   const { spec, text, hasSpec } = useJsonRenderMessage(message.parts);
+
+  // Build ordered segments from parts, collapsing adjacent text and adjacent tools
+  const segments: Array<
+    | { kind: "text"; text: string }
+    | {
+        kind: "tools";
+        tools: Array<{
+          toolCallId: string;
+          toolName: string;
+          state: string;
+          output?: unknown;
+        }>;
+      }
+  > = [];
+
+  for (const part of message.parts) {
+    if (part.type === "text") {
+      const last = segments[segments.length - 1];
+      if (last?.kind === "text") {
+        last.text += part.text;
+      } else {
+        segments.push({ kind: "text", text: part.text });
+      }
+    } else if (part.type.startsWith("tool-")) {
+      const tp = part as {
+        type: string;
+        toolCallId: string;
+        state: string;
+        output?: unknown;
+      };
+      const last = segments[segments.length - 1];
+      if (last?.kind === "tools") {
+        last.tools.push({
+          toolCallId: tp.toolCallId,
+          toolName: tp.type.replace(/^tool-/, ""),
+          state: tp.state,
+          output: tp.output,
+        });
+      } else {
+        segments.push({
+          kind: "tools",
+          tools: [
+            {
+              toolCallId: tp.toolCallId,
+              toolName: tp.type.replace(/^tool-/, ""),
+              state: tp.state,
+              output: tp.output,
+            },
+          ],
+        });
+      }
+    }
+  }
+
+  const hasAnything = segments.length > 0 || hasSpec;
   const showLoader =
-    isLast && isStreaming && message.role === "assistant" && !text && !hasSpec;
+    isLast && isStreaming && message.role === "assistant" && !hasAnything;
 
   if (isUser) {
     return (
@@ -79,14 +197,36 @@ function MessageBubble({
 
   return (
     <div className="w-full flex flex-col gap-3">
-      {/* Text content */}
-      {text && (
-        <div className="text-sm leading-relaxed [&_p+p]:mt-3 [&_ul]:mt-2 [&_ol]:mt-2 [&_pre]:mt-2">
-          <Streamdown plugins={{ code }} animated={isLast && isStreaming}>
-            {text}
-          </Streamdown>
-        </div>
-      )}
+      {segments.map((seg, i) => {
+        if (seg.kind === "text") {
+          const isLastSegment = i === segments.length - 1;
+          return (
+            <div
+              key={`text-${i}`}
+              className="text-sm leading-relaxed [&_p+p]:mt-3 [&_ul]:mt-2 [&_ol]:mt-2 [&_pre]:mt-2"
+            >
+              <Streamdown
+                plugins={{ code }}
+                animated={isLast && isStreaming && isLastSegment}
+              >
+                {seg.text}
+              </Streamdown>
+            </div>
+          );
+        }
+        return (
+          <div key={`tools-${i}`} className="flex flex-col gap-1">
+            {seg.tools.map((t) => (
+              <ToolCallDisplay
+                key={t.toolCallId}
+                toolName={t.toolName}
+                state={t.state}
+                result={t.output}
+              />
+            ))}
+          </div>
+        );
+      })}
 
       {/* Loading indicator */}
       {showLoader && (
