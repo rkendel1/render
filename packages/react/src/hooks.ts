@@ -6,6 +6,7 @@ import type {
   UIElement,
   FlatElement,
   JsonPatch,
+  SpecDataPart,
 } from "@json-render/core";
 import {
   setByPath,
@@ -436,12 +437,16 @@ export interface DataPart {
 }
 
 /**
- * Build a `Spec` by replaying all `data-jsonrender` parts from a message's
- * parts array. Returns `null` if no `data-jsonrender` parts are present.
+ * Build a `Spec` by replaying all `data-spec` parts from a message's
+ * parts array. Returns `null` if no `data-spec` parts are present.
  *
  * This function is designed to work with the AI SDK's `UIMessage.parts` array.
- * It picks out parts whose `type` is `"data-jsonrender"` and applies each
- * one as a JSON Patch operation (via `applySpecPatch`) to build the final spec.
+ * It picks out parts whose `type` is `"data-spec"` and processes them based
+ * on the payload's `type` discriminator:
+ *
+ * - `"patch"`: Applies the JSON Patch operation incrementally via `applySpecPatch`.
+ * - `"flat"`: Replaces the spec with the complete flat spec.
+ * - `"nested"`: Assigns the nested spec directly (future: nested-to-flat conversion).
  *
  * The function has no AI SDK dependency — it operates on a generic array of
  * `{ type: string; data: unknown }` objects.
@@ -456,16 +461,26 @@ export interface DataPart {
  */
 export function buildSpecFromParts(parts: DataPart[]): Spec | null {
   const spec: Spec = { root: "", elements: {} };
-  let hasPatches = false;
+  let hasSpec = false;
 
   for (const part of parts) {
-    if (part.type === "data-jsonrender") {
-      hasPatches = true;
-      applySpecPatch(spec, part.data as JsonPatch);
+    if (part.type === "data-spec") {
+      const payload = part.data as SpecDataPart;
+      if (payload.type === "patch") {
+        hasSpec = true;
+        applySpecPatch(spec, payload.patch);
+      } else if (payload.type === "flat") {
+        hasSpec = true;
+        Object.assign(spec, payload.spec);
+      } else if (payload.type === "nested") {
+        hasSpec = true;
+        // TODO: nested-to-flat conversion (future)
+        Object.assign(spec, payload.spec);
+      }
     }
   }
 
-  return hasPatches ? spec : null;
+  return hasSpec ? spec : null;
 }
 
 /**

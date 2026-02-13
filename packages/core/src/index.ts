@@ -23,6 +23,7 @@ export type {
   MixedStreamParser,
   // AI SDK stream transform
   StreamChunk,
+  SpecDataPart,
 } from "./types";
 
 export {
@@ -47,7 +48,7 @@ export {
   // AI SDK stream transform
   createJsonRenderTransform,
   pipeJsonRender,
-  JSON_RENDER_DATA_PART,
+  SPEC_DATA_PART,
 } from "./types";
 
 // Visibility

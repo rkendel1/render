@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { JSON_RENDER_DATA_PART, type JsonPatch } from "@json-render/core";
+import { SPEC_DATA_PART, type SpecDataPart } from "@json-render/core";
 import { useJsonRenderMessage } from "@json-render/react";
 import { ExplorerRenderer } from "@/lib/render/renderer";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,7 +15,7 @@ import { code } from "@streamdown/code";
 // Types
 // =============================================================================
 
-type AppDataParts = { [JSON_RENDER_DATA_PART]: JsonPatch };
+type AppDataParts = { [SPEC_DATA_PART]: SpecDataPart };
 type AppMessage = UIMessage<unknown, AppDataParts>;
 
 // =============================================================================

@@ -807,7 +807,7 @@ export type StreamChunk =
  *   `text-delta` chunks, preserving character-by-character streaming.
  * - **Potential JSONL** (lines starting with `{`): buffered until the line
  *   completes, then classified via `parseSpecStreamLine`. Valid patches are
- *   emitted as `data-jsonrender` parts; everything else is flushed as text.
+ *   emitted as `data-spec` parts; everything else is flushed as text.
  * - **Non-text chunks** (tool events, step markers, etc.): passed through
  *   unchanged.
  *
@@ -844,7 +844,10 @@ export function createJsonRenderTransform(): TransformStream<
     if (trimmed) {
       const patch = parseSpecStreamLine(trimmed);
       if (patch) {
-        controller.enqueue({ type: "data-jsonrender", data: patch });
+        controller.enqueue({
+          type: "data-spec",
+          data: { type: "patch", patch },
+        });
       } else {
         // Was buffered but isn't JSONL — flush as text
         controller.enqueue({
@@ -882,7 +885,7 @@ export function createJsonRenderTransform(): TransformStream<
 
     const patch = parseSpecStreamLine(trimmed);
     if (patch) {
-      controller.enqueue({ type: "data-jsonrender", data: patch });
+      controller.enqueue({ type: "data-spec", data: { type: "patch", patch } });
     } else {
       controller.enqueue({
         type: "text-delta",
@@ -972,11 +975,23 @@ export function createJsonRenderTransform(): TransformStream<
  *
  * @example
  * ```ts
- * import { JSON_RENDER_DATA_PART, type JsonPatch } from "@json-render/core";
- * type AppDataParts = { [JSON_RENDER_DATA_PART]: JsonPatch };
+ * import { SPEC_DATA_PART, type SpecDataPart } from "@json-render/core";
+ * type AppDataParts = { [SPEC_DATA_PART]: SpecDataPart };
  * ```
  */
-export const JSON_RENDER_DATA_PART = "jsonrender" as const;
+export const SPEC_DATA_PART = "spec" as const;
+
+/**
+ * Discriminated union for the payload of a `data-spec` SSE part.
+ *
+ * - `"patch"`: A single RFC 6902 JSON Patch operation (streaming, progressive UI).
+ * - `"flat"`: A complete flat spec with `root`, `elements`, and optional `state`.
+ * - `"nested"`: A complete nested spec (tree structure — schema depends on catalog).
+ */
+export type SpecDataPart =
+  | { type: "patch"; patch: JsonPatch }
+  | { type: "flat"; spec: Spec }
+  | { type: "nested"; spec: Record<string, unknown> };
 
 /**
  * Convenience wrapper that pipes an AI SDK UI message stream through the
