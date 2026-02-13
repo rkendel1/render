@@ -222,21 +222,21 @@ Read a value directly from the state model:
 }
 ```
 
-### Two-Way Binding (`$bind`)
+### Two-Way Binding (`$bindState` / `$bindItem`)
 
-Use `{ "$bind": "/path" }` on the natural value prop for form components that need read/write access. The component reads from and writes to the state path:
+Use `{ "$bindState": "/path" }` on the natural value prop for form components that need read/write access. The component reads from and writes to the state path:
 
 ```json
 {
   "type": "Input",
   "props": {
-    "value": { "$bind": "/form/email" },
+    "value": { "$bindState": "/form/email" },
     "placeholder": "Email"
   }
 }
 ```
 
-Inside a repeat scope, use `{ "$bind": "$item/completed" }` to bind to the current item's field.
+Inside a repeat scope, use `{ "$bindItem": "/completed" }` to bind to a field on the current item:
 
 ### Conditional (`$cond` / `$then` / `$else`)
 
@@ -306,7 +306,7 @@ const resolved = resolveElementProps(element.props, { stateModel: myState });
 
 ## Visibility Conditions
 
-Visibility conditions control when elements are shown. `VisibilityContext` is `{ stateModel: StateModel }`.
+Visibility conditions control when elements are shown. `VisibilityContext` is `{ stateModel: StateModel, repeatItem?: unknown, repeatIndex?: number }`.
 
 ### Syntax
 
@@ -316,7 +316,11 @@ Visibility conditions control when elements are shown. `VisibilityContext` is `{
 { "$state": "/path", "eq": value }             // equality
 { "$state": "/path", "neq": value }            // inequality
 { "$state": "/path", "gt": number }            // greater than
+{ "$item": "/field" }                          // repeat item field
+{ "$index": true, "gt": 0 }                   // repeat index
 [ condition, condition ]                       // implicit AND
+{ "$and": [ condition, condition ] }           // explicit AND
+{ "$or": [ condition, condition ] }            // OR
 true / false                                   // always / never
 ```
 
@@ -336,6 +340,7 @@ visibility.gte("/path", n)     // { $state: "/path", gte: n }
 visibility.lt("/path", n)      // { $state: "/path", lt: n }
 visibility.lte("/path", n)     // { $state: "/path", lte: n }
 visibility.and(cond1, cond2)   // { $and: [cond1, cond2] }
+visibility.or(cond1, cond2)    // { $or: [cond1, cond2] }
 ```
 
 ## User Prompt Builder

@@ -422,7 +422,7 @@ export function flatToTree(elements: FlatElement[]): Spec {
 }
 
 // =============================================================================
-// useBoundProp — Two-way binding helper for $bind expressions
+// useBoundProp — Two-way binding helper for $bindState/$bindItem expressions
 // =============================================================================
 
 /**
@@ -432,7 +432,7 @@ export function flatToTree(elements: FlatElement[]): Spec {
  * - `setValue` writes back to the bound state path (no-op if not bound)
  *
  * Designed to work with the `bindings` map that the renderer provides when
- * a prop uses `{ $bind: "/path" }`.
+ * a prop uses `{ $bindState: "/path" }` or `{ $bindItem: "/field" }`.
  *
  * @example
  * ```tsx

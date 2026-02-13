@@ -37,7 +37,7 @@ const catalog = defineCatalog(schema, {
     Metric: {
       props: z.object({
         label: z.string(),
-        statePath: z.string(), // JSON Pointer to data
+        value: z.union([z.string(), z.number()]),
         format: z.enum(['currency', 'percent', 'number']),
       }),
       description: "Display a single metric value",

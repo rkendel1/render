@@ -651,10 +651,10 @@ Note: state patches appear right after the elements that use them, so the UI fil
   // Initial state section
   lines.push("INITIAL STATE:");
   lines.push(
-    "Specs include a /state field to seed the state model. Components with { $bind } read from and write to this state, and $state expressions read from it.",
+    "Specs include a /state field to seed the state model. Components with { $bindState } or { $bindItem } read from and write to this state, and $state expressions read from it.",
   );
   lines.push(
-    "CRITICAL: You MUST include state patches whenever your UI displays data via $state, $bind, $item, or $index expressions, or uses repeat to iterate over arrays. Without state, these references resolve to nothing and repeat lists render zero items.",
+    "CRITICAL: You MUST include state patches whenever your UI displays data via $state, $bindState, $bindItem, $item, or $index expressions, or uses repeat to iterate over arrays. Without state, these references resolve to nothing and repeat lists render zero items.",
   );
   lines.push(
     "Output state patches right after the elements that reference them, so the UI fills in progressively as it streams.",
@@ -689,7 +689,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     `Example: ${JSON.stringify({ type: comp1, props: comp1Props, repeat: { statePath: "/todos", key: "id" }, children: ["todo-item"] })}`,
   );
   lines.push(
-    'Inside children of a repeated element, use { "$item": "/field" } to read a field from the current item, and { "$index": true } to get the current array index. For two-way binding use { "$bind": "$item/completed" } on the appropriate prop.',
+    'Inside children of a repeated element, use { "$item": "/field" } to read a field from the current item, and { "$index": true } to get the current array index. For two-way binding to an item field use { "$bindItem": "/completed" } on the appropriate prop.',
   );
   lines.push(
     "ALWAYS use the repeat field for lists backed by state arrays. NEVER hardcode individual elements for each array item.",
@@ -838,13 +838,13 @@ Note: state patches appear right after the elements that use them, so the UI fil
   );
   lines.push("");
   lines.push(
-    '2. Two-way binding: `{ "$bind": "/statePath" }` - resolves to the value at the state path AND enables write-back. Use on form input props (value, checked, pressed, etc.).',
+    '2. Two-way binding: `{ "$bindState": "/statePath" }` - resolves to the value at the state path AND enables write-back. Use on form input props (value, checked, pressed, etc.).',
   );
   lines.push(
-    '   Example: `"value": { "$bind": "/form/email" }` binds the input value to /form/email.',
+    '   Example: `"value": { "$bindState": "/form/email" }` binds the input value to /form/email.',
   );
   lines.push(
-    '   Inside repeat scopes: `"checked": { "$bind": "$item/completed" }` binds to the current item\'s completed field.',
+    '   Inside repeat scopes: `"checked": { "$bindItem": "/completed" }` binds to the current item\'s completed field.',
   );
   lines.push("");
   lines.push(
@@ -855,7 +855,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
   );
   lines.push("");
   lines.push(
-    "Use $bind for form inputs (text fields, checkboxes, selects, sliders, etc.) and $state for read-only data display. Use dynamic props instead of duplicating elements with opposing visible conditions when only prop values differ.",
+    "Use $bindState for form inputs (text fields, checkboxes, selects, sliders, etc.) and $state for read-only data display. Inside repeat scopes, use $bindItem for form inputs bound to the current item. Use dynamic props instead of duplicating elements with opposing visible conditions when only prop values differ.",
   );
   lines.push("");
 
@@ -897,7 +897,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     );
     lines.push("");
     lines.push(
-      "IMPORTANT: When using checks, the component must also have a { $bind } on its value/checked prop for two-way binding.",
+      "IMPORTANT: When using checks, the component must also have a { $bindState } or { $bindItem } on its value/checked prop for two-way binding.",
     );
     lines.push(
       "Always include validation checks on form inputs for a good user experience (e.g. required, email, minLength).",
@@ -914,7 +914,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Write a brief conversational response before any JSONL output",
           'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
           'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
-          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $bind, $item, $index, or repeat.",
+          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $bindState, $bindItem, $item, $index, or repeat.",
           "ONLY use components listed above",
           "Each element value needs: type, props, children (array of child keys)",
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
@@ -923,7 +923,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Output ONLY JSONL patches - one JSON object per line, no markdown, no code fences",
           'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
           'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
-          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $bind, $item, $index, or repeat.",
+          "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $bindState, $bindItem, $item, $index, or repeat.",
           "ONLY use components listed above",
           "Each element value needs: type, props, children (array of child keys)",
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",

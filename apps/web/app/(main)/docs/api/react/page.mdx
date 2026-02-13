@@ -85,10 +85,11 @@ type Registry = Record<string, React.ComponentType<ComponentRenderProps>>;
 
 ```tsx
 interface ComponentContext<P> {
-  props: P;                    // Typed props from catalog
-  children?: React.ReactNode;  // Rendered children (for slot components)
-  emit?: (event: string) => void;  // Emit a named event
+  props: P;                                // Typed props from catalog
+  children?: React.ReactNode;              // Rendered children (for slot components)
+  emit?: (event: string) => void;          // Emit a named event
   loading?: boolean;
+  bindings?: Record<string, string>;       // State paths from $bindState/$bindItem expressions
 }
 ```
 
@@ -167,3 +168,71 @@ const {
 ```
 
 `ValidationConfig` is `{ checks?: ValidationCheck[], validateOn?: 'change' | 'blur' | 'submit' }`.
+
+### useBoundProp
+
+Two-way binding helper for `$bindState` / `$bindItem` expressions. Returns `[value, setValue]` where `setValue` writes back to the bound state path.
+
+```typescript
+const [value, setValue] = useBoundProp<T>(
+  propValue: T | undefined,       // The already-resolved prop value
+  bindingPath: string | undefined  // From bindings?.value
+);
+```
+
+Use inside registry components:
+
+```tsx
+const Input: ComponentRenderer = ({ props, bindings }) => {
+  const [value, setValue] = useBoundProp<string>(props.value, bindings?.value);
+  return <input value={value ?? ""} onChange={(e) => setValue(e.target.value)} />;
+};
+```
+
+### useChatUI
+
+Hook for chat + GenUI experiences. Manages a multi-turn conversation where each assistant message can contain both text and a json-render UI spec.
+
+```typescript
+const {
+  messages,     // ChatMessage[] - all messages in the conversation
+  isStreaming,  // boolean - true while streaming
+  error,        // Error | null
+  send,         // (text: string) => Promise<void>
+  clear,        // () => void - reset conversation
+} = useChatUI({
+  api: string,                                   // API endpoint
+  onComplete?: (message: ChatMessage) => void,   // Called when streaming completes
+  onError?: (error: Error) => void,              // Called on error
+});
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  spec: Spec | null;
+}
+```
+
+### useJsonRenderMessage
+
+Extract a spec and text content from an AI SDK message's `parts` array. Designed for integration with Vercel AI SDK's `useChat`.
+
+```typescript
+const { spec, text, hasSpec } = useJsonRenderMessage(parts: DataPart[]);
+
+// spec: Spec | null     - compiled from JSONL patches in data parts
+// text: string          - concatenated text parts
+// hasSpec: boolean      - true when spec is non-null
+```
+
+### buildSpecFromParts / getTextFromParts
+
+Standalone utilities for extracting spec and text from AI SDK message parts (non-hook versions):
+
+```typescript
+import { buildSpecFromParts, getTextFromParts } from '@json-render/react';
+
+const spec = buildSpecFromParts(message.parts);   // Spec | null
+const text = getTextFromParts(message.parts);      // string
+```

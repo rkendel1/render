@@ -18,14 +18,14 @@ json-render includes common validation functions:
 
 ## Using Validation in JSON
 
-Use `{ "$bind": "/path" }` on the value prop for two-way binding. Validation checks run against the value at the bound path (available as `bindings?.value` in components):
+Use `{ "$bindState": "/path" }` on the value prop for two-way binding. Validation checks run against the value at the bound path (available as `bindings?.value` in components):
 
 ```json
 {
   "type": "TextField",
   "props": {
     "label": "Email",
-    "value": { "$bind": "/form/email" },
+    "value": { "$bindState": "/form/email" },
     "checks": [
       { "type": "required", "message": "Email is required" },
       { "type": "email", "message": "Invalid email format" }
@@ -42,7 +42,7 @@ Use `{ "$bind": "/path" }` on the value prop for two-way binding. Validation che
   "type": "TextField",
   "props": {
     "label": "Password",
-    "value": { "$bind": "/form/password" },
+    "value": { "$bindState": "/form/password" },
     "checks": [
       { "type": "required", "message": "Password is required" },
       { 
@@ -152,4 +152,4 @@ Control when validation runs with `validateOn`:
 
 ## Next
 
-Learn about [AI SDK integration](/docs/ai-sdk).
+Learn about [generation modes](/docs/generation-modes).

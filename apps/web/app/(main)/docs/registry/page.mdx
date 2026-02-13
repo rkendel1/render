@@ -67,10 +67,11 @@ Each component receives a `ComponentContext` object:
 
 ```typescript
 interface ComponentContext {
-  props: T;                    // Type-safe props from your catalog
-  children?: React.ReactNode;  // Rendered children (for slot components)
-  emit?: (event: string) => void;  // Emit a named event (e.g. "press")
-  loading?: boolean;           // Whether the renderer is in a loading state
+  props: T;                                // Type-safe props from your catalog
+  children?: React.ReactNode;              // Rendered children (for slot components)
+  emit?: (event: string) => void;          // Emit a named event (e.g. "press")
+  loading?: boolean;                       // Whether the renderer is in a loading state
+  bindings?: Record<string, string>;       // State paths from $bindState/$bindItem expressions
 }
 ```
 
@@ -140,7 +141,7 @@ export const { handlers, executeAction } = defineRegistry(catalog, {
 
 Most data binding is handled automatically by the renderer — `$state`, `$item`, and `$index` expressions in props are resolved before your component receives them. See the [Data Binding](/docs/data-binding) guide for the full reference.
 
-For two-way binding (form inputs), use `{ "$bind": "/path" }` on the natural value prop. The renderer provides a `bindings` map with the state path for each bound prop. Use `useBoundProp` to get `[value, setValue]`:
+For two-way binding (form inputs), use `{ "$bindState": "/path" }` on the natural value prop (or `{ "$bindItem": "/field" }` inside repeat scopes). The renderer provides a `bindings` map with the state path for each bound prop. Use `useBoundProp` to get `[value, setValue]`:
 
 ```tsx
 import { useBoundProp } from '@json-render/react';

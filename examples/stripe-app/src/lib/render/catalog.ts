@@ -295,11 +295,11 @@ export const stripeCatalog = defineCatalog(schema, {
         required: z.boolean().nullable(),
       }),
       description:
-        "Text input field with label, validation. Use $bind on value for two-way binding.",
+        "Text input field with label, validation. Use $bindState on value for two-way binding.",
       example: {
         label: "Email",
         placeholder: "customer@example.com",
-        value: { $bind: "/form/email" },
+        value: { $bindState: "/form/email" },
         type: "email",
       },
     },
@@ -316,7 +316,7 @@ export const stripeCatalog = defineCatalog(schema, {
         required: z.boolean().nullable(),
       }),
       description:
-        "Multi-line text input with configurable rows. Use $bind on value for two-way binding.",
+        "Multi-line text input with configurable rows. Use $bindState on value for two-way binding.",
     },
 
     Select: {
@@ -331,7 +331,7 @@ export const stripeCatalog = defineCatalog(schema, {
         required: z.boolean().nullable(),
       }),
       description:
-        "Dropdown select input with configurable options. Use $bind on value for two-way binding.",
+        "Dropdown select input with configurable options. Use $bindState on value for two-way binding.",
     },
 
     Checkbox: {
@@ -344,7 +344,7 @@ export const stripeCatalog = defineCatalog(schema, {
         disabled: z.boolean().nullable(),
       }),
       description:
-        "Checkbox input with label and description. Use $bind on checked for two-way binding.",
+        "Checkbox input with label and description. Use $bindState on checked for two-way binding.",
     },
 
     Radio: {
@@ -357,7 +357,7 @@ export const stripeCatalog = defineCatalog(schema, {
         disabled: z.boolean().nullable(),
       }),
       description:
-        "Radio button input for selecting one option from a group. Use $bind on value for two-way binding.",
+        "Radio button input for selecting one option from a group. Use $bindState on value for two-way binding.",
     },
 
     Switch: {
@@ -369,7 +369,7 @@ export const stripeCatalog = defineCatalog(schema, {
         disabled: z.boolean().nullable(),
       }),
       description:
-        "Toggle switch for boolean values. Use $bind on checked for two-way binding.",
+        "Toggle switch for boolean values. Use $bindState on checked for two-way binding.",
     },
 
     DateField: {
@@ -382,7 +382,7 @@ export const stripeCatalog = defineCatalog(schema, {
         disabled: z.boolean().nullable(),
       }),
       description:
-        "Date input field with date picker. Use $bind on value for two-way binding.",
+        "Date input field with date picker. Use $bindState on value for two-way binding.",
     },
 
     // =========================================================================

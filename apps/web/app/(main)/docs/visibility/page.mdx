@@ -33,7 +33,7 @@ Visible when `/user/hasSeenWelcome` is falsy.
 
 ## Auth-Based Visibility
 
-Show/hide based on authentication state. Auth is exposed as state at `/auth/isSignedIn`:
+Show/hide based on authentication state. Expose your auth state in the state model (e.g. at `/auth/isSignedIn`):
 
 ```json
 {
@@ -145,6 +145,42 @@ Use boolean literals for constant visibility:
 }
 ```
 
+## Repeat-Scoped Conditions
+
+Inside a [repeat](/docs/data-binding#repeat), use `$item` and `$index` conditions to show/hide based on the current item:
+
+### `$item` — Condition on item field
+
+```json
+{
+  "type": "Badge",
+  "props": { "label": "Overdue" },
+  "visible": { "$item": "/isOverdue" }
+}
+```
+
+With comparison:
+
+```json
+{
+  "type": "DiscountTag",
+  "visible": { "$item": "/price", "gt": 100 }
+}
+```
+
+### `$index` — Condition on array index
+
+```json
+{
+  "type": "Divider",
+  "visible": { "$index": true, "gt": 0 }
+}
+```
+
+This shows the divider for every item except the first (index 0).
+
+`$item` and `$index` conditions support the same comparison operators as `$state` (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `not`).
+
 ## Complex Example
 
 ```json
@@ -204,11 +240,27 @@ Use boolean literals for constant visibility:
         <td><code>{'{ "$state": "/path", "lte": number }'}</code></td>
       </tr>
       <tr>
-        <td>AND (multiple)</td>
+        <td>Item field (repeat)</td>
+        <td><code>{'{ "$item": "/field" }'}</code></td>
+      </tr>
+      <tr>
+        <td>Item comparison</td>
+        <td><code>{'{ "$item": "/field", "eq": value }'}</code></td>
+      </tr>
+      <tr>
+        <td>Index (repeat)</td>
+        <td><code>{'{ "$index": true, "gt": 0 }'}</code></td>
+      </tr>
+      <tr>
+        <td>AND (implicit)</td>
         <td><code>{"[ condition, condition ]"}</code></td>
       </tr>
       <tr>
-        <td>OR (any)</td>
+        <td>AND (explicit)</td>
+        <td><code>{'{ "$and": [ condition, condition ] }'}</code></td>
+      </tr>
+      <tr>
+        <td>OR</td>
         <td><code>{'{ "$or": [ condition, condition ] }'}</code></td>
       </tr>
       <tr>

@@ -302,6 +302,56 @@ const obj = {};
 applySpecStreamPatch(obj, patch);
 ```
 
+### applySpecPatch
+
+Apply a single SpecStream patch to a Spec object (mutates in place, returns the spec):
+
+```typescript
+import { applySpecPatch } from '@json-render/core';
+
+let spec: Spec = { root: "", elements: {} };
+applySpecPatch(spec, { op: "add", path: "/root", value: "main" });
+
+// For React state updates, spread to create a new reference:
+setSpec({ ...applySpecPatch(spec, patch) });
+```
+
+### nestedToFlat
+
+Convert a nested element tree (with inline children) into the flat `Spec` format:
+
+```typescript
+import { nestedToFlat } from '@json-render/core';
+
+const flat = nestedToFlat({
+  type: "Card",
+  props: { title: "Hello" },
+  children: [
+    { type: "Text", props: { content: "World" }, children: [] }
+  ],
+});
+// { root: "el-0", elements: { "el-0": ..., "el-1": ... } }
+```
+
+### createMixedStreamParser
+
+Parse a mixed stream of text and JSONL patches (used for Chat + GenUI mode):
+
+```typescript
+import { createMixedStreamParser } from '@json-render/core';
+
+const parser = createMixedStreamParser({
+  onText: (text) => appendToMessage(text),
+  onPatch: (patch) => applySpecPatch(spec, patch),
+});
+
+// As chunks arrive from the stream:
+for await (const chunk of stream) {
+  parser.push(chunk);
+}
+parser.flush();
+```
+
 ### SpecStream Types
 
 Fully compliant with [RFC 6902](https://datatracker.ietf.org/doc/html/rfc6902):
@@ -319,6 +369,16 @@ interface SpecStreamCompiler<T> {
   getResult(): T;
   getPatches(): SpecStreamLine[];
   reset(): void;
+}
+
+interface MixedStreamCallbacks {
+  onText: (text: string) => void;
+  onPatch: (patch: SpecStreamLine) => void;
+}
+
+interface MixedStreamParser {
+  push(chunk: string): void;
+  flush(): void;
 }
 ```
 
@@ -368,6 +428,8 @@ function evaluateVisibility(
 
 interface VisibilityContext {
   stateModel: StateModel;
+  repeatItem?: unknown;    // Current repeat item (inside repeat scope)
+  repeatIndex?: number;    // Current repeat array index (inside repeat scope)
 }
 
 type VisibilityCondition =
@@ -379,7 +441,13 @@ type VisibilityCondition =
   | { $state: string; gte: number }                       // gte
   | { $state: string; lt: number }                        // lt
   | { $state: string; lte: number }                       // lte
+  | { $item: string }                                     // item field (repeat scope)
+  | { $item: string; eq: unknown }                        // item field equality
+  | { $index: true }                                      // index truthiness (repeat scope)
+  | { $index: true; gt: number }                          // index comparison
   | VisibilityCondition[]                                 // implicit AND
+  | { $and: VisibilityCondition[] }                       // explicit AND
+  | { $or: VisibilityCondition[] }                        // OR
   | boolean;                                              // always / never
 ```
 
@@ -404,8 +472,9 @@ Elements are stored in the `elements` map keyed by string IDs. The key comes fro
 
 ```typescript
 interface Spec {
-  root: string | null;         // Key of root element
-  elements: Record<string, UIElement>;
+  root: string | null;                        // Key of root element
+  elements: Record<string, UIElement>;        // Flat element map
+  state?: Record<string, unknown>;            // Initial state model
 }
 ```
 

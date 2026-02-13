@@ -16,7 +16,7 @@ import {
 import { useStateStore } from "./contexts/state";
 
 // =============================================================================
-// useBoundProp — Two-way binding helper for $bind expressions
+// useBoundProp — Two-way binding helper for $bindState/$bindItem expressions
 // =============================================================================
 
 /**

@@ -61,7 +61,8 @@ export const dashboardCatalog = defineCatalog(schema, {
         placeholder: z.string().nullable(),
         type: z.enum(["text", "email", "password", "number", "tel"]).nullable(),
       }),
-      description: "Text input field. Use value with $bind for two-way binding",
+      description:
+        "Text input field. Use value with $bindState for two-way binding",
       example: {
         label: "Email",
         value: "/form/email",
@@ -121,7 +122,8 @@ export const dashboardCatalog = defineCatalog(schema, {
         checked: z.boolean().nullable(),
         defaultChecked: z.boolean().nullable(),
       }),
-      description: "Checkbox input. Use checked with $bind for two-way binding",
+      description:
+        "Checkbox input. Use checked with $bindState for two-way binding",
     },
 
     Dialog: {
@@ -204,7 +206,7 @@ export const dashboardCatalog = defineCatalog(schema, {
         defaultValue: z.string().nullable(),
       }),
       description:
-        "Radio button group. Use value with $bind for two-way binding",
+        "Radio button group. Use value with $bindState for two-way binding",
     },
 
     Select: {
@@ -219,7 +221,7 @@ export const dashboardCatalog = defineCatalog(schema, {
         ),
       }),
       description:
-        "Dropdown select input. Use value with $bind for two-way binding",
+        "Dropdown select input. Use value with $bindState for two-way binding",
     },
 
     Skeleton: {
@@ -243,7 +245,8 @@ export const dashboardCatalog = defineCatalog(schema, {
         checked: z.boolean().nullable(),
         defaultChecked: z.boolean().nullable(),
       }),
-      description: "Toggle switch. Use checked with $bind for two-way binding",
+      description:
+        "Toggle switch. Use checked with $bindState for two-way binding",
     },
 
     Tabs: {
@@ -276,7 +279,7 @@ export const dashboardCatalog = defineCatalog(schema, {
         rows: z.number().nullable(),
       }),
       description:
-        "Multi-line text input. Use value with $bind for two-way binding",
+        "Multi-line text input. Use value with $bindState for two-way binding",
     },
 
     Tooltip: {

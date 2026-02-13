@@ -71,7 +71,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Tab navigation. Use { $bind } on value for active tab binding.",
+        "Tab navigation. Use { $bindState } on value for active tab binding.",
     },
 
     Accordion: {
@@ -310,7 +310,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["submit", "focus", "blur"],
       description:
-        "Text input field. Use { $bind } on value for two-way binding. Use checks for validation (e.g. required, email, minLength).",
+        "Text input field. Use { $bindState } on value for two-way binding. Use checks for validation (e.g. required, email, minLength).",
       example: {
         label: "Email",
         name: "email",
@@ -337,7 +337,7 @@ export const playgroundCatalog = defineCatalog(schema, {
           .nullable(),
       }),
       description:
-        "Multi-line text input. Use { $bind } on value for binding. Use checks for validation.",
+        "Multi-line text input. Use { $bindState } on value for binding. Use checks for validation.",
     },
 
     Select: {
@@ -359,7 +359,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Dropdown select input. Use { $bind } on value for binding. Use checks for validation.",
+        "Dropdown select input. Use { $bindState } on value for binding. Use checks for validation.",
     },
 
     Checkbox: {
@@ -369,7 +369,7 @@ export const playgroundCatalog = defineCatalog(schema, {
         checked: z.boolean().nullable(),
       }),
       events: ["change"],
-      description: "Checkbox input. Use { $bind } on checked for binding.",
+      description: "Checkbox input. Use { $bindState } on checked for binding.",
     },
 
     Radio: {
@@ -380,7 +380,8 @@ export const playgroundCatalog = defineCatalog(schema, {
         value: z.string().nullable(),
       }),
       events: ["change"],
-      description: "Radio button group. Use { $bind } on value for binding.",
+      description:
+        "Radio button group. Use { $bindState } on value for binding.",
     },
 
     Switch: {
@@ -390,7 +391,7 @@ export const playgroundCatalog = defineCatalog(schema, {
         checked: z.boolean().nullable(),
       }),
       events: ["change"],
-      description: "Toggle switch. Use { $bind } on checked for binding.",
+      description: "Toggle switch. Use { $bindState } on checked for binding.",
     },
 
     Slider: {
@@ -402,7 +403,8 @@ export const playgroundCatalog = defineCatalog(schema, {
         value: z.number().nullable(),
       }),
       events: ["change"],
-      description: "Range slider input. Use { $bind } on value for binding.",
+      description:
+        "Range slider input. Use { $bindState } on value for binding.",
     },
 
     // ── Actions ─────────────────────────────────────────────────────────
@@ -447,7 +449,8 @@ export const playgroundCatalog = defineCatalog(schema, {
         variant: z.enum(["default", "outline"]).nullable(),
       }),
       events: ["change"],
-      description: "Toggle button. Use { $bind } on pressed for state binding.",
+      description:
+        "Toggle button. Use { $bindState } on pressed for state binding.",
     },
 
     ToggleGroup: {
@@ -463,7 +466,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Group of toggle buttons. Type 'single' (default) or 'multiple'. Use { $bind } on value.",
+        "Group of toggle buttons. Type 'single' (default) or 'multiple'. Use { $bindState } on value.",
     },
 
     ButtonGroup: {
@@ -478,7 +481,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Segmented button group. Use { $bind } on selected for selected value.",
+        "Segmented button group. Use { $bindState } on selected for selected value.",
     },
 
     Pagination: {
@@ -488,7 +491,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Page navigation. Use { $bind } on page for current page number.",
+        "Page navigation. Use { $bindState } on page for current page number.",
     },
   },
 

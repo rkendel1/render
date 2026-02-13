@@ -41,7 +41,7 @@ export interface ComponentContext<
   /** Emit a named event. The renderer resolves the event to an action binding from the element's `on` field. */
   emit?: (event: string) => void;
   /**
-   * Two-way binding paths resolved from `$bind` expressions.
+   * Two-way binding paths resolved from `$bindState` / `$bindItem` expressions.
    * Maps prop name → absolute state path for write-back.
    */
   bindings?: Record<string, string>;

@@ -287,10 +287,10 @@ export const explorerCatalog = defineCatalog(schema, {
         ),
       }),
       description:
-        'Radio button group for single selection. Use { "$bind": "/path" } for two-way binding. Use for multiple-choice questions, settings, or any single-select input.',
+        'Radio button group for single selection. Use { "$bindState": "/path" } for two-way binding. Use for multiple-choice questions, settings, or any single-select input.',
       example: {
         label: "Choose one",
-        value: { $bind: "/answer" },
+        value: { $bindState: "/answer" },
         options: [
           { value: "a", label: "Option A" },
           { value: "b", label: "Option B" },
@@ -311,10 +311,10 @@ export const explorerCatalog = defineCatalog(schema, {
         ),
       }),
       description:
-        'Dropdown select input. Use { "$bind": "/path" } for two-way binding. Use when there are many options and a dropdown is more compact than radio buttons.',
+        'Dropdown select input. Use { "$bindState": "/path" } for two-way binding. Use when there are many options and a dropdown is more compact than radio buttons.',
       example: {
         label: "Country",
-        value: { $bind: "/selectedCountry" },
+        value: { $bindState: "/selectedCountry" },
         placeholder: "Select a country",
         options: [
           { value: "us", label: "United States" },
@@ -331,10 +331,10 @@ export const explorerCatalog = defineCatalog(schema, {
         type: z.enum(["text", "email", "number", "password", "url"]).nullable(),
       }),
       description:
-        'Text input field. Use { "$bind": "/path" } for two-way binding. Use for free-text entry like names, emails, search, etc.',
+        'Text input field. Use { "$bindState": "/path" } for two-way binding. Use for free-text entry like names, emails, search, etc.',
       example: {
         label: "Your name",
-        value: { $bind: "/userName" },
+        value: { $bindState: "/userName" },
         placeholder: "Enter your name",
         type: "text",
       },

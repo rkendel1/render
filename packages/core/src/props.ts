@@ -15,10 +15,12 @@ import { evaluateVisibility, type VisibilityContext } from "./visibility";
  * - `{ $index: true }` returns the current repeat array index. Uses `true`
  *    as a sentinel flag because the index is a scalar with no sub-path to
  *    navigate — unlike `$item` which needs a path into the item object.
- * - `{ $bind: string }` two-way binding — resolves to the value at the
- *    state path (like `$state`) AND exposes the resolved path so the
- *    component can write back. Use `"$item/field"` prefix inside repeat
- *    scopes (rewritten to the absolute path automatically).
+ * - `{ $bindState: string }` two-way binding to a global state path —
+ *    resolves to the value at the path (like `$state`) AND exposes the
+ *    resolved path so the component can write back.
+ * - `{ $bindItem: string }` two-way binding to a field on the current
+ *    repeat item — resolves via `repeatBasePath + path` and exposes the
+ *    absolute state path for write-back.
  * - `{ $cond, $then, $else }` conditionally picks a value
  * - Any other value is a literal (passthrough)
  */
@@ -27,7 +29,8 @@ export type PropExpression<T = unknown> =
   | { $state: string }
   | { $item: string }
   | { $index: true }
-  | { $bind: string }
+  | { $bindState: string }
+  | { $bindItem: string }
   | {
       $cond: VisibilityCondition;
       $then: PropExpression<T>;
@@ -37,7 +40,7 @@ export type PropExpression<T = unknown> =
 /**
  * Context for resolving prop expressions.
  * Extends {@link VisibilityContext} with an optional `repeatBasePath` used
- * to rewrite `$item` prefixes in `$bind` paths to absolute state paths.
+ * to resolve `$bindItem` paths to absolute state paths.
  */
 export interface PropResolutionContext extends VisibilityContext {
   /** Absolute state path to the current repeat item (e.g. "/todos/0"). Set inside repeat scopes. */
@@ -75,12 +78,23 @@ function isIndexExpression(value: unknown): value is { $index: true } {
   );
 }
 
-function isBindExpression(value: unknown): value is { $bind: string } {
+function isBindStateExpression(
+  value: unknown,
+): value is { $bindState: string } {
   return (
     typeof value === "object" &&
     value !== null &&
-    "$bind" in value &&
-    typeof (value as Record<string, unknown>).$bind === "string"
+    "$bindState" in value &&
+    typeof (value as Record<string, unknown>).$bindState === "string"
+  );
+}
+
+function isBindItemExpression(value: unknown): value is { $bindItem: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "$bindItem" in value &&
+    typeof (value as Record<string, unknown>).$bindItem === "string"
   );
 }
 
@@ -101,25 +115,25 @@ function isCondExpression(
 // =============================================================================
 
 // =============================================================================
-// $bind path resolution helper
+// $bindItem path resolution helper
 // =============================================================================
 
 /**
- * Resolve a `$bind` path string into an absolute state path.
+ * Resolve a `$bindItem` path into an absolute state path using the repeat
+ * scope's base path.
  *
- * Inside a repeat scope, `"$item/field"` is rewritten to
- * `"{repeatBasePath}/field"` (e.g. `"/todos/0/field"`).
- * Outside a repeat scope, the path is returned as-is.
+ * `"/"` resolves to `repeatBasePath` (the whole item).
+ * `"/field"` resolves to `repeatBasePath + "/field"`.
+ *
+ * Returns the raw path unchanged when no `repeatBasePath` is available.
  */
-function resolveBindPath(raw: string, ctx: PropResolutionContext): string {
-  if (raw === "$item") {
-    return ctx.repeatBasePath ?? raw;
-  }
-  if (raw.startsWith("$item/")) {
-    const suffix = raw.slice("$item".length); // e.g. "/completed"
-    return ctx.repeatBasePath != null ? ctx.repeatBasePath + suffix : raw;
-  }
-  return raw;
+function resolveBindItemPath(
+  itemPath: string,
+  ctx: PropResolutionContext,
+): string {
+  if (ctx.repeatBasePath == null) return itemPath;
+  if (itemPath === "/") return ctx.repeatBasePath;
+  return ctx.repeatBasePath + itemPath;
 }
 
 // =============================================================================
@@ -128,7 +142,7 @@ function resolveBindPath(raw: string, ctx: PropResolutionContext): string {
 
 /**
  * Resolve a single prop value that may contain expressions.
- * Handles $state, $item, $index, $bind, and $cond/$then/$else in a single pass.
+ * Handles $state, $item, $index, $bindState, $bindItem, and $cond/$then/$else in a single pass.
  */
 export function resolvePropValue(
   value: unknown,
@@ -157,9 +171,14 @@ export function resolvePropValue(
     return ctx.repeatIndex;
   }
 
-  // $bind: two-way binding — resolve path, then read value from state
-  if (isBindExpression(value)) {
-    const resolvedPath = resolveBindPath(value.$bind, ctx);
+  // $bindState: two-way binding to global state path
+  if (isBindStateExpression(value)) {
+    return getByPath(ctx.stateModel, value.$bindState);
+  }
+
+  // $bindItem: two-way binding to repeat item field
+  if (isBindItemExpression(value)) {
+    const resolvedPath = resolveBindItemPath(value.$bindItem, ctx);
     return getByPath(ctx.stateModel, resolvedPath);
   }
 
@@ -203,8 +222,8 @@ export function resolveElementProps(
 }
 
 /**
- * Scan an element's raw props for `$bind` expressions and return a map
- * of prop name → resolved state path.
+ * Scan an element's raw props for `$bindState` / `$bindItem` expressions
+ * and return a map of prop name → resolved absolute state path.
  *
  * This is called **before** `resolveElementProps` so the component can
  * receive both the resolved value (in `props`) and the write-back path
@@ -212,7 +231,7 @@ export function resolveElementProps(
  *
  * @example
  * ```ts
- * const rawProps = { value: { $bind: "/form/email" }, label: "Email" };
+ * const rawProps = { value: { $bindState: "/form/email" }, label: "Email" };
  * const bindings = resolveBindings(rawProps, ctx);
  * // bindings = { value: "/form/email" }
  * ```
@@ -223,10 +242,12 @@ export function resolveBindings(
 ): Record<string, string> | undefined {
   let bindings: Record<string, string> | undefined;
   for (const [key, value] of Object.entries(props)) {
-    if (isBindExpression(value)) {
-      const resolvedPath = resolveBindPath(value.$bind, ctx);
+    if (isBindStateExpression(value)) {
       if (!bindings) bindings = {};
-      bindings[key] = resolvedPath;
+      bindings[key] = value.$bindState;
+    } else if (isBindItemExpression(value)) {
+      if (!bindings) bindings = {};
+      bindings[key] = resolveBindItemPath(value.$bindItem, ctx);
     }
   }
   return bindings;

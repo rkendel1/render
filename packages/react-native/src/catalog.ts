@@ -270,7 +270,7 @@ export const standardComponentDefinitions = {
     events: ["submit", "focus", "blur"],
     slots: [],
     description:
-      "Text input field. Use $bind to bind to the state model for two-way binding. The value typed by the user is stored at the bound path.",
+      "Text input field. Use $bindState to bind to the state model for two-way binding. The value typed by the user is stored at the bound path.",
     example: {
       placeholder: "Enter text...",
       label: "Name",
@@ -285,7 +285,7 @@ export const standardComponentDefinitions = {
     }),
     events: ["change"],
     slots: [],
-    description: "Toggle switch. Use $bind to bind to the state model.",
+    description: "Toggle switch. Use $bindState to bind to the state model.",
   },
 
   Checkbox: {
@@ -297,7 +297,7 @@ export const standardComponentDefinitions = {
     events: ["change"],
     slots: [],
     description:
-      "Checkbox for boolean selections. Use $bind to bind to the state model.",
+      "Checkbox for boolean selections. Use $bindState to bind to the state model.",
   },
 
   Slider: {
@@ -311,7 +311,7 @@ export const standardComponentDefinitions = {
     }),
     slots: [],
     description:
-      "Range slider for numeric values. Use $bind to bind to the state model.",
+      "Range slider for numeric values. Use $bindState to bind to the state model.",
   },
 
   SearchBar: {
@@ -395,7 +395,7 @@ export const standardComponentDefinitions = {
     }),
     slots: ["default"],
     description:
-      "Modal overlay dialog. Use $bind on visible to bind visibility to the state model.",
+      "Modal overlay dialog. Use $bindState on visible to bind visibility to the state model.",
   },
 };
 

@@ -138,7 +138,7 @@ Example spec:
     "input-1": {
       "type": "Input",
       "props": {
-        "value": { "$bind": "/form/name" },
+        "value": { "$bindState": "/form/name" },
         "label": "Name",
         "placeholder": "Enter name"
       }
@@ -291,7 +291,7 @@ Any prop value can use data-driven expressions that resolve at render time. The 
 }
 ```
 
-For two-way binding, use `{ "$bind": "/path" }` on the natural value prop (e.g. `value`, `checked`, `pressed`). Components receive resolved `bindings` with the state path for each bound prop; use `useBoundProp(props.value, bindings?.value)` to get `[value, setValue]`.
+For two-way binding, use `{ "$bindState": "/path" }` on the natural value prop (e.g. `value`, `checked`, `pressed`). Inside repeat scopes, use `{ "$bindItem": "/field" }` instead. Components receive resolved `bindings` with the state path for each bound prop; use `useBoundProp(props.value, bindings?.value)` to get `[value, setValue]`.
 
 See [@json-render/core](../core/README.md) for full expression syntax.
 
@@ -323,7 +323,7 @@ interface ComponentContext<P> {
   children?: React.ReactNode;  // Rendered children
   emit?: (event: string) => void;  // Emit a named event
   loading?: boolean;           // Whether the parent is loading
-  bindings?: Record<string, string>;  // State paths for $bind expressions (e.g. bindings.value)
+  bindings?: Record<string, string>;  // State paths for $bindState/$bindItem expressions (e.g. bindings.value)
 }
 ```
 

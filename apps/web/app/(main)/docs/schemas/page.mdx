@@ -83,7 +83,7 @@ Reference dynamic data using `$state` expressions in props. The value is a JSON 
 }
 ```
 
-json-render also supports `$item` and `$index` expressions for lists, two-way binding via `$bind`, and conditional props. See [Data Binding](/docs/data-binding) for the full reference.
+json-render also supports `$item` and `$index` expressions for lists, two-way binding via `$bindState` / `$bindItem`, and conditional props. See [Data Binding](/docs/data-binding) for the full reference.
 
 ### Action Format
 
@@ -123,7 +123,7 @@ const MyElementSchema = z.object({
 // Define your own data binding format
 const BoundValue = z.object({
   literal: z.string().optional(),
-  path: z.string().optional(),  // e.g., "/users/0/name"
+  source: z.string().optional(),  // e.g., "/users/0/name"
 });
 
 // Define your own action format

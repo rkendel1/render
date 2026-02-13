@@ -50,9 +50,9 @@ export interface ComponentRenderProps<P = Record<string, unknown>> {
   /** Emit a named event. The renderer resolves the event to action binding(s) from the element's `on` field. */
   emit?: (event: string) => void;
   /**
-   * Two-way binding paths resolved from `$bind` expressions.
+   * Two-way binding paths resolved from `$bindState` / `$bindItem` expressions.
    * Maps prop name → absolute state path for write-back.
-   * Only present when at least one prop uses `{ $bind: "..." }`.
+   * Only present when at least one prop uses `{ $bindState: "..." }` or `{ $bindItem: "..." }`.
    */
   bindings?: Record<string, string>;
   /** Whether the parent is loading */
@@ -208,7 +208,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
             // Rewrite $item-prefixed path params to absolute state paths
             resolved[key] = repeatScope.basePath + val.slice("$item".length);
           } else {
-            // Resolve $item/$index/$state/$cond/$bind expressions to values
+            // Resolve $item/$index/$state/$cond/$bindState/$bindItem expressions to values
             resolved[key] = resolvePropValue(val, fullCtx);
           }
         }
@@ -223,11 +223,11 @@ const ElementRenderer = React.memo(function ElementRenderer({
     return null;
   }
 
-  // Resolve $bind expressions → bindings map (prop name → state path)
+  // Resolve $bindState/$bindItem expressions → bindings map (prop name → state path)
   const rawProps = element.props as Record<string, unknown>;
   const elementBindings = resolveBindings(rawProps, fullCtx);
 
-  // Resolve dynamic prop expressions ($state, $item, $index, $bind, $cond/$then/$else)
+  // Resolve dynamic prop expressions ($state, $item, $index, $bindState, $bindItem, $cond/$then/$else)
   const resolvedProps = resolveElementProps(rawProps, fullCtx);
 
   const resolvedElement =
