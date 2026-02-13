@@ -131,7 +131,9 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ),
     table: ({ children }: { children?: React.ReactNode }) => (
       <div className="my-6 overflow-x-auto">
-        <table className="w-full text-sm border-collapse">{children}</table>
+        <table className="mdx-table w-full text-sm border-collapse">
+          {children}
+        </table>
       </div>
     ),
     th: ({ children }: { children?: React.ReactNode }) => (

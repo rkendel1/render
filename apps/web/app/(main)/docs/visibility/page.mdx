@@ -178,19 +178,62 @@ function ConditionalContent({ condition, children }) {
 
 ## Quick Reference
 
-```
-Truthiness        { "$state": "/path" }
-Falsy (not)       { "$state": "/path", "not": true }
-Equal             { "$state": "/path", "eq": value }
-Not equal         { "$state": "/path", "neq": value }
-Greater than      { "$state": "/path", "gt": number }
-Greater or equal  { "$state": "/path", "gte": number }
-Less than         { "$state": "/path", "lt": number }
-Less or equal     { "$state": "/path", "lte": number }
-AND (multiple)    [ condition, condition ]
-Always            true
-Never             false
-```
+<div className="my-6 overflow-x-auto">
+  <table className="mdx-table w-full text-sm border-collapse">
+    <thead>
+      <tr>
+        <th>Condition</th>
+        <th>Syntax</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Truthiness</td>
+        <td><code>{'{ "$state": "/path" }'}</code></td>
+      </tr>
+      <tr>
+        <td>Falsy (not)</td>
+        <td><code>{'{ "$state": "/path", "not": true }'}</code></td>
+      </tr>
+      <tr>
+        <td>Equal</td>
+        <td><code>{'{ "$state": "/path", "eq": value }'}</code></td>
+      </tr>
+      <tr>
+        <td>Not equal</td>
+        <td><code>{'{ "$state": "/path", "neq": value }'}</code></td>
+      </tr>
+      <tr>
+        <td>Greater than</td>
+        <td><code>{'{ "$state": "/path", "gt": number }'}</code></td>
+      </tr>
+      <tr>
+        <td>Greater or equal</td>
+        <td><code>{'{ "$state": "/path", "gte": number }'}</code></td>
+      </tr>
+      <tr>
+        <td>Less than</td>
+        <td><code>{'{ "$state": "/path", "lt": number }'}</code></td>
+      </tr>
+      <tr>
+        <td>Less or equal</td>
+        <td><code>{'{ "$state": "/path", "lte": number }'}</code></td>
+      </tr>
+      <tr>
+        <td>AND (multiple)</td>
+        <td><code>{"[ condition, condition ]"}</code></td>
+      </tr>
+      <tr>
+        <td>Always</td>
+        <td><code>{"true"}</code></td>
+      </tr>
+      <tr>
+        <td>Never</td>
+        <td><code>{"false"}</code></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 Comparison values can be literals or state references for state-to-state comparisons:
 
