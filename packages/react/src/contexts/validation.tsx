@@ -6,6 +6,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -198,12 +199,21 @@ export function useFieldValidation(
     registerField,
   } = useValidation();
 
-  // Register field on mount
+  // Stabilize config reference — callers typically pass an inline object
+  // literal which creates a new reference every render.  We compare by
+  // value (JSON) so the effect only re-runs when the config truly changes.
+  const configRef = useRef(config);
+  const configJson = useMemo(() => JSON.stringify(config), [config]);
   React.useEffect(() => {
-    if (config) {
-      registerField(path, config);
+    configRef.current = config;
+  }, [configJson]);
+
+  // Register field on mount (or when config value changes)
+  React.useEffect(() => {
+    if (configRef.current) {
+      registerField(path, configRef.current);
     }
-  }, [path, config, registerField]);
+  }, [path, configJson, registerField]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const state = fieldStates[path] ?? {
     touched: false,
