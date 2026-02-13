@@ -175,6 +175,24 @@ export function collectActions(spec: Spec): Set<string> {
     if (typeof actionProp === "string") {
       actions.add(actionProp);
     }
+
+    // Collect actions from on event bindings
+    const onBindings = element.on;
+    if (onBindings) {
+      for (const binding of Object.values(onBindings)) {
+        const bindings = Array.isArray(binding) ? binding : [binding];
+        for (const b of bindings) {
+          if (
+            b &&
+            typeof b === "object" &&
+            "action" in b &&
+            typeof (b as { action: unknown }).action === "string"
+          ) {
+            actions.add((b as { action: string }).action);
+          }
+        }
+      }
+    }
   });
 
   return actions;

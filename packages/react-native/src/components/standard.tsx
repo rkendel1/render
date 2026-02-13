@@ -1027,9 +1027,9 @@ export function createStandardActionHandlers(options?: {
     },
 
     setData: async (params) => {
-      const path = params.path as string;
+      const statePath = params.statePath as string;
       const value = params.value;
-      options?.onSetData?.(path, value);
+      options?.onSetData?.(statePath, value);
     },
 
     refresh: async (params) => {

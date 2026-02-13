@@ -11,8 +11,10 @@ import {
   compileSpecStream,
   createSpecStreamCompiler,
   createMixedStreamParser,
+  createJsonRenderTransform,
+  SPEC_DATA_PART_TYPE,
 } from "./types";
-import type { Spec, SpecStreamLine } from "./types";
+import type { Spec, SpecStreamLine, StreamChunk } from "./types";
 
 describe("getByPath", () => {
   it("gets nested values with JSON pointer paths", () => {
@@ -807,14 +809,16 @@ describe("nestedToFlat", () => {
       type: "Panel",
       props: {},
       visible: { $state: "/showPanel" },
-      on: { press: { action: "setState", params: { path: "/x", value: 1 } } },
+      on: {
+        press: { action: "setState", params: { statePath: "/x", value: 1 } },
+      },
       children: [],
     });
 
     const el = spec.elements["el-0"] as Record<string, unknown>;
     expect(el.visible).toEqual({ $state: "/showPanel" });
     expect(el.on).toEqual({
-      press: { action: "setState", params: { path: "/x", value: 1 } },
+      press: { action: "setState", params: { statePath: "/x", value: 1 } },
     });
   });
 
@@ -868,5 +872,198 @@ describe("nestedToFlat", () => {
     expect(
       (spec.elements["el-1"] as Record<string, unknown>).state,
     ).toBeUndefined();
+  });
+});
+
+// =============================================================================
+// createJsonRenderTransform
+// =============================================================================
+
+describe("createJsonRenderTransform", () => {
+  /** Helper: push text-delta chunks through the transform and collect output */
+  async function transformText(text: string): Promise<StreamChunk[]> {
+    const transform = createJsonRenderTransform();
+    const writer = transform.writable.getWriter();
+    const reader = transform.readable.getReader();
+
+    const chunks: StreamChunk[] = [];
+
+    // Read and write concurrently to avoid backpressure deadlock
+    const readAll = (async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+    })();
+
+    await writer.write({ type: "text-start", id: "t1" });
+    await writer.write({ type: "text-delta", id: "t1", delta: text });
+    await writer.write({ type: "text-end", id: "t1" });
+    await writer.close();
+
+    await readAll;
+    return chunks;
+  }
+
+  it("passes prose text through as text-delta", async () => {
+    const chunks = await transformText("Hello world\n");
+    const textChunks = chunks.filter((c) => c.type === "text-delta");
+    const text = textChunks.map((c) => (c as { delta: string }).delta).join("");
+    expect(text).toContain("Hello world");
+  });
+
+  it("classifies valid JSONL patches as data-spec (heuristic mode)", async () => {
+    const patch = '{"op":"add","path":"/root","value":"main"}\n';
+    const chunks = await transformText(patch);
+    const specChunks = chunks.filter((c) => c.type === SPEC_DATA_PART_TYPE);
+    expect(specChunks.length).toBe(1);
+    expect((specChunks[0] as { data: { type: string } }).data.type).toBe(
+      "patch",
+    );
+  });
+
+  it("lines starting with { that are NOT patches are flushed as text", async () => {
+    const line = '{"not":"a patch"}\n';
+    const chunks = await transformText(line);
+    const specChunks = chunks.filter((c) => c.type === SPEC_DATA_PART_TYPE);
+    const textChunks = chunks.filter((c) => c.type === "text-delta");
+    expect(specChunks.length).toBe(0);
+    const text = textChunks.map((c) => (c as { delta: string }).delta).join("");
+    expect(text).toContain('{"not":"a patch"}');
+  });
+
+  it("parses content inside ```spec fence as patches", async () => {
+    const input = [
+      "Here is some UI:\n",
+      "```spec\n",
+      '{"op":"add","path":"/root","value":"main"}\n',
+      '{"op":"add","path":"/elements/main","value":{"type":"Card","props":{},"children":[]}}\n',
+      "```\n",
+      "Done!\n",
+    ].join("");
+
+    const chunks = await transformText(input);
+    const specChunks = chunks.filter((c) => c.type === SPEC_DATA_PART_TYPE);
+    expect(specChunks.length).toBe(2);
+
+    // Prose before and after should come through
+    const textChunks = chunks.filter((c) => c.type === "text-delta");
+    const text = textChunks.map((c) => (c as { delta: string }).delta).join("");
+    expect(text).toContain("Here is some UI:");
+    expect(text).toContain("Done!");
+    // Fence delimiters should NOT appear in text
+    expect(text).not.toContain("```spec");
+  });
+
+  it("handles mixed text + heuristic patches in single stream", async () => {
+    const input = [
+      "Some text\n",
+      '{"op":"add","path":"/root","value":"r"}\n',
+      "More text\n",
+    ].join("");
+
+    const chunks = await transformText(input);
+    const specChunks = chunks.filter((c) => c.type === SPEC_DATA_PART_TYPE);
+    expect(specChunks.length).toBe(1);
+
+    const textChunks = chunks.filter((c) => c.type === "text-delta");
+    const text = textChunks.map((c) => (c as { delta: string }).delta).join("");
+    expect(text).toContain("Some text");
+    expect(text).toContain("More text");
+  });
+
+  it("non-text chunks pass through unchanged", async () => {
+    const transform = createJsonRenderTransform();
+    const writer = transform.writable.getWriter();
+    const reader = transform.readable.getReader();
+
+    const toolChunk = {
+      type: "tool-call",
+      toolCallId: "abc",
+      toolName: "test",
+    };
+
+    const readPromise = reader.read();
+    await writer.write(toolChunk as StreamChunk);
+    await writer.close();
+
+    const { value } = await readPromise;
+    expect(value).toEqual(toolChunk);
+  });
+
+  it("flush behavior at end of stream", async () => {
+    const transform = createJsonRenderTransform();
+    const writer = transform.writable.getWriter();
+    const reader = transform.readable.getReader();
+
+    const chunks: StreamChunk[] = [];
+    const readAll = (async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+    })();
+
+    // Write a text delta with no trailing newline
+    await writer.write({ type: "text-start", id: "t1" });
+    await writer.write({
+      type: "text-delta",
+      id: "t1",
+      delta: '{"op":"add","path":"/root","value":"main"}',
+    });
+    await writer.write({ type: "text-end", id: "t1" });
+    await writer.close();
+
+    await readAll;
+
+    // The buffered patch should be flushed on text-end
+    const specChunks = chunks.filter((c) => c.type === SPEC_DATA_PART_TYPE);
+    expect(specChunks.length).toBe(1);
+  });
+});
+
+// =============================================================================
+// createMixedStreamParser - fence mode
+// =============================================================================
+
+describe("createMixedStreamParser - fence mode", () => {
+  it("parses patches inside ```spec fence", () => {
+    const patches: SpecStreamLine[] = [];
+    const texts: string[] = [];
+    const parser = createMixedStreamParser({
+      onPatch: (p) => patches.push(p),
+      onText: (t) => texts.push(t),
+    });
+
+    parser.push("Hello\n");
+    parser.push("```spec\n");
+    parser.push('{"op":"add","path":"/root","value":"main"}\n');
+    parser.push("```\n");
+    parser.push("Goodbye\n");
+    parser.flush();
+
+    expect(patches.length).toBe(1);
+    expect(patches[0].op).toBe("add");
+    expect(texts).toContain("Hello");
+    expect(texts).toContain("Goodbye");
+  });
+
+  it("fence delimiters are not emitted as text or patches", () => {
+    const patches: SpecStreamLine[] = [];
+    const texts: string[] = [];
+    const parser = createMixedStreamParser({
+      onPatch: (p) => patches.push(p),
+      onText: (t) => texts.push(t),
+    });
+
+    parser.push("```spec\n");
+    parser.push('{"op":"add","path":"/root","value":"r"}\n');
+    parser.push("```\n");
+    parser.flush();
+
+    expect(patches.length).toBe(1);
+    expect(texts.length).toBe(0);
   });
 });

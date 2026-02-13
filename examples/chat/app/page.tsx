@@ -148,17 +148,12 @@ function MessageBubble({
 
   for (const part of message.parts) {
     if (part.type === "text") {
-      // Strip leaked JSON patch operations from text content
-      const cleaned = part.text.replace(
-        /\{"\s*op"\s*:\s*"(?:add|remove|replace|move|copy|test)"[^}]*"path"\s*:[^}]*\}(?:\s*\{[^}]*\})*/g,
-        "",
-      );
-      if (!cleaned.trim()) continue;
+      if (!part.text.trim()) continue;
       const last = segments[segments.length - 1];
       if (last?.kind === "text") {
-        last.text += cleaned;
+        last.text += part.text;
       } else {
-        segments.push({ kind: "text", text: cleaned });
+        segments.push({ kind: "text", text: part.text });
       }
     } else if (part.type.startsWith("tool-")) {
       const tp = part as {

@@ -41,13 +41,13 @@ Start by defining the JSON structure your system will use. Here's an example of 
 
 ## 2. Create the Catalog
 
-Define a catalog that describes your components and validates props. For custom schemas, use `createCatalog` (the low-level API). If you're using a built-in schema like `@json-render/react`, prefer `defineCatalog` instead — see [Catalog](/docs/catalog).
+Define a catalog that describes your components and validates props using `defineCatalog` — see [Catalog](/docs/catalog).
 
 ```typescript
-import { createCatalog } from '@json-render/core';
+import { defineCatalog } from '@json-render/core';
 import { z } from 'zod';
 
-export const dashboardCatalog = createCatalog({
+export const dashboardCatalog = defineCatalog(mySchema, {
   components: {
     metric: {
       description: 'Displays a single metric value',

@@ -136,7 +136,7 @@ Button: ({ props, emit }) => (
 The `setState` action is handled automatically by `ActionProvider` and updates the state model directly, which re-evaluates visibility conditions and dynamic prop expressions:
 
 ```json
-{ "action": "setState", "actionParams": { "path": "/activeTab", "value": "home" } }
+{ "action": "setState", "actionParams": { "statePath": "/activeTab", "value": "home" } }
 ```
 
 ## Key Exports

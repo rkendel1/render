@@ -9,6 +9,9 @@ export type {
   Spec,
   VisibilityCondition,
   StateCondition,
+  ItemCondition,
+  IndexCondition,
+  SingleCondition,
   AndCondition,
   OrCondition,
   StateModel,
@@ -51,6 +54,7 @@ export {
   createJsonRenderTransform,
   pipeJsonRender,
   SPEC_DATA_PART,
+  SPEC_DATA_PART_TYPE,
 } from "./types";
 
 // Visibility
@@ -158,18 +162,3 @@ export { defineCatalog } from "./schema";
 export type { UserPromptOptions } from "./prompt";
 
 export { buildUserPrompt } from "./prompt";
-
-// Legacy Catalog (for backwards compatibility during migration)
-export type {
-  ComponentDefinition,
-  CatalogConfig,
-  Catalog as LegacyCatalog,
-  InferCatalogComponentProps,
-  SystemPromptOptions,
-} from "./catalog";
-
-export {
-  createCatalog,
-  generateCatalogPrompt,
-  generateSystemPrompt,
-} from "./catalog";

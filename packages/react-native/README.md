@@ -154,7 +154,7 @@ The `Pressable` component wraps children and triggers an action on press. It's e
   "type": "Pressable",
   "props": {
     "action": "setState",
-    "actionParams": { "path": "/activeTab", "value": "home" }
+    "actionParams": { "statePath": "/activeTab", "value": "home" }
   },
   "children": ["home-tab-icon", "home-tab-label"]
 }
@@ -167,7 +167,7 @@ The `setState` action is handled automatically by `ActionProvider`. It updates t
 ```json
 {
   "action": "setState",
-  "actionParams": { "path": "/activeTab", "value": "home" }
+  "actionParams": { "statePath": "/activeTab", "value": "home" }
 }
 ```
 
@@ -199,7 +199,7 @@ See [@json-render/core](../core/README.md) for full expression syntax.
 
 Combine `Pressable`, `setState`, visibility conditions, and dynamic props for functional tabs:
 
-1. Each tab button is a `Pressable` with `action: "setState"` and `actionParams: { path: "/activeTab", value: "tabName" }`
+1. Each tab button is a `Pressable` with `action: "setState"` and `actionParams: { statePath: "/activeTab", value: "tabName" }`
 2. Tab icons/labels use `$cond` dynamic props for active/inactive styling
 3. Tab content sections use `visible` conditions: `{ "$state": "/activeTab", "eq": "tabName" }`
 

@@ -104,7 +104,7 @@ Use `Pressable` with the built-in `setState` action for interactive UIs like tab
   "type": "Pressable",
   "props": {
     "action": "setState",
-    "actionParams": { "path": "/activeTab", "value": "home" }
+    "actionParams": { "statePath": "/activeTab", "value": "home" }
   },
   "children": ["home-icon", "home-label"]
 }
@@ -134,7 +134,7 @@ Components receive already-resolved props. No changes needed to component implem
 The `setState` action is handled automatically by `ActionProvider` and updates the state model directly, which re-evaluates visibility conditions and dynamic prop expressions:
 
 ```json
-{ "action": "setState", "actionParams": { "path": "/activeTab", "value": "home" } }
+{ "action": "setState", "actionParams": { "statePath": "/activeTab", "value": "home" } }
 ```
 
 ## Providers

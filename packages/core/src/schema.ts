@@ -552,18 +552,24 @@ function generatePrompt<TDef extends SchemaDefinition, TCatalog>(
   if (mode === "chat") {
     lines.push("OUTPUT FORMAT (text + JSONL, RFC 6902 JSON Patch):");
     lines.push(
-      "You respond conversationally. When generating UI, first write a brief explanation (1-3 sentences), then output JSONL patch lines on new lines.",
+      "You respond conversationally. When generating UI, first write a brief explanation (1-3 sentences), then output JSONL patch lines wrapped in a ```spec code fence.",
     );
     lines.push(
-      "The JSONL lines use RFC 6902 JSON Patch operations to build a UI tree. Do NOT wrap JSONL in markdown code blocks.",
+      "The JSONL lines use RFC 6902 JSON Patch operations to build a UI tree. Always wrap them in a ```spec fence block:",
     );
+    lines.push("  ```spec");
+    lines.push('  {"op":"add","path":"/root","value":"main"}');
+    lines.push(
+      '  {"op":"add","path":"/elements/main","value":{"type":"Card","props":{"title":"Hello"},"children":[]}}',
+    );
+    lines.push("  ```");
     lines.push(
       "If the user's message does not require a UI (e.g. a greeting or clarifying question), respond with text only — no JSONL.",
     );
   } else {
     lines.push("OUTPUT FORMAT (JSONL, RFC 6902 JSON Patch):");
     lines.push(
-      "Output JSONL (one JSON object per line) using RFC 6902 JSON Patch operations to build a UI tree.",
+      "Output JSONL (one JSON object per line) using RFC 6902 JSON Patch operations to build a UI tree. Wrap all JSONL in a ```spec code fence.",
     );
   }
   lines.push(
@@ -694,7 +700,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
   lines.push("");
   lines.push("ARRAY STATE ACTIONS:");
   lines.push(
-    'Use action "pushState" to append items to arrays. Params: { path: "/arrayPath", value: { ...item }, clearPath: "/inputPath" }.',
+    'Use action "pushState" to append items to arrays. Params: { statePath: "/arrayPath", value: { ...item }, clearStatePath: "/inputPath" }.',
   );
   lines.push(
     'Values inside pushState can contain { "$state": "/statePath" } references to read current state (e.g. the text from an input field).',
@@ -703,10 +709,10 @@ Note: state patches appear right after the elements that use them, so the UI fil
     'Use "$id" inside a pushState value to auto-generate a unique ID.',
   );
   lines.push(
-    'Example: on: { "press": { "action": "pushState", "params": { "path": "/todos", "value": { "id": "$id", "title": { "$state": "/newTodoText" }, "completed": false }, "clearPath": "/newTodoText" } } }',
+    'Example: on: { "press": { "action": "pushState", "params": { "statePath": "/todos", "value": { "id": "$id", "title": { "$state": "/newTodoText" }, "completed": false }, "clearStatePath": "/newTodoText" } } }',
   );
   lines.push(
-    'Use action "removeState" to remove items from arrays by index. Params: { path: "/arrayPath", index: N }. Inside a repeated element\'s children, use { "$index": true } for the current item index.',
+    'Use action "removeState" to remove items from arrays by index. Params: { statePath: "/arrayPath", index: N }. Inside a repeated element\'s children, use { "$index": true } for the current item index.',
   );
   lines.push(
     "For lists where users can add/remove items (todos, carts, etc.), use pushState and removeState instead of hardcoding with setState.",
@@ -763,7 +769,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
   lines.push("");
   lines.push("Example:");
   lines.push(
-    `  ${JSON.stringify({ type: comp1, props: comp1Props, on: { press: { action: "setState", params: { path: "/saved", value: true } } }, children: [] })}`,
+    `  ${JSON.stringify({ type: comp1, props: comp1Props, on: { press: { action: "setState", params: { statePath: "/saved", value: true } } }, children: [] })}`,
   );
   lines.push("");
   lines.push(
@@ -810,7 +816,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
     "Use a component with on.press bound to setState to update state and drive visibility.",
   );
   lines.push(
-    `Example: A ${comp1} with on: { "press": { "action": "setState", "params": { "path": "/activeTab", "value": "home" } } } sets state, then a container with visible: { "$state": "/activeTab", "eq": "home" } shows only when that tab is active.`,
+    `Example: A ${comp1} with on: { "press": { "action": "setState", "params": { "statePath": "/activeTab", "value": "home" } } } sets state, then a container with visible: { "$state": "/activeTab", "eq": "home" } shows only when that tab is active.`,
   );
   lines.push("");
   lines.push(
@@ -897,7 +903,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
   const baseRules =
     mode === "chat"
       ? [
-          "When generating UI, output JSONL patches on their own lines - one JSON object per line, no markdown code fences",
+          "When generating UI, wrap all JSONL patches in a ```spec code fence - one JSON object per line inside the fence",
           "Write a brief conversational response before any JSONL output",
           'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
           'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
@@ -907,7 +913,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
         ]
       : [
-          "Output ONLY JSONL patches - one JSON object per line, no markdown, no code fences",
+          "Output ONLY JSONL patches wrapped in a ```spec code fence - one JSON object per line inside the fence",
           'First set root: {"op":"add","path":"/root","value":"<root-key>"}',
           'Then add each element: {"op":"add","path":"/elements/<key>","value":{...}}',
           "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $item, $index, repeat, or statePath.",

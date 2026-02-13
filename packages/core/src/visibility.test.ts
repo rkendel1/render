@@ -521,6 +521,124 @@ describe("evaluateVisibility", () => {
       ).toBe(false);
     });
   });
+
+  describe("$item conditions", () => {
+    it("$item truthiness check", () => {
+      expect(
+        evaluateVisibility(
+          { $item: "/active" },
+          { stateModel: {}, repeatItem: { active: true } },
+        ),
+      ).toBe(true);
+    });
+
+    it("$item falsy check", () => {
+      expect(
+        evaluateVisibility(
+          { $item: "/active" },
+          { stateModel: {}, repeatItem: { active: false } },
+        ),
+      ).toBe(false);
+    });
+
+    it("$item equality check", () => {
+      expect(
+        evaluateVisibility(
+          { $item: "/status", eq: "done" },
+          { stateModel: {}, repeatItem: { status: "done" } },
+        ),
+      ).toBe(true);
+    });
+
+    it("$item equality check fails", () => {
+      expect(
+        evaluateVisibility(
+          { $item: "/status", eq: "done" },
+          { stateModel: {}, repeatItem: { status: "pending" } },
+        ),
+      ).toBe(false);
+    });
+
+    it("$item root reference", () => {
+      expect(
+        evaluateVisibility(
+          { $item: "/", eq: "hello" },
+          { stateModel: {}, repeatItem: "hello" },
+        ),
+      ).toBe(true);
+    });
+
+    it("$item with not", () => {
+      expect(
+        evaluateVisibility(
+          { $item: "/active", not: true },
+          { stateModel: {}, repeatItem: { active: true } },
+        ),
+      ).toBe(false);
+    });
+
+    it("$item returns false when no repeat scope", () => {
+      expect(evaluateVisibility({ $item: "/x" }, { stateModel: {} })).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("$index conditions", () => {
+    it("$index equality check", () => {
+      expect(
+        evaluateVisibility(
+          { $index: true, eq: 0 },
+          { stateModel: {}, repeatIndex: 0 },
+        ),
+      ).toBe(true);
+    });
+
+    it("$index equality check fails", () => {
+      expect(
+        evaluateVisibility(
+          { $index: true, eq: 0 },
+          { stateModel: {}, repeatIndex: 1 },
+        ),
+      ).toBe(false);
+    });
+
+    it("$index gt check", () => {
+      expect(
+        evaluateVisibility(
+          { $index: true, gt: 2 },
+          { stateModel: {}, repeatIndex: 5 },
+        ),
+      ).toBe(true);
+    });
+
+    it("$index truthiness", () => {
+      expect(
+        evaluateVisibility(
+          { $index: true },
+          { stateModel: {}, repeatIndex: 3 },
+        ),
+      ).toBe(true);
+    });
+
+    it("$index zero is falsy", () => {
+      expect(
+        evaluateVisibility(
+          { $index: true },
+          { stateModel: {}, repeatIndex: 0 },
+        ),
+      ).toBe(false);
+    });
+
+    it("$index with not", () => {
+      expect(
+        evaluateVisibility(
+          { $index: true, eq: 0, not: true },
+          { stateModel: {}, repeatIndex: 1 },
+        ),
+      ).toBe(true);
+    });
+  });
 });
 
 describe("visibility helper", () => {

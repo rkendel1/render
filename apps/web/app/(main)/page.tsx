@@ -100,10 +100,12 @@ export default function Home() {
               <p className="text-muted-foreground mb-6">
                 Components, actions, and validation functions.
               </p>
-              <Code lang="typescript">{`import { createCatalog } from '@json-render/core';
+              <Code lang="typescript">{`import { defineSchema, defineCatalog } from '@json-render/core';
 import { z } from 'zod';
 
-export const catalog = createCatalog({
+const schema = defineSchema({ /* ... */ });
+
+export const catalog = defineCatalog(schema, {
   components: {
     Card: {
       props: z.object({

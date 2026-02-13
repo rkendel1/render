@@ -79,7 +79,6 @@ export {
   // Low-level
   Renderer,
   JSONUIProvider,
-  createRendererFromCatalog,
   type ComponentRenderProps,
   type ComponentRenderer,
   type ComponentRegistry,

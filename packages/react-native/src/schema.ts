@@ -66,7 +66,7 @@ export const schema = defineSchema(
 
       // Tab navigation pattern
       "TAB NAVIGATION PATTERN: When building a UI with multiple tabs, use a pressable/tappable component + setState action + visible conditions to make tabs functional. ONLY use components from the AVAILABLE COMPONENTS list.",
-      'Each tab button should be a pressable component wrapping its icon/label children, with action "setState" and actionParams { "path": "/activeTab", "value": "tabName" }.',
+      'Each tab button should be a pressable component wrapping its icon/label children, with action "setState" and actionParams { "statePath": "/activeTab", "value": "tabName" }.',
       'Each tab\'s content section should have a visible condition: { "$state": "/activeTab", "eq": "tabName" }.',
       "The first tab's content should NOT have a visible condition (so it shows by default when no tab is selected yet). All other tabs MUST have a visible condition.",
 

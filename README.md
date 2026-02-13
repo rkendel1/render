@@ -246,7 +246,7 @@ Components can trigger actions, including the built-in `setState` action:
 ```json
 {
   "type": "Pressable",
-  "props": { "action": "setState", "actionParams": { "path": "/activeTab", "value": "home" } },
+  "props": { "action": "setState", "actionParams": { "statePath": "/activeTab", "value": "home" } },
   "children": ["home-icon"]
 }
 ```

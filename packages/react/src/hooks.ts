@@ -16,6 +16,7 @@ import {
   createMixedStreamParser,
   applySpecPatch,
   nestedToFlat,
+  SPEC_DATA_PART_TYPE,
 } from "@json-render/core";
 
 /**
@@ -438,11 +439,11 @@ export interface DataPart {
 }
 
 /**
- * Build a `Spec` by replaying all `data-spec` parts from a message's
- * parts array. Returns `null` if no `data-spec` parts are present.
+ * Build a `Spec` by replaying all spec data parts from a message's
+ * parts array. Returns `null` if no spec data parts are present.
  *
  * This function is designed to work with the AI SDK's `UIMessage.parts` array.
- * It picks out parts whose `type` is `"data-spec"` and processes them based
+ * It picks out parts whose `type` is {@link SPEC_DATA_PART_TYPE} and processes them based
  * on the payload's `type` discriminator:
  *
  * - `"patch"`: Applies the JSON Patch operation incrementally via `applySpecPatch`.
@@ -465,7 +466,7 @@ export function buildSpecFromParts(parts: DataPart[]): Spec | null {
   let hasSpec = false;
 
   for (const part of parts) {
-    if (part.type === "data-spec") {
+    if (part.type === SPEC_DATA_PART_TYPE) {
       const payload = part.data as SpecDataPart;
       if (payload.type === "patch") {
         hasSpec = true;

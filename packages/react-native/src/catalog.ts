@@ -466,25 +466,25 @@ export const standardActionDefinitions = {
 
   setState: {
     params: z.object({
-      path: z.string(),
+      statePath: z.string(),
       value: z.unknown(),
     }),
-    description: "Update a value in the state model at the given path.",
+    description: "Update a value in the state model at the given statePath.",
   },
 
   pushState: {
     params: z.object({
-      path: z.string(),
+      statePath: z.string(),
       value: z.unknown(),
-      clearPath: z.string().optional(),
+      clearStatePath: z.string().optional(),
     }),
     description:
-      'Append an item to an array in the state model. The value can contain { $state: "/statePath" } references to read from current state, and "$id" to auto-generate a unique ID. Use clearPath to reset another path after pushing (e.g. clear an input field). Example: { path: "/todos", value: { id: "$id", title: { $state: "/newTodoText" }, completed: false }, clearPath: "/newTodoText" }.',
+      'Append an item to an array in the state model. The value can contain { $state: "/statePath" } references to read from current state, and "$id" to auto-generate a unique ID. Use clearStatePath to reset another path after pushing (e.g. clear an input field). Example: { statePath: "/todos", value: { id: "$id", title: { $state: "/newTodoText" }, completed: false }, clearStatePath: "/newTodoText" }.',
   },
 
   removeState: {
     params: z.object({
-      path: z.string(),
+      statePath: z.string(),
       index: z.number(),
     }),
     description:

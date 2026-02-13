@@ -2,6 +2,9 @@ import { z } from "zod";
 import type {
   VisibilityCondition,
   StateCondition,
+  ItemCondition,
+  IndexCondition,
+  SingleCondition,
   AndCondition,
   OrCondition,
   StateModel,
@@ -20,8 +23,7 @@ const numericOrStateRef = z.union([
   z.object({ $state: z.string() }),
 ]);
 
-const StateConditionSchema = z.object({
-  $state: z.string(),
+const comparisonOps = {
   eq: z.unknown().optional(),
   neq: z.unknown().optional(),
   gt: numericOrStateRef.optional(),
@@ -29,7 +31,28 @@ const StateConditionSchema = z.object({
   lt: numericOrStateRef.optional(),
   lte: numericOrStateRef.optional(),
   not: z.literal(true).optional(),
+};
+
+const StateConditionSchema = z.object({
+  $state: z.string(),
+  ...comparisonOps,
 });
+
+const ItemConditionSchema = z.object({
+  $item: z.string(),
+  ...comparisonOps,
+});
+
+const IndexConditionSchema = z.object({
+  $index: z.literal(true),
+  ...comparisonOps,
+});
+
+const SingleConditionSchema = z.union([
+  StateConditionSchema,
+  ItemConditionSchema,
+  IndexConditionSchema,
+]);
 
 /**
  * Visibility condition schema.
@@ -40,8 +63,8 @@ export const VisibilityConditionSchema: z.ZodType<VisibilityCondition> = z.lazy(
   () =>
     z.union([
       z.boolean(),
-      StateConditionSchema,
-      z.array(StateConditionSchema),
+      SingleConditionSchema,
+      z.array(SingleConditionSchema),
       z.object({ $and: z.array(VisibilityConditionSchema) }),
       z.object({ $or: z.array(VisibilityConditionSchema) }),
     ]),
@@ -53,9 +76,16 @@ export const VisibilityConditionSchema: z.ZodType<VisibilityCondition> = z.lazy(
 
 /**
  * Context for evaluating visibility conditions.
+ *
+ * `repeatItem` and `repeatIndex` are only present inside a `repeat` scope
+ * and enable `$item` / `$index` conditions.
  */
 export interface VisibilityContext {
   stateModel: StateModel;
+  /** The current repeat item (set inside a repeat scope). */
+  repeatItem?: unknown;
+  /** The current repeat array index (set inside a repeat scope). */
+  repeatIndex?: number;
 }
 
 // =============================================================================
@@ -68,21 +98,52 @@ export interface VisibilityContext {
  */
 function resolveComparisonValue(
   value: unknown,
-  stateModel: StateModel,
+  ctx: VisibilityContext,
 ): unknown {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "$state" in value &&
-    typeof (value as Record<string, unknown>).$state === "string"
-  ) {
-    return getByPath(stateModel, (value as { $state: string }).$state);
+  if (typeof value === "object" && value !== null) {
+    if (
+      "$state" in value &&
+      typeof (value as Record<string, unknown>).$state === "string"
+    ) {
+      return getByPath(ctx.stateModel, (value as { $state: string }).$state);
+    }
   }
   return value;
 }
 
 /**
- * Evaluate a single state condition against the state model.
+ * Type guards for condition sources.
+ */
+function isItemCondition(cond: SingleCondition): cond is ItemCondition {
+  return "$item" in cond;
+}
+
+function isIndexCondition(cond: SingleCondition): cond is IndexCondition {
+  return "$index" in cond;
+}
+
+/**
+ * Resolve the left-hand-side value of a condition based on its source.
+ */
+function resolveConditionValue(
+  cond: SingleCondition,
+  ctx: VisibilityContext,
+): unknown {
+  if (isIndexCondition(cond)) {
+    return ctx.repeatIndex;
+  }
+  if (isItemCondition(cond)) {
+    if (ctx.repeatItem === undefined) return undefined;
+    return cond.$item === "/"
+      ? ctx.repeatItem
+      : getByPath(ctx.repeatItem, cond.$item);
+  }
+  // StateCondition
+  return getByPath(ctx.stateModel, (cond as StateCondition).$state);
+}
+
+/**
+ * Evaluate a single condition against the context.
  *
  * When `not` is `true`, the final result is inverted — this applies to
  * whichever operator is present (or to the truthiness check if no operator
@@ -91,25 +152,25 @@ function resolveComparisonValue(
  * - `{ $state: "/x", gt: 5, not: true }` → `!(value > 5)`
  */
 function evaluateCondition(
-  cond: StateCondition,
-  stateModel: StateModel,
+  cond: SingleCondition,
+  ctx: VisibilityContext,
 ): boolean {
-  const value = getByPath(stateModel, cond.$state);
+  const value = resolveConditionValue(cond, ctx);
   let result: boolean;
 
   // Equality
   if (cond.eq !== undefined) {
-    const rhs = resolveComparisonValue(cond.eq, stateModel);
+    const rhs = resolveComparisonValue(cond.eq, ctx);
     result = value === rhs;
   }
   // Inequality
   else if (cond.neq !== undefined) {
-    const rhs = resolveComparisonValue(cond.neq, stateModel);
+    const rhs = resolveComparisonValue(cond.neq, ctx);
     result = value !== rhs;
   }
   // Greater than
   else if (cond.gt !== undefined) {
-    const rhs = resolveComparisonValue(cond.gt, stateModel);
+    const rhs = resolveComparisonValue(cond.gt, ctx);
     result =
       typeof value === "number" && typeof rhs === "number"
         ? value > rhs
@@ -117,7 +178,7 @@ function evaluateCondition(
   }
   // Greater than or equal
   else if (cond.gte !== undefined) {
-    const rhs = resolveComparisonValue(cond.gte, stateModel);
+    const rhs = resolveComparisonValue(cond.gte, ctx);
     result =
       typeof value === "number" && typeof rhs === "number"
         ? value >= rhs
@@ -125,7 +186,7 @@ function evaluateCondition(
   }
   // Less than
   else if (cond.lt !== undefined) {
-    const rhs = resolveComparisonValue(cond.lt, stateModel);
+    const rhs = resolveComparisonValue(cond.lt, ctx);
     result =
       typeof value === "number" && typeof rhs === "number"
         ? value < rhs
@@ -133,7 +194,7 @@ function evaluateCondition(
   }
   // Less than or equal
   else if (cond.lte !== undefined) {
-    const rhs = resolveComparisonValue(cond.lte, stateModel);
+    const rhs = resolveComparisonValue(cond.lte, ctx);
     result =
       typeof value === "number" && typeof rhs === "number"
         ? value <= rhs
@@ -181,8 +242,9 @@ function isOrCondition(
  *
  * - `undefined` → visible
  * - `boolean` → that value
- * - `StateCondition` → evaluate single condition
- * - `StateCondition[]` → implicit AND (all must be true)
+ * - `SingleCondition` → evaluate single condition
+ * - `SingleCondition[]` → implicit AND (all must be true)
+ * - `AndCondition` → `{ $and: [...] }`, explicit AND
  * - `OrCondition` → `{ $or: [...] }`, at least one must be true
  */
 export function evaluateVisibility(
@@ -201,7 +263,7 @@ export function evaluateVisibility(
 
   // Array = implicit AND
   if (Array.isArray(condition)) {
-    return condition.every((c) => evaluateCondition(c, ctx.stateModel));
+    return condition.every((c) => evaluateCondition(c, ctx));
   }
 
   // Explicit AND condition
@@ -215,7 +277,7 @@ export function evaluateVisibility(
   }
 
   // Single condition
-  return evaluateCondition(condition, ctx.stateModel);
+  return evaluateCondition(condition, ctx);
 }
 
 // =============================================================================
@@ -276,8 +338,8 @@ export const visibility = {
 
   /** AND multiple conditions (implicit AND — array of conditions) */
   and: (
-    ...conditions: (StateCondition | StateCondition[])[]
-  ): StateCondition[] => conditions.flat(),
+    ...conditions: (SingleCondition | SingleCondition[])[]
+  ): SingleCondition[] => conditions.flat(),
 
   /** OR multiple conditions */
   or: (...conditions: VisibilityCondition[]): OrCondition => ({

@@ -13,13 +13,13 @@ import type {
   ActionBinding,
   Catalog,
   SchemaDefinition,
-  LegacyCatalog,
-  ComponentDefinition,
 } from "@json-render/core";
 import {
   resolveElementProps,
+  evaluateVisibility,
   getByPath,
   type PropResolutionContext,
+  type VisibilityContext as CoreVisibilityContext,
 } from "@json-render/core";
 import type {
   Components,
@@ -123,28 +123,47 @@ class ElementErrorBoundary extends React.Component<
   }
 }
 
-/**
- * Element renderer component
- */
-function ElementRenderer({
-  element,
-  spec,
-  registry,
-  loading,
-  fallback,
-}: {
+interface ElementRendererProps {
   element: UIElement;
   spec: Spec;
   registry: ComponentRegistry;
   loading?: boolean;
   fallback?: ComponentRenderer;
-}) {
+}
+
+/**
+ * Element renderer component.
+ * Memoized to prevent re-rendering all repeat children when state changes.
+ */
+const ElementRenderer = React.memo(function ElementRenderer({
+  element,
+  spec,
+  registry,
+  loading,
+  fallback,
+}: ElementRendererProps) {
   const repeatScope = useRepeatScope();
   const { ctx } = useVisibility();
   const { execute } = useActions();
 
-  // Evaluate visibility
-  const isVisible = useIsVisible(element.visible);
+  // Build context with repeat scope (used for both visibility and props)
+  const fullCtx: CoreVisibilityContext & PropResolutionContext = useMemo(
+    () =>
+      repeatScope
+        ? {
+            ...ctx,
+            repeatItem: repeatScope.item,
+            repeatIndex: repeatScope.index,
+          }
+        : ctx,
+    [ctx, repeatScope],
+  );
+
+  // Evaluate visibility (now supports $item/$index inside repeat scopes)
+  const isVisible =
+    element.visible === undefined
+      ? true
+      : evaluateVisibility(element.visible, fullCtx);
 
   // Create emit function that resolves events to action bindings.
   // Must be called before any early return to satisfy Rules of Hooks.
@@ -166,10 +185,8 @@ function ElementRenderer({
     return null;
   }
 
-  // Build prop resolution context (extends visibility context with repeat scope)
-  const propCtx: PropResolutionContext = repeatScope
-    ? { ...ctx, repeatItem: repeatScope.item, repeatIndex: repeatScope.index }
-    : ctx;
+  // Prop resolution context (same as fullCtx, includes repeat scope)
+  const propCtx: PropResolutionContext = fullCtx;
 
   // Resolve dynamic prop expressions ($state, $item, $index, $cond/$then/$else)
   let resolvedProps = resolveElementProps(
@@ -244,7 +261,7 @@ function ElementRenderer({
       </Component>
     </ElementErrorBoundary>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // RepeatChildren -- renders child elements once per item in a state array.
@@ -408,21 +425,6 @@ function ConfirmationDialogManager() {
       onCancel={cancel}
     />
   );
-}
-
-/**
- * Legacy helper to create a renderer component from a catalog
- * @deprecated Use createRenderer with the new catalog API instead
- */
-export function createRendererFromCatalog<
-  C extends LegacyCatalog<Record<string, ComponentDefinition>>,
->(
-  _catalog: C,
-  registry: ComponentRegistry,
-): ComponentType<Omit<RendererProps, "registry">> {
-  return function CatalogRenderer(props: Omit<RendererProps, "registry">) {
-    return <Renderer {...props} registry={registry} />;
-  };
 }
 
 // ============================================================================

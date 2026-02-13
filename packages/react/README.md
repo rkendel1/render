@@ -299,7 +299,7 @@ The `setState`, `pushState`, and `removeState` actions are handled automatically
   "on": {
     "press": {
       "action": "setState",
-      "params": { "path": "/activeTab", "value": "settings" }
+      "params": { "statePath": "/activeTab", "value": "settings" }
     }
   },
   "children": []

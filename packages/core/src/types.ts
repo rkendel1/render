@@ -86,16 +86,8 @@ export interface FlatElement<
   parentKey?: string | null;
 }
 
-/**
- * A single state-based condition.
- * Resolves `$state` to a value from the state model, then applies the operator.
- * Without an operator, checks truthiness.
- *
- * When `not` is `true`, the result of the entire condition is inverted.
- * For example `{ $state: "/count", gt: 5, not: true }` means "NOT greater than 5".
- */
-export type StateCondition = {
-  $state: string;
+/** Shared comparison operators for visibility conditions. */
+type ComparisonOperators = {
   eq?: unknown;
   neq?: unknown;
   gt?: number | { $state: string };
@@ -106,8 +98,35 @@ export type StateCondition = {
 };
 
 /**
+ * A single state-based condition.
+ * Resolves `$state` to a value from the state model, then applies the operator.
+ * Without an operator, checks truthiness.
+ *
+ * When `not` is `true`, the result of the entire condition is inverted.
+ * For example `{ $state: "/count", gt: 5, not: true }` means "NOT greater than 5".
+ */
+export type StateCondition = { $state: string } & ComparisonOperators;
+
+/**
+ * A condition that resolves `$item` to a field on the current repeat item.
+ * Only meaningful inside a `repeat` scope.
+ *
+ * Use `"/"` to reference the whole item, or `"/field"` for a specific field.
+ */
+export type ItemCondition = { $item: string } & ComparisonOperators;
+
+/**
+ * A condition that resolves `$index` to the current repeat array index.
+ * Only meaningful inside a `repeat` scope.
+ */
+export type IndexCondition = { $index: true } & ComparisonOperators;
+
+/** A single visibility condition (state, item, or index). */
+export type SingleCondition = StateCondition | ItemCondition | IndexCondition;
+
+/**
  * AND wrapper — all child conditions must be true.
- * This is the explicit form of the implicit array AND (`StateCondition[]`).
+ * This is the explicit form of the implicit array AND (`SingleCondition[]`).
  * Unlike the implicit form, `$and` supports nested `$or` and `$and` conditions.
  */
 export type AndCondition = { $and: VisibilityCondition[] };
@@ -120,15 +139,15 @@ export type OrCondition = { $or: VisibilityCondition[] };
 /**
  * Visibility condition types.
  * - `boolean` — always/never
- * - `StateCondition` — single condition
- * - `StateCondition[]` — implicit AND (all must be true)
+ * - `SingleCondition` — single condition (`$state`, `$item`, or `$index`)
+ * - `SingleCondition[]` — implicit AND (all must be true)
  * - `AndCondition` — `{ $and: [...] }`, explicit AND (all must be true)
  * - `OrCondition` — `{ $or: [...] }`, at least one must be true
  */
 export type VisibilityCondition =
   | boolean
-  | StateCondition
-  | StateCondition[]
+  | SingleCondition
+  | SingleCondition[]
   | AndCondition
   | OrCondition;
 
@@ -868,11 +887,32 @@ export function createMixedStreamParser(
   callbacks: MixedStreamCallbacks,
 ): MixedStreamParser {
   let buffer = "";
+  let inSpecFence = false;
 
   function processLine(line: string): void {
     const trimmed = line.trim();
+
+    // Fence detection
+    if (!inSpecFence && trimmed.startsWith("```spec")) {
+      inSpecFence = true;
+      return;
+    }
+    if (inSpecFence && trimmed === "```") {
+      inSpecFence = false;
+      return;
+    }
+
     if (!trimmed) return;
 
+    if (inSpecFence) {
+      const patch = parseSpecStreamLine(trimmed);
+      if (patch) {
+        callbacks.onPatch(patch);
+      }
+      return;
+    }
+
+    // Outside fence: heuristic mode
     const patch = parseSpecStreamLine(trimmed);
     if (patch) {
       callbacks.onPatch(patch);
@@ -920,17 +960,25 @@ export type StreamChunk =
   | { type: "text-end"; id: string; [k: string]: unknown }
   | { type: string; [k: string]: unknown };
 
+/** The opening fence for a spec block (e.g. ` ```spec `). */
+const SPEC_FENCE_OPEN = "```spec";
+/** The closing fence for a spec block. */
+const SPEC_FENCE_CLOSE = "```";
+
 /**
  * Creates a `TransformStream` that intercepts AI SDK UI message stream chunks
  * and classifies text content as either prose or json-render JSONL patches.
  *
- * - **Prose text** (lines not starting with `{`): forwarded immediately as
- *   `text-delta` chunks, preserving character-by-character streaming.
- * - **Potential JSONL** (lines starting with `{`): buffered until the line
- *   completes, then classified via `parseSpecStreamLine`. Valid patches are
- *   emitted as `data-spec` parts; everything else is flushed as text.
- * - **Non-text chunks** (tool events, step markers, etc.): passed through
- *   unchanged.
+ * Two classification modes:
+ *
+ * 1. **Fence mode** (preferred): Lines between ` ```spec ` and ` ``` ` are
+ *    parsed as JSONL patches. Fence delimiters are swallowed (not emitted).
+ * 2. **Heuristic mode** (backward compat): Outside of fences, lines starting
+ *    with `{` are buffered and tested with `parseSpecStreamLine`. Valid patches
+ *    are emitted as {@link SPEC_DATA_PART_TYPE} parts; everything else is
+ *    flushed as text.
+ *
+ * Non-text chunks (tool events, step markers, etc.) are passed through unchanged.
  *
  * @example
  * ```ts
@@ -955,6 +1003,18 @@ export function createJsonRenderTransform(): TransformStream<
   let currentTextId = "";
   // Whether the current incomplete line might be JSONL (starts with '{')
   let buffering = false;
+  // Whether we are inside a ```spec fence
+  let inSpecFence = false;
+
+  function emitPatch(
+    patch: SpecStreamLine,
+    controller: TransformStreamDefaultController<StreamChunk>,
+  ) {
+    controller.enqueue({
+      type: SPEC_DATA_PART_TYPE,
+      data: { type: "patch", patch },
+    });
+  }
 
   function flushBuffer(
     controller: TransformStreamDefaultController<StreamChunk>,
@@ -962,13 +1022,23 @@ export function createJsonRenderTransform(): TransformStream<
     if (!lineBuffer) return;
 
     const trimmed = lineBuffer.trim();
+
+    // Inside a fence, everything is spec data
+    if (inSpecFence) {
+      if (trimmed) {
+        const patch = parseSpecStreamLine(trimmed);
+        if (patch) emitPatch(patch, controller);
+        // Non-patch lines inside the fence are silently dropped
+      }
+      lineBuffer = "";
+      buffering = false;
+      return;
+    }
+
     if (trimmed) {
       const patch = parseSpecStreamLine(trimmed);
       if (patch) {
-        controller.enqueue({
-          type: "data-spec",
-          data: { type: "patch", patch },
-        });
+        emitPatch(patch, controller);
       } else {
         // Was buffered but isn't JSONL — flush as text
         controller.enqueue({
@@ -994,6 +1064,27 @@ export function createJsonRenderTransform(): TransformStream<
     controller: TransformStreamDefaultController<StreamChunk>,
   ) {
     const trimmed = line.trim();
+
+    // --- Fence detection ---
+    if (!inSpecFence && trimmed.startsWith(SPEC_FENCE_OPEN)) {
+      inSpecFence = true;
+      return; // Swallow the opening fence
+    }
+    if (inSpecFence && trimmed === SPEC_FENCE_CLOSE) {
+      inSpecFence = false;
+      return; // Swallow the closing fence
+    }
+
+    // Inside a fence: parse as spec data
+    if (inSpecFence) {
+      if (trimmed) {
+        const patch = parseSpecStreamLine(trimmed);
+        if (patch) emitPatch(patch, controller);
+      }
+      return;
+    }
+
+    // --- Outside fence: heuristic mode ---
     if (!trimmed) {
       // Empty line — forward for markdown paragraph breaks
       controller.enqueue({
@@ -1006,7 +1097,7 @@ export function createJsonRenderTransform(): TransformStream<
 
     const patch = parseSpecStreamLine(trimmed);
     if (patch) {
-      controller.enqueue({ type: "data-spec", data: { type: "patch", patch } });
+      emitPatch(patch, controller);
     } else {
       controller.enqueue({
         type: "text-delta",
@@ -1040,15 +1131,19 @@ export function createJsonRenderTransform(): TransformStream<
                 lineBuffer = "";
                 buffering = false;
               } else {
-                controller.enqueue({
-                  type: "text-delta",
-                  id: currentTextId,
-                  delta: "\n",
-                });
+                // Outside fence, emit newline; inside fence, swallow it
+                if (!inSpecFence) {
+                  controller.enqueue({
+                    type: "text-delta",
+                    id: currentTextId,
+                    delta: "\n",
+                  });
+                }
               }
             } else if (lineBuffer.length === 0 && !buffering) {
               // Start of a new line — decide whether to buffer or stream
-              if (ch === "{") {
+              if (inSpecFence || ch === "{" || ch === "`") {
+                // Buffer: inside fence (everything), or heuristic mode ({), or potential fence (`)
                 buffering = true;
                 lineBuffer += ch;
               } else {
@@ -1091,8 +1186,9 @@ export function createJsonRenderTransform(): TransformStream<
 }
 
 /**
- * The data part type name used by json-render in AI SDK streams.
- * Use this when defining custom data part types for `useChat`.
+ * The key registered in `AppDataParts` for json-render specs.
+ * The AI SDK automatically prefixes this with `"data-"` on the wire,
+ * so the actual stream chunk type is `"data-spec"` (see {@link SPEC_DATA_PART_TYPE}).
  *
  * @example
  * ```ts
@@ -1103,7 +1199,15 @@ export function createJsonRenderTransform(): TransformStream<
 export const SPEC_DATA_PART = "spec" as const;
 
 /**
- * Discriminated union for the payload of a `data-spec` SSE part.
+ * The wire-format type string as it appears in stream chunks and message parts.
+ * This is `"data-"` + {@link SPEC_DATA_PART} — i.e. `"data-spec"`.
+ *
+ * Use this constant when filtering message parts or enqueuing stream chunks.
+ */
+export const SPEC_DATA_PART_TYPE = `data-${SPEC_DATA_PART}` as const;
+
+/**
+ * Discriminated union for the payload of a {@link SPEC_DATA_PART_TYPE} SSE part.
  *
  * - `"patch"`: A single RFC 6902 JSON Patch operation (streaming, progressive UI).
  * - `"flat"`: A complete flat spec with `root`, `elements`, and optional `state`.
