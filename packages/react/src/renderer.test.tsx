@@ -1,11 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
 import {
+  defineRegistry,
   Renderer,
   JSONUIProvider,
 } from "./renderer";
-import type { Spec } from "@json-render/core";
+import { defineCatalog, type Spec } from "@json-render/core";
+import { z } from "zod";
+import { schema } from "./schema";
 
 describe("Renderer", () => {
   it("renders null for null spec", () => {
@@ -76,24 +79,36 @@ describe("Renderer - Named Slots", () => {
       },
     };
 
-    const registry = {
-      Layout: ({
-        children,
-        slots,
-      }: {
-        children?: React.ReactNode;
-        slots?: Record<string, React.ReactNode>;
-      }) => (
-        <div data-testid="layout">
-          <header data-testid="header-slot">{slots?.header}</header>
-          <main data-testid="main-slot">{children}</main>
-          <footer data-testid="footer-slot">{slots?.footer}</footer>
-        </div>
-      ),
-      Text: ({ element }: { element: { props: { content: string } } }) => (
-        <span data-testid="text">{element.props.content}</span>
-      ),
-    };
+    const catalog = defineCatalog(schema, {
+      components: {
+        Layout: {
+          props: z.object({}),
+          slots: ["header", "footer"],
+          description: "Layout component with header and footer slots",
+        },
+        Text: {
+          props: z.object({ content: z.string() }),
+          slots: [],
+          description: "Text component",
+        },
+      },
+      actions: {},
+    });
+
+    const { registry } = defineRegistry(catalog, {
+      components: {
+        Layout: ({ children, slots }) => (
+          <div data-testid="layout">
+            <header data-testid="header-slot">{slots?.header}</header>
+            <main data-testid="main-slot">{children}</main>
+            <footer data-testid="footer-slot">{slots?.footer}</footer>
+          </div>
+        ),
+        Text: ({ props }: { props: { content: string } }) => (
+          <span data-testid="text">{props.content}</span>
+        ),
+      },
+    });
 
     const { getByTestId, getAllByTestId } = render(
       <JSONUIProvider registry={registry}>
@@ -137,19 +152,30 @@ describe("Renderer - Named Slots", () => {
       },
     };
 
-    const registry = {
-      Layout: ({ slots }: { slots?: Record<string, React.ReactNode> }) => (
-        <div>{slots?.sidebar}</div>
-      ),
-      Text: ({ element }: { element: { props: { content: string } } }) => (
-        <span>{element.props.content}</span>
-      ),
-      __metadata__: {
-        components: {
-          Layout: { slots: ["header", "footer"] }, // sidebar NOT included
+    const catalog = defineCatalog(schema, {
+      components: {
+        Layout: {
+          props: z.object({}),
+          slots: ["header", "footer"], // sidebar NOT included
+          description: "Layout component",
+        },
+        Text: {
+          props: z.object({ content: z.string() }),
+          slots: [],
+          description: "Text component",
         },
       },
-    };
+      actions: {},
+    });
+
+    const { registry } = defineRegistry(catalog, {
+      components: {
+        Layout: ({ slots }) => <div>{slots?.sidebar}</div>,
+        Text: ({ props }: { props: { content: string } }) => (
+          <span>{props.content}</span>
+        ),
+      },
+    });
 
     render(
       <JSONUIProvider registry={registry}>
@@ -189,28 +215,35 @@ describe("Renderer - Named Slots", () => {
       },
     };
 
-    const registry = {
-      Layout: ({
-        children,
-        slots,
-      }: {
-        children?: React.ReactNode;
-        slots?: Record<string, React.ReactNode>;
-      }) => (
-        <div data-testid="layout">
-          <div data-testid="default-slot">{slots?.default}</div>
-          <div data-testid="children">{children}</div>
-        </div>
-      ),
-      Text: ({ element }: { element: { props: { content: string } } }) => (
-        <span>{element.props.content}</span>
-      ),
-      __metadata__: {
-        components: {
-          Layout: { slots: ["header", "footer"] }, // default NOT included
+    const catalog = defineCatalog(schema, {
+      components: {
+        Layout: {
+          props: z.object({}),
+          slots: ["header", "footer"], // default NOT included
+          description: "Layout component",
+        },
+        Text: {
+          props: z.object({ content: z.string() }),
+          slots: [],
+          description: "Text component",
         },
       },
-    };
+      actions: {},
+    });
+
+    const { registry } = defineRegistry(catalog, {
+      components: {
+        Layout: ({ children, slots }) => (
+          <div data-testid="layout">
+            <div data-testid="default-slot">{slots?.default}</div>
+            <div data-testid="children">{children}</div>
+          </div>
+        ),
+        Text: ({ props }: { props: { content: string } }) => (
+          <span>{props.content}</span>
+        ),
+      },
+    });
 
     const { getByTestId } = render(
       <JSONUIProvider registry={registry}>
@@ -254,23 +287,35 @@ describe("Renderer - Named Slots", () => {
       },
     };
 
-    const registry = {
-      Layout: ({
-        children,
-        slots,
-      }: {
-        children?: React.ReactNode;
-        slots?: Record<string, React.ReactNode>;
-      }) => (
-        <div data-testid="layout">
-          <header data-testid="header">{slots?.header}</header>
-          <main>{children}</main>
-        </div>
-      ),
-      Text: ({ element }: { element: { props: { content: string } } }) => (
-        <span>{element.props.content}</span>
-      ),
-    };
+    const catalog = defineCatalog(schema, {
+      components: {
+        Layout: {
+          props: z.object({}),
+          slots: ["header", "footer"],
+          description: "Layout component",
+        },
+        Text: {
+          props: z.object({ content: z.string() }),
+          slots: [],
+          description: "Text component",
+        },
+      },
+      actions: {},
+    });
+
+    const { registry } = defineRegistry(catalog, {
+      components: {
+        Layout: ({ children, slots }) => (
+          <div data-testid="layout">
+            <header data-testid="header">{slots?.header}</header>
+            <main>{children}</main>
+          </div>
+        ),
+        Text: ({ props }: { props: { content: string } }) => (
+          <span>{props.content}</span>
+        ),
+      },
+    });
 
     const { getByTestId } = render(
       <JSONUIProvider registry={registry}>
