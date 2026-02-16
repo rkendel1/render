@@ -75,14 +75,27 @@ export type ComponentRenderer<P = Record<string, unknown>> = ComponentType<
 >;
 
 /**
+ * Helper function to attach metadata (used for slot validation) to a registry.
+ * Metadata is stored as a non-enumerable __metadata__ property at runtime,
+ * but not included in the type definition to avoid index signature conflicts.
+ * @internal
+ */
+export function attachRegistryMetadata(
+  registry: ComponentRegistry,
+  metadata: { components: Record<string, { slots?: string[] }> },
+): void {
+  Object.defineProperty(registry, "__metadata__", {
+    value: metadata,
+    writable: false,
+    enumerable: false,
+    configurable: true,
+  });
+}
+
+/**
  * Registry of component renderers
  */
-export type ComponentRegistry = Record<string, ComponentRenderer<any>> & {
-  /** Metadata about components (for validation) */
-  __metadata__?: {
-    components: Record<string, { slots?: string[] }>;
-  };
-};
+export type ComponentRegistry = Record<string, ComponentRenderer<any>>;
 
 /**
  * Props for the Renderer component
@@ -260,9 +273,9 @@ const ElementRenderer = React.memo(function ElementRenderer({
   }
 
   // Validate slots
-  if (resolvedElement.slots && registry.__metadata__) {
-    const componentMeta =
-      registry.__metadata__.components[resolvedElement.type];
+  const registryMetadata = (registry as any).__metadata__;
+  if (resolvedElement.slots && registryMetadata) {
+    const componentMeta = registryMetadata.components[resolvedElement.type];
     if (componentMeta?.slots) {
       const declaredSlots = new Set(componentMeta.slots);
       for (const slotName of Object.keys(resolvedElement.slots)) {
@@ -621,14 +634,14 @@ export function defineRegistry<C extends Catalog>(
     components?: Record<string, { slots?: string[] }>;
   };
   if (catalogData.components) {
-    registry.__metadata__ = {
+    attachRegistryMetadata(registry, {
       components: Object.fromEntries(
         Object.entries(catalogData.components).map(([name, def]) => [
           name,
           { slots: def.slots },
         ]),
       ),
-    };
+    });
   }
 
   // Build action helpers
