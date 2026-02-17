@@ -147,10 +147,7 @@ const { registry } = defineRegistry(catalog, { components });
 ```tsx
 import { defineCatalog } from "@json-render/core";
 import { schema, defineRegistry, Renderer } from "@json-render/react";
-import {
-  shadcnComponentDefinitions,
-  shadcnActionDefinitions,
-} from "@json-render/shadcn/catalog";
+import { shadcnComponentDefinitions } from "@json-render/shadcn/catalog";
 import { shadcnComponents } from "@json-render/shadcn";
 
 // Pick components from the 30+ standard definitions
@@ -161,9 +158,7 @@ const catalog = defineCatalog(schema, {
     Heading: shadcnComponentDefinitions.Heading,
     Button: shadcnComponentDefinitions.Button,
   },
-  actions: {
-    setState: shadcnActionDefinitions.setState,
-  },
+  actions: {},
 });
 
 // Use matching implementations

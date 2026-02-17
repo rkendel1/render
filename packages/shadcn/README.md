@@ -17,10 +17,7 @@ Import standard definitions from `@json-render/shadcn/catalog` and pass them to 
 ```typescript
 import { defineCatalog } from "@json-render/core";
 import { schema } from "@json-render/react/schema";
-import {
-  shadcnComponentDefinitions,
-  shadcnActionDefinitions,
-} from "@json-render/shadcn/catalog";
+import { shadcnComponentDefinitions } from "@json-render/shadcn/catalog";
 
 const catalog = defineCatalog(schema, {
   components: {
@@ -31,13 +28,11 @@ const catalog = defineCatalog(schema, {
     Button: shadcnComponentDefinitions.Button,
     Input: shadcnComponentDefinitions.Input,
   },
-  actions: {
-    setState: shadcnActionDefinitions.setState,
-    pushState: shadcnActionDefinitions.pushState,
-    removeState: shadcnActionDefinitions.removeState,
-  },
+  actions: {},
 });
 ```
+
+> **Note:** State actions (`setState`, `pushState`, `removeState`) are built into the React schema and handled automatically by `ActionProvider`. You don't need to declare them in your catalog.
 
 ### 2. Create a Registry
 
@@ -93,11 +88,7 @@ const catalog = defineCatalog(schema, {
       description: "KPI metric display",
     },
   },
-  actions: {
-    setState: shadcnActionDefinitions.setState,
-    pushState: shadcnActionDefinitions.pushState,
-    removeState: shadcnActionDefinitions.removeState,
-  },
+  actions: {},
 });
 
 // Registry
@@ -187,7 +178,9 @@ const { registry } = defineRegistry(catalog, {
 | `ToggleGroup` | Group of toggle buttons |
 | `ButtonGroup` | Group of buttons with selected state |
 
-## Standard Actions
+## Built-in Actions
+
+State actions (`setState`, `pushState`, `removeState`) are built into the `@json-render/react` schema and handled automatically by `ActionProvider`. They are included in prompts without needing to be declared in your catalog.
 
 | Action | Description |
 |--------|-------------|
@@ -200,6 +193,6 @@ const { registry } = defineRegistry(catalog, {
 | Entry Point | Exports |
 |-------------|---------|
 | `@json-render/shadcn` | `shadcnComponents` |
-| `@json-render/shadcn/catalog` | `shadcnComponentDefinitions`, `shadcnActionDefinitions` |
+| `@json-render/shadcn/catalog` | `shadcnComponentDefinitions` |
 
 The `/catalog` entry point contains only Zod schemas (no React dependency), so it can be used in server-side code for prompt generation.

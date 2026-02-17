@@ -11,7 +11,7 @@ Pre-built shadcn/ui component definitions and implementations for json-render. P
 
 | Entry Point | Exports | Use For |
 |-------------|---------|---------|
-| `@json-render/shadcn/catalog` | `shadcnComponentDefinitions`, `shadcnActionDefinitions` | Catalog schemas (no React dependency, safe for server) |
+| `@json-render/shadcn/catalog` | `shadcnComponentDefinitions` | Catalog schemas (no React dependency, safe for server) |
 | `@json-render/shadcn` | `shadcnComponents` | React implementations |
 
 ## Usage Pattern
@@ -21,10 +21,7 @@ Pick the components you need from the standard definitions. Do not spread all de
 ```typescript
 import { defineCatalog } from "@json-render/core";
 import { schema } from "@json-render/react/schema";
-import {
-  shadcnComponentDefinitions,
-  shadcnActionDefinitions,
-} from "@json-render/shadcn/catalog";
+import { shadcnComponentDefinitions } from "@json-render/shadcn/catalog";
 import { defineRegistry } from "@json-render/react";
 import { shadcnComponents } from "@json-render/shadcn";
 
@@ -37,11 +34,7 @@ const catalog = defineCatalog(schema, {
     Button: shadcnComponentDefinitions.Button,
     Input: shadcnComponentDefinitions.Input,
   },
-  actions: {
-    setState: shadcnActionDefinitions.setState,
-    pushState: shadcnActionDefinitions.pushState,
-    removeState: shadcnActionDefinitions.removeState,
-  },
+  actions: {},
 });
 
 // Registry: pick matching implementations
@@ -55,6 +48,8 @@ const { registry } = defineRegistry(catalog, {
   },
 });
 ```
+
+> State actions (`setState`, `pushState`, `removeState`) are built into the React schema and handled by `ActionProvider` automatically. No need to declare them.
 
 ## Extending with Custom Components
 
@@ -77,9 +72,7 @@ const catalog = defineCatalog(schema, {
       description: "KPI metric display",
     },
   },
-  actions: {
-    setState: shadcnActionDefinitions.setState,
-  },
+  actions: {},
 });
 
 const { registry } = defineRegistry(catalog, {
@@ -141,7 +134,9 @@ const { registry } = defineRegistry(catalog, {
 - **ToggleGroup** - Group of toggles with items, type, value
 - **ButtonGroup** - Button group with buttons array and selected
 
-## Available Actions
+## Built-in Actions (from `@json-render/react`)
+
+These are built into the React schema and handled by `ActionProvider` automatically. They appear in prompts without needing to be declared in the catalog.
 
 - **setState** - Set a value at a state path (`{ statePath, value }`)
 - **pushState** - Push a value onto an array (`{ statePath, value, clearStatePath? }`)

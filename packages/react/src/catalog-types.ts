@@ -104,3 +104,15 @@ export type ActionFn<
 export type Actions<C extends Catalog> = {
   [K in keyof InferCatalogActions<C>]: ActionFn<C, K>;
 };
+
+/**
+ * True when the catalog declares at least one action, false otherwise.
+ * Used by defineRegistry to conditionally require the `actions` field.
+ */
+export type CatalogHasActions<C extends Catalog> = [
+  InferCatalogActions<C>,
+] extends [never]
+  ? false
+  : [keyof InferCatalogActions<C>] extends [never]
+    ? false
+    : true;

@@ -471,43 +471,6 @@ export const shadcnComponentDefinitions = {
 };
 
 // =============================================================================
-// shadcn/ui Action Definitions
-// =============================================================================
-
-/**
- * shadcn/ui action definitions for json-render catalogs.
- *
- * These are the built-in state actions handled by ActionProvider.
- */
-export const shadcnActionDefinitions = {
-  setState: {
-    params: z.object({
-      statePath: z.string(),
-      value: z.unknown(),
-    }),
-    description: "Update a value in the state model at the given statePath.",
-  },
-
-  pushState: {
-    params: z.object({
-      statePath: z.string(),
-      value: z.unknown(),
-      clearStatePath: z.string().optional(),
-    }),
-    description:
-      'Append an item to an array in state. Value can contain {"$state":"/statePath"} refs and "$id" for auto IDs. clearStatePath resets another path after pushing.',
-  },
-
-  removeState: {
-    params: z.object({
-      statePath: z.string(),
-      index: z.number(),
-    }),
-    description: "Remove an item from an array in state at the given index.",
-  },
-};
-
-// =============================================================================
 // Types
 // =============================================================================
 
@@ -520,12 +483,4 @@ export type ComponentDefinition = {
   events?: string[];
   description: string;
   example?: Record<string, unknown>;
-};
-
-/**
- * Type for an action definition
- */
-export type ActionDefinition = {
-  params: z.ZodType;
-  description: string;
 };

@@ -29,6 +29,7 @@ import type {
   ActionFn,
   SetState,
   StateModel,
+  CatalogHasActions,
 } from "./catalog-types";
 import { useIsVisible, useVisibility } from "./contexts/visibility";
 import { useActions } from "./contexts/actions";
@@ -467,11 +468,25 @@ export interface DefineRegistryResult {
 }
 
 /**
+ * Options for defineRegistry.
+ *
+ * When the catalog declares actions, the `actions` field is required.
+ * When the catalog has no actions (or `actions: {}`), the field is optional.
+ */
+type DefineRegistryOptions<C extends Catalog> = {
+  components?: Components<C>;
+} & (CatalogHasActions<C> extends true
+  ? { actions: Actions<C> }
+  : { actions?: Actions<C> });
+
+/**
  * Create a registry from a catalog with components and/or actions.
+ *
+ * When the catalog declares actions, the `actions` field is required.
  *
  * @example
  * ```tsx
- * // Components only
+ * // Components only (catalog has no actions)
  * const { registry } = defineRegistry(catalog, {
  *   components: {
  *     Card: ({ props, children }) => (
@@ -480,14 +495,7 @@ export interface DefineRegistryResult {
  *   },
  * });
  *
- * // Actions only
- * const { handlers, executeAction } = defineRegistry(catalog, {
- *   actions: {
- *     viewCustomers: async (params, setState) => { ... },
- *   },
- * });
- *
- * // Both
+ * // Both (catalog declares actions)
  * const { registry, handlers, executeAction } = defineRegistry(catalog, {
  *   components: { ... },
  *   actions: { ... },
@@ -496,10 +504,7 @@ export interface DefineRegistryResult {
  */
 export function defineRegistry<C extends Catalog>(
   _catalog: C,
-  options: {
-    components?: Components<C>;
-    actions?: Actions<C>;
-  },
+  options: DefineRegistryOptions<C>,
 ): DefineRegistryResult {
   // Build component registry
   const registry: ComponentRegistry = {};

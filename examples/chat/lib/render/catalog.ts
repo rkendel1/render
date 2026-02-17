@@ -1,9 +1,6 @@
 import { defineCatalog } from "@json-render/core";
 import { schema } from "@json-render/react/schema";
-import {
-  shadcnComponentDefinitions,
-  shadcnActionDefinitions,
-} from "@json-render/shadcn/catalog";
+import { shadcnComponentDefinitions } from "@json-render/shadcn/catalog";
 import { z } from "zod";
 
 // =============================================================================
@@ -500,9 +497,5 @@ export const explorerCatalog = defineCatalog(schema, {
     },
   },
 
-  actions: {
-    setState: shadcnActionDefinitions.setState,
-    pushState: shadcnActionDefinitions.pushState,
-    removeState: shadcnActionDefinitions.removeState,
-  },
+  actions: {},
 });
