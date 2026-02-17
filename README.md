@@ -22,7 +22,7 @@ json-render is a **Generative UI** framework: AI generates interfaces from natur
 - **Predictable** - JSON output matches your schema, every time
 - **Fast** - Stream and render progressively as the model responds
 - **Cross-Platform** - React (web) and React Native (mobile) from the same catalog
-- **Batteries Included** - 30+ pre-built shadcn/ui components ready to use
+- **Batteries Included** - 36 pre-built shadcn/ui components ready to use
 
 ## Quick Start
 
@@ -108,7 +108,7 @@ function Dashboard({ spec }) {
 |---------|-------------|
 | `@json-render/core` | Schemas, catalogs, AI prompts, dynamic props, SpecStream utilities |
 | `@json-render/react` | React renderer, contexts, hooks |
-| `@json-render/shadcn` | 30+ pre-built shadcn/ui components (Radix UI + Tailwind CSS) |
+| `@json-render/shadcn` | 36 pre-built shadcn/ui components (Radix UI + Tailwind CSS) |
 | `@json-render/react-native` | React Native renderer with standard mobile components |
 | `@json-render/remotion` | Remotion video renderer, timeline schema |
 
@@ -150,7 +150,7 @@ import { schema, defineRegistry, Renderer } from "@json-render/react";
 import { shadcnComponentDefinitions } from "@json-render/shadcn/catalog";
 import { shadcnComponents } from "@json-render/shadcn";
 
-// Pick components from the 30+ standard definitions
+// Pick components from the 36 standard definitions
 const catalog = defineCatalog(schema, {
   components: {
     Card: shadcnComponentDefinitions.Card,

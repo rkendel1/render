@@ -157,6 +157,20 @@ visibility.always                        // true
 visibility.never                         // false
 ```
 
+## Built-in Actions in Schema
+
+Schemas can declare `builtInActions` -- actions that are always available at runtime and auto-injected into prompts:
+
+```typescript
+const schema = defineSchema(builder, {
+  builtInActions: [
+    { name: "setState", description: "Update a value in the state model" },
+  ],
+});
+```
+
+These appear in prompts as `[built-in]` and don't require handlers in `defineRegistry`.
+
 ## Key Exports
 
 | Export | Purpose |
@@ -169,5 +183,8 @@ visibility.never                         // false
 | `validateSpec` | Validate spec structure |
 | `autoFixSpec` | Auto-fix common spec issues |
 | `createSpecStreamCompiler` | Stream JSONL patches into spec |
+| `createJsonRenderTransform` | TransformStream separating text from JSONL in mixed streams |
 | `parseSpecStreamLine` | Parse single JSONL line |
 | `applySpecStreamPatch` | Apply patch to object |
+| `BuiltInAction` | Type for built-in action definitions (`name` + `description`) |
+| `ActionBinding` | Action binding type (includes `preventDefault` field) |

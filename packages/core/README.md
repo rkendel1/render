@@ -157,6 +157,14 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 | `defineSchema(builder, options?)` | Create a schema with spec/catalog structure |
 | `SchemaBuilder` | Builder with `s.object()`, `s.array()`, `s.map()`, etc. |
 
+Schema options:
+
+| Option | Purpose |
+|--------|---------|
+| `promptTemplate` | Custom AI prompt generator |
+| `defaultRules` | Default rules injected before custom rules in prompts |
+| `builtInActions` | Actions always available at runtime, auto-injected into prompts (e.g. `setState`) |
+
 ### Catalog
 
 | Export | Purpose |
@@ -196,12 +204,30 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 | `autoFixSpec(spec)` | Auto-fix common spec issues (returns corrected copy) |
 | `formatSpecIssues(issues)` | Format validation issues as readable strings |
 
+### Actions
+
+| Export | Purpose |
+|--------|---------|
+| `ActionBinding` | Action binding with `action`, `params`, `confirm`, `preventDefault`, etc. |
+| `BuiltInAction` | Built-in action definition with `name` and `description` |
+
+### Chat Mode (Mixed Streams)
+
+| Export | Purpose |
+|--------|---------|
+| `createJsonRenderTransform()` | TransformStream that separates text from JSONL patches in a mixed stream |
+| `pipeJsonRender()` | Server-side helper to pipe a mixed stream through the transform |
+| `SPEC_DATA_PART` / `SPEC_DATA_PART_TYPE` | Constants for filtering spec data parts |
+
+The transform splits text blocks around spec data by emitting `text-end`/`text-start` pairs, ensuring the AI SDK creates separate text parts and preserving correct interleaving of prose and UI in `message.parts`.
+
 ### Types
 
 | Export | Purpose |
 |--------|---------|
 | `Spec` | Base spec type |
 | `Catalog` | Catalog type |
+| `BuiltInAction` | Built-in action type (`name` + `description`) |
 | `VisibilityCondition` | Visibility condition type (used by `$cond`) |
 | `VisibilityContext` | Context for evaluating visibility and prop expressions |
 | `SpecStreamLine` | Single patch operation |

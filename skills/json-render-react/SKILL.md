@@ -118,13 +118,24 @@ Components receive already-resolved props. For two-way bound props, use the `use
 
 ## Event System
 
-Components use `emit` to fire named events. The element's `on` field maps events to action bindings:
+Components use `emit` to fire named events, or `on()` to get an event handle with metadata. The element's `on` field maps events to action bindings:
 
 ```tsx
-// Component emits a named event
+// Simple event firing
 Button: ({ props, emit }) => (
   <button onClick={() => emit("press")}>{props.label}</button>
 ),
+
+// Event handle with metadata (e.g. preventDefault)
+Link: ({ props, on }) => {
+  const click = on("click");
+  return (
+    <a href={props.href} onClick={(e) => {
+      if (click.shouldPreventDefault) e.preventDefault();
+      click.emit();
+    }}>{props.label}</a>
+  );
+},
 ```
 
 ```json
@@ -135,12 +146,16 @@ Button: ({ props, emit }) => (
 }
 ```
 
+The `EventHandle` returned by `on()` has: `emit()`, `shouldPreventDefault` (boolean), and `bound` (boolean).
+
 ## Built-in Actions
 
-The `setState` action is handled automatically by `ActionProvider` and updates the state model directly, which re-evaluates visibility conditions and dynamic prop expressions:
+The `setState`, `pushState`, and `removeState` actions are built into the React schema and handled automatically by `ActionProvider`. They are injected into AI prompts without needing to be declared in catalog `actions`:
 
 ```json
-{ "action": "setState", "actionParams": { "statePath": "/activeTab", "value": "home" } }
+{ "action": "setState", "params": { "statePath": "/activeTab", "value": "home" } }
+{ "action": "pushState", "params": { "statePath": "/items", "value": { "text": "New" } } }
+{ "action": "removeState", "params": { "statePath": "/items", "index": 0 } }
 ```
 
 Note: `statePath` in action params (e.g. `setState.statePath`) targets the mutation path. Two-way binding in component props uses `{ "$bindState": "/path" }` on the value prop, not `statePath`.
@@ -168,16 +183,35 @@ Input: ({ element, bindings }) => {
 
 `useBoundProp(propValue, bindingPath)` returns `[value, setValue]`. The `value` is the resolved prop; `setValue` writes back to the bound state path (no-op if not bound).
 
+## BaseComponentProps
+
+For building reusable component libraries not tied to a specific catalog (e.g. `@json-render/shadcn`):
+
+```typescript
+import type { BaseComponentProps } from "@json-render/react";
+
+const Card = ({ props, children }: BaseComponentProps<{ title?: string }>) => (
+  <div>{props.title}{children}</div>
+);
+```
+
+## defineRegistry
+
+`defineRegistry` conditionally requires the `actions` field only when the catalog declares actions. Catalogs with `actions: {}` can omit it.
+
 ## Key Exports
 
 | Export | Purpose |
 |--------|---------|
 | `defineRegistry` | Create a type-safe component registry from a catalog |
 | `Renderer` | Render a spec using a registry |
-| `schema` | Element tree schema |
+| `schema` | Element tree schema (includes built-in state actions) |
 | `useStateStore` | Access state context |
 | `useStateValue` | Get single value from state |
 | `useBoundProp` | Two-way binding for `$bindState`/`$bindItem` expressions |
 | `useActions` | Access actions context |
 | `useAction` | Get a single action dispatch function |
 | `useUIStream` | Stream specs from an API endpoint |
+| `BaseComponentProps` | Catalog-agnostic base type for reusable component libraries |
+| `EventHandle` | Event handle type (`emit`, `shouldPreventDefault`, `bound`) |
+| `ComponentContext` | Typed component context (catalog-aware) |

@@ -1,6 +1,6 @@
 # @json-render/shadcn
 
-Pre-built [shadcn/ui](https://ui.shadcn.com/) components for json-render. Drop-in catalog definitions and React implementations for 30+ components built on Radix UI + Tailwind CSS.
+Pre-built [shadcn/ui](https://ui.shadcn.com/) components for json-render. Drop-in catalog definitions and React implementations for 36 components built on Radix UI + Tailwind CSS.
 
 ## Installation
 

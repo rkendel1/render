@@ -51,6 +51,8 @@ export const catalog = defineCatalog(schema, {
 
 ### 2. Define Component Implementations
 
+`defineRegistry` conditionally requires the `actions` field only when the catalog declares actions. Catalogs with `actions: {}` can omit it entirely.
+
 ```tsx
 import { defineRegistry, useBoundProp } from "@json-render/react";
 import { catalog } from "./catalog";
@@ -297,7 +299,7 @@ See [@json-render/core](../core/README.md) for full expression syntax.
 
 ## Built-in Actions
 
-The `setState`, `pushState`, and `removeState` actions are handled automatically by `ActionProvider`. They update the state model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
+The `setState`, `pushState`, and `removeState` actions are built into the React schema and handled automatically by `ActionProvider`. They are injected into AI prompts without needing to be declared in your catalog's `actions`. They update the state model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
 
 ```json
 {
@@ -321,13 +323,51 @@ When using `defineRegistry`, components receive these props:
 interface ComponentContext<P> {
   props: P;                    // Typed props from the catalog (expressions resolved)
   children?: React.ReactNode;  // Rendered children
-  emit?: (event: string) => void;  // Emit a named event
+  emit: (event: string) => void;   // Emit a named event (always defined)
+  on: (event: string) => EventHandle; // Get event handle with metadata
   loading?: boolean;           // Whether the parent is loading
   bindings?: Record<string, string>;  // State paths for $bindState/$bindItem expressions (e.g. bindings.value)
 }
+
+interface EventHandle {
+  emit: () => void;            // Fire the event
+  shouldPreventDefault: boolean; // Whether any binding requested preventDefault
+  bound: boolean;              // Whether any handler is bound
+}
+```
+
+Use `emit("press")` for simple event firing. Use `on("click")` when you need to check metadata like `shouldPreventDefault` or `bound`:
+
+```tsx
+Link: ({ props, on }) => {
+  const click = on("click");
+  return (
+    <a
+      href={props.href}
+      onClick={(e) => {
+        if (click.shouldPreventDefault) e.preventDefault();
+        click.emit();
+      }}
+    >
+      {props.label}
+    </a>
+  );
+},
 ```
 
 Use `bindings?.value`, `bindings?.checked`, etc. with `useBoundProp()` for two-way bound form components.
+
+### `BaseComponentProps`
+
+For building reusable component libraries that are not tied to a specific catalog (e.g. `@json-render/shadcn`), use the catalog-agnostic `BaseComponentProps` type:
+
+```typescript
+import type { BaseComponentProps } from "@json-render/react";
+
+const Card = ({ props, children }: BaseComponentProps<{ title?: string }>) => (
+  <div>{props.title}{children}</div>
+);
+```
 
 ## Generate AI Prompts
 
@@ -374,3 +414,28 @@ function App() {
   return <Renderer spec={spec} registry={registry} />;
 }
 ```
+
+## Key Exports
+
+| Export | Purpose |
+|--------|---------|
+| `defineRegistry` | Create a type-safe component registry from a catalog |
+| `Renderer` | Render a spec using a registry |
+| `schema` | Element tree schema (includes built-in actions: `setState`, `pushState`, `removeState`) |
+| `useStateStore` | Access state context |
+| `useStateValue` | Get single value from state |
+| `useBoundProp` | Two-way binding for `$bindState`/`$bindItem` expressions |
+| `useActions` | Access actions context |
+| `useAction` | Get a single action dispatch function |
+| `useUIStream` | Stream specs from an API endpoint |
+
+### Types
+
+| Export | Purpose |
+|--------|---------|
+| `ComponentContext` | Typed component render function context (catalog-aware) |
+| `BaseComponentProps` | Catalog-agnostic base type for reusable component libraries |
+| `EventHandle` | Event handle with `emit()`, `shouldPreventDefault`, `bound` |
+| `ComponentFn` | Component render function type |
+| `SetState` | State setter type |
+| `StateModel` | State model type |

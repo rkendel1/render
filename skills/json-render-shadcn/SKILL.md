@@ -5,7 +5,7 @@ description: Pre-built shadcn/ui components for json-render. Use when working wi
 
 # @json-render/shadcn
 
-Pre-built shadcn/ui component definitions and implementations for json-render. Provides 30+ components built on Radix UI + Tailwind CSS.
+Pre-built shadcn/ui component definitions and implementations for json-render. Provides 36 components built on Radix UI + Tailwind CSS.
 
 ## Two Entry Points
 
