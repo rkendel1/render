@@ -254,23 +254,47 @@ export const Metric: FunctionComponent<ExtendedRenderProps> = ({ element }) => {
   );
 };
 
+const BADGE_TYPES = new Set([
+  "neutral",
+  "urgent",
+  "warning",
+  "negative",
+  "positive",
+  "info",
+]);
+const BADGE_ALIAS: Record<string, string> = {
+  success: "positive",
+  error: "negative",
+  danger: "negative",
+  critical: "urgent",
+  default: "neutral",
+  primary: "info",
+};
+
+function coerceBadgeType(
+  raw: unknown,
+): "neutral" | "urgent" | "warning" | "negative" | "positive" | "info" {
+  const s = String(raw ?? "neutral");
+  if (BADGE_TYPES.has(s))
+    return s as
+      | "neutral"
+      | "urgent"
+      | "warning"
+      | "negative"
+      | "positive"
+      | "info";
+  return (BADGE_ALIAS[s] ?? "neutral") as
+    | "neutral"
+    | "urgent"
+    | "warning"
+    | "negative"
+    | "positive"
+    | "info";
+}
+
 export const Badge: FunctionComponent<ExtendedRenderProps> = ({ element }) => {
   const { label, type = "neutral" } = element.props as Record<string, unknown>;
-  return (
-    <UIBadge
-      type={
-        type as
-          | "neutral"
-          | "urgent"
-          | "warning"
-          | "negative"
-          | "positive"
-          | "info"
-      }
-    >
-      {String(label || "")}
-    </UIBadge>
-  );
+  return <UIBadge type={coerceBadgeType(type)}>{String(label || "")}</UIBadge>;
 };
 
 export const Icon: FunctionComponent<ExtendedRenderProps> = ({ element }) => {

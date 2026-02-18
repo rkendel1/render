@@ -512,6 +512,9 @@ const Home = (_props: ExtensionContextValue) => {
           systemPrompt: stripeCatalog.prompt({
             system:
               "You are a Stripe dashboard widget builder. Generate UI specs for displaying Stripe data.",
+            customRules: [
+              'LAYOUT CONSTRAINT: This UI renders inside a narrow Stripe dashboard drawer (~320px wide). NEVER place more than 2 small items side-by-side horizontally. Prefer vertical (stacked) layouts. Use direction:"horizontal" sparingly and only for very compact items like a label+value pair.',
+            ],
           }),
         },
         (spec) => setCurrentSpec(spec),

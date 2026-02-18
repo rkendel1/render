@@ -7,6 +7,31 @@ interface JsonPatch {
   from?: string;
 }
 
+function setDeep(
+  obj: Record<string, unknown>,
+  segments: string[],
+  value: unknown,
+): void {
+  let current: unknown = obj;
+  for (let i = 0; i < segments.length - 1; i++) {
+    const seg = segments[i];
+    const next = (current as Record<string, unknown>)[seg];
+    if (next && typeof next === "object") {
+      current = next;
+    } else {
+      const container = /^\d+$/.test(segments[i + 1]) ? [] : {};
+      (current as Record<string, unknown>)[seg] = container;
+      current = container;
+    }
+  }
+  const last = segments[segments.length - 1];
+  if (Array.isArray(current)) {
+    (current as unknown[])[Number(last)] = value;
+  } else {
+    (current as Record<string, unknown>)[last] = value;
+  }
+}
+
 function setSpecValue(spec: Spec, path: string, value: unknown): void {
   if (path === "/root") {
     (spec as Record<string, unknown>).root = value as string;
@@ -18,8 +43,8 @@ function setSpecValue(spec: Spec, path: string, value: unknown): void {
   }
   if (path.startsWith("/state/")) {
     if (!spec.state) (spec as Record<string, unknown>).state = {};
-    const key = path.slice("/state/".length);
-    (spec.state as Record<string, unknown>)[key] = value;
+    const segments = path.slice("/state/".length).split("/");
+    setDeep(spec.state as Record<string, unknown>, segments, value);
     return;
   }
   const elemMatch = path.match(/^\/elements\/(.+)/);
