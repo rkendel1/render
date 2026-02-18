@@ -17,6 +17,7 @@ import type { ExtensionContextValue } from "@stripe/ui-extension-sdk/context";
 import { stripeCatalog, StripeRenderer } from "../lib/render";
 import { executeAction } from "../lib/render/catalog/actions";
 import { API_GENERATE_URL } from "../lib/config";
+import { streamSpec } from "../lib/stream-spec";
 
 function createOverviewSpec(data: Record<string, unknown>): Spec {
   const customers = data.customers as { total?: number } | undefined;
@@ -137,31 +138,17 @@ const FullPage = (_props: ExtensionContextValue) => {
     setError(null);
 
     try {
-      const response = await fetch(API_GENERATE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await streamSpec(
+        API_GENERATE_URL,
+        {
           prompt,
           systemPrompt: stripeCatalog.prompt({
             system:
               "You are a Stripe dashboard builder. Generate UI specs for displaying Stripe data in a full-page layout.",
           }),
-        }),
-      });
-
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
-        const responseData = await response.json();
-        if (responseData.spec) {
-          setCurrentSpec(responseData.spec);
-          return;
-        } else if (responseData.error) {
-          throw new Error(responseData.error);
-        }
-      }
-      throw new Error("Invalid response");
+        },
+        (spec) => setCurrentSpec(spec),
+      );
     } catch (err) {
       setCurrentSpec(createOverviewSpec(data));
       setError(
