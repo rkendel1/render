@@ -1,5 +1,6 @@
 import { renderToBuffer } from "@json-render/react-pdf/render";
 import { examples } from "@/lib/examples";
+import type { Spec } from "@json-render/core";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -11,7 +12,25 @@ export async function GET(req: Request) {
     return new Response("Example not found", { status: 404 });
   }
 
-  const buffer = await renderToBuffer(example.spec);
+  return pdfResponse(example.spec, name, download);
+}
+
+export async function POST(req: Request) {
+  const { spec, download, filename } = (await req.json()) as {
+    spec: Spec;
+    download?: boolean;
+    filename?: string;
+  };
+
+  if (!spec || !spec.root || !spec.elements) {
+    return new Response("Invalid spec", { status: 400 });
+  }
+
+  return pdfResponse(spec, filename ?? "document", download ?? false);
+}
+
+async function pdfResponse(spec: Spec, name: string, download: boolean) {
+  const buffer = await renderToBuffer(spec);
 
   const disposition = download
     ? `attachment; filename="${name}.pdf"`

@@ -30,3 +30,12 @@ button {
   cursor: pointer;
   font-family: inherit;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
