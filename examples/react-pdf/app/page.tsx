@@ -11,6 +11,10 @@ interface Selection {
   exampleName?: string;
 }
 
+const MIN_SIDEBAR = 260;
+const MAX_SIDEBAR = 600;
+const DEFAULT_SIDEBAR = 340;
+
 export default function Page() {
   const [selection, setSelection] = useState<Selection>({
     mode: "example",
@@ -24,6 +28,50 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const pdfUrlRef = useRef<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR);
+  const [isResizing, setIsResizing] = useState(false);
+  const dragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(0);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      const delta = e.clientX - dragStartX.current;
+      const next = Math.min(
+        MAX_SIDEBAR,
+        Math.max(MIN_SIDEBAR, dragStartWidth.current + delta),
+      );
+      setSidebarWidth(next);
+    };
+    const onMouseUp = () => {
+      if (!dragging.current) return;
+      dragging.current = false;
+      setIsResizing(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragging.current = true;
+      setIsResizing(true);
+      dragStartX.current = e.clientX;
+      dragStartWidth.current = sidebarWidth;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [sidebarWidth],
+  );
 
   const currentExample =
     selection.mode === "example"
@@ -141,7 +189,13 @@ export default function Page() {
 
   return (
     <div style={styles.container}>
-      <aside style={styles.sidebar}>
+      <aside
+        style={{
+          ...styles.sidebar,
+          width: sidebarWidth,
+          minWidth: sidebarWidth,
+        }}
+      >
         <h1 style={styles.logo}>json-render</h1>
         <p style={styles.subtitle}>React PDF</p>
 
@@ -234,6 +288,9 @@ export default function Page() {
         </div>
       </aside>
 
+      {/* Resize handle */}
+      <div onMouseDown={handleResizeStart} style={styles.resizeHandle} />
+
       {/* Main content */}
       <main style={styles.main}>
         {generating && (
@@ -275,6 +332,8 @@ export default function Page() {
           </div>
         ) : null}
       </main>
+
+      {isResizing && <div style={styles.resizeOverlay} />}
     </div>
   );
 }
@@ -286,15 +345,25 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
   },
   sidebar: {
-    width: 340,
-    minWidth: 340,
-    borderRight: "1px solid var(--border)",
     background: "var(--surface)",
     display: "flex",
     flexDirection: "column",
     padding: 20,
     gap: 4,
     overflow: "auto",
+  },
+  resizeHandle: {
+    width: 5,
+    cursor: "col-resize",
+    background: "var(--border)",
+    flexShrink: 0,
+    transition: "background 0.15s",
+  },
+  resizeOverlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    cursor: "col-resize",
   },
   logo: {
     fontSize: 18,
