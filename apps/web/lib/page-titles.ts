@@ -38,6 +38,7 @@ export const PAGE_TITLES: Record<string, string> = {
   // API references
   "docs/api/core": "@json-render/core API",
   "docs/api/react": "@json-render/react API",
+  "docs/api/react-pdf": "@json-render/react-pdf API",
   "docs/api/react-native": "@json-render/react-native API",
   "docs/api/codegen": "@json-render/codegen API",
   "docs/api/remotion": "@json-render/remotion API",

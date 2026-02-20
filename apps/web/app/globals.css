@@ -154,21 +154,32 @@ button {
   margin-bottom: 0.5em;
 }
 
-/* MDX table styles — fallback for GFM-generated tables */
+/* MDX table styles — applies to both GFM pipe tables and raw HTML tables */
 .mdx-table th,
-.mdx-table td {
+.mdx-table td,
+article table th,
+article table td {
   border: 1px solid var(--border);
   padding: 0.75rem 1rem;
   text-align: left;
 }
 
-.mdx-table th {
+.mdx-table th,
+article table th {
   font-weight: 600;
   background-color: var(--muted);
 }
 
-.mdx-table td {
+.mdx-table td,
+article table td {
   color: var(--muted-foreground);
+}
+
+article table {
+  width: 100%;
+  font-size: 0.875rem;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
 }
 
 /* Shiki dual theme support */

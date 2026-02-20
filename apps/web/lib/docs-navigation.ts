@@ -58,6 +58,11 @@ export const docsNavigation: NavSection[] = [
         external: true,
       },
       {
+        title: "React PDF",
+        href: "https://github.com/vercel-labs/json-render/tree/main/examples/react-pdf",
+        external: true,
+      },
+      {
         title: "Remotion",
         href: "https://github.com/vercel-labs/json-render/tree/main/examples/remotion",
         external: true,
@@ -86,6 +91,7 @@ export const docsNavigation: NavSection[] = [
     items: [
       { title: "@json-render/core", href: "/docs/api/core" },
       { title: "@json-render/react", href: "/docs/api/react" },
+      { title: "@json-render/react-pdf", href: "/docs/api/react-pdf" },
       { title: "@json-render/shadcn", href: "/docs/api/shadcn" },
       { title: "@json-render/react-native", href: "/docs/api/react-native" },
       { title: "@json-render/remotion", href: "/docs/api/remotion" },
