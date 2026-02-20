@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { examples } from "@/lib/examples";
+import { createSpecStreamCompiler } from "@json-render/core";
 import type { Spec } from "@json-render/core";
 
 type Mode = "scratch" | "example";
@@ -14,6 +15,10 @@ interface Selection {
 const MIN_SIDEBAR = 260;
 const MAX_SIDEBAR = 600;
 const DEFAULT_SIDEBAR = 340;
+
+const MIN_SPEC_PANEL = 260;
+const MAX_SPEC_PANEL = 700;
+const DEFAULT_SPEC_PANEL = 400;
 
 export default function Page() {
   const [selection, setSelection] = useState<Selection>({
@@ -30,24 +35,34 @@ export default function Page() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR);
+  const [specPanelWidth, setSpecPanelWidth] = useState(DEFAULT_SPEC_PANEL);
   const [isResizing, setIsResizing] = useState(false);
-  const dragging = useRef(false);
+  const dragging = useRef<"sidebar" | "spec" | null>(null);
   const dragStartX = useRef(0);
   const dragStartWidth = useRef(0);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!dragging.current) return;
-      const delta = e.clientX - dragStartX.current;
-      const next = Math.min(
-        MAX_SIDEBAR,
-        Math.max(MIN_SIDEBAR, dragStartWidth.current + delta),
-      );
-      setSidebarWidth(next);
+      if (dragging.current === "sidebar") {
+        const delta = e.clientX - dragStartX.current;
+        const next = Math.min(
+          MAX_SIDEBAR,
+          Math.max(MIN_SIDEBAR, dragStartWidth.current + delta),
+        );
+        setSidebarWidth(next);
+      } else {
+        const delta = dragStartX.current - e.clientX;
+        const next = Math.min(
+          MAX_SPEC_PANEL,
+          Math.max(MIN_SPEC_PANEL, dragStartWidth.current + delta),
+        );
+        setSpecPanelWidth(next);
+      }
     };
     const onMouseUp = () => {
       if (!dragging.current) return;
-      dragging.current = false;
+      dragging.current = null;
       setIsResizing(false);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
@@ -63,7 +78,7 @@ export default function Page() {
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      dragging.current = true;
+      dragging.current = "sidebar";
       setIsResizing(true);
       dragStartX.current = e.clientX;
       dragStartWidth.current = sidebarWidth;
@@ -71,6 +86,19 @@ export default function Page() {
       document.body.style.userSelect = "none";
     },
     [sidebarWidth],
+  );
+
+  const handleSpecResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragging.current = "spec";
+      setIsResizing(true);
+      dragStartX.current = e.clientX;
+      dragStartWidth.current = specPanelWidth;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [specPanelWidth],
   );
 
   const currentExample =
@@ -117,6 +145,7 @@ export default function Page() {
     if (!prompt.trim()) return;
     setGenerating(true);
     setError(null);
+    setShowSpec(true);
 
     try {
       const startingSpec =
@@ -131,16 +160,35 @@ export default function Page() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Generation failed");
+        throw new Error("Generation failed");
       }
 
-      const { spec } = await res.json();
-      setGeneratedSpec(spec);
-      await fetchPdfBlob(spec);
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      const compiler = createSpecStreamCompiler<Spec>(
+        startingSpec ? { ...startingSpec } : {},
+      );
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const { result, newPatches } = compiler.push(chunk);
+
+        if (newPatches.length > 0) {
+          setGeneratedSpec(result);
+        }
+      }
+
+      const finalSpec = compiler.getResult();
+      setGeneratedSpec(finalSpec);
+      setGenerating(false);
+      await fetchPdfBlob(finalSpec);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
       setGenerating(false);
     }
   }, [prompt, selection, currentExample, fetchPdfBlob]);
@@ -300,22 +348,7 @@ export default function Page() {
           </div>
         )}
 
-        {!generating && showSpec && activeSpec ? (
-          <div style={styles.specViewer}>
-            <div style={styles.specHeader}>
-              <h2 style={styles.specTitle}>JSON Spec</h2>
-              <button
-                onClick={() => setShowSpec(false)}
-                style={styles.specClose}
-              >
-                Close
-              </button>
-            </div>
-            <pre style={styles.specCode}>
-              {JSON.stringify(activeSpec, null, 2)}
-            </pre>
-          </div>
-        ) : !generating && displayPdfUrl ? (
+        {!generating && displayPdfUrl ? (
           <iframe
             key={displayPdfUrl}
             src={displayPdfUrl}
@@ -332,6 +365,36 @@ export default function Page() {
           </div>
         ) : null}
       </main>
+
+      {/* JSON Spec panel */}
+      {showSpec && activeSpec && (
+        <>
+          <div
+            onMouseDown={handleSpecResizeStart}
+            style={styles.specResizeHandle}
+          />
+          <div
+            style={{
+              ...styles.specViewer,
+              width: specPanelWidth,
+              minWidth: specPanelWidth,
+            }}
+          >
+            <div style={styles.specHeader}>
+              <h2 style={styles.specTitle}>JSON Spec</h2>
+              <button
+                onClick={() => setShowSpec(false)}
+                style={styles.specClose}
+              >
+                Close
+              </button>
+            </div>
+            <pre style={styles.specCode}>
+              {JSON.stringify(activeSpec, null, 2)}
+            </pre>
+          </div>
+        </>
+      )}
 
       {isResizing && <div style={styles.resizeOverlay} />}
     </div>
@@ -393,7 +456,9 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-start",
     gap: 2,
     padding: "8px 10px",
-    border: "1px solid var(--border)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--border)",
     borderRadius: "var(--radius)",
     background: "transparent",
     textAlign: "left",
@@ -534,11 +599,18 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 12,
   },
   specViewer: {
-    flex: 1,
     display: "flex",
     flexDirection: "column",
     background: "var(--surface)",
     overflow: "hidden",
+    flexShrink: 0,
+  },
+  specResizeHandle: {
+    width: 5,
+    cursor: "col-resize",
+    background: "var(--border)",
+    flexShrink: 0,
+    transition: "background 0.15s",
   },
   specHeader: {
     display: "flex",

@@ -1,43 +1,34 @@
-import { generateText } from "ai";
-import { buildSystemPrompt } from "@/lib/prompt";
-
-const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
+import { streamText } from "ai";
+import { buildUserPrompt, type Spec } from "@json-render/core";
+import { pdfCatalog } from "@/lib/catalog";
 
 export const maxDuration = 60;
+
+const SYSTEM_PROMPT = pdfCatalog.prompt();
+
+const DEFAULT_MODEL = "anthropic/claude-haiku-4.5";
 
 export async function POST(req: Request) {
   const { prompt, startingSpec } = (await req.json()) as {
     prompt: string;
-    startingSpec?: Record<string, unknown> | null;
+    startingSpec?: Spec | null;
   };
 
   if (!prompt || typeof prompt !== "string") {
     return Response.json({ error: "prompt is required" }, { status: 400 });
   }
 
-  const systemPrompt = buildSystemPrompt();
-
-  let userPrompt = prompt;
-  if (startingSpec) {
-    userPrompt = `Use the following spec as a starting point and modify it according to my instructions.\n\nSTARTING SPEC:\n${JSON.stringify(startingSpec, null, 2)}\n\nINSTRUCTIONS:\n${prompt}`;
-  }
-
-  const { text } = await generateText({
-    model: process.env.AI_MODEL ?? DEFAULT_MODEL,
-    system: systemPrompt,
-    prompt: userPrompt,
+  const userPrompt = buildUserPrompt({
+    prompt,
+    currentSpec: startingSpec,
   });
 
-  let spec: Record<string, unknown>;
-  try {
-    const cleaned = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-    spec = JSON.parse(cleaned);
-  } catch {
-    return Response.json(
-      { error: "Failed to parse AI response as JSON", raw: text },
-      { status: 500 },
-    );
-  }
+  const result = streamText({
+    model: process.env.AI_MODEL ?? DEFAULT_MODEL,
+    system: SYSTEM_PROMPT,
+    prompt: userPrompt,
+    temperature: 0.7,
+  });
 
-  return Response.json({ spec });
+  return result.toTextStreamResponse();
 }
