@@ -4,21 +4,90 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { examples } from "@/lib/examples";
 import { createSpecStreamCompiler } from "@json-render/core";
 import type { Spec } from "@json-render/core";
+import { cn } from "@/lib/utils";
+
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { FileText, Download, Menu, Loader2, PenLine } from "lucide-react";
 
 type Mode = "scratch" | "example";
+type MainTab = "preview" | "json";
 
 interface Selection {
   mode: Mode;
   exampleName?: string;
 }
 
-const MIN_SIDEBAR = 260;
-const MAX_SIDEBAR = 600;
-const DEFAULT_SIDEBAR = 340;
+function Logo({ size = "default" }: { size?: "default" | "sm" }) {
+  const iconSize = size === "sm" ? "h-7 w-7" : "h-9 w-9";
+  const titleSize = size === "sm" ? "text-sm" : "text-base";
+  const subtitleSize = size === "sm" ? "text-[11px]" : "text-xs";
 
-const MIN_SPEC_PANEL = 260;
-const MAX_SPEC_PANEL = 700;
-const DEFAULT_SPEC_PANEL = 400;
+  return (
+    <div className="flex items-center gap-2.5">
+      <div
+        className={cn(
+          iconSize,
+          "rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0",
+        )}
+      >
+        <FileText className="h-4 w-4" />
+      </div>
+      <div>
+        <h1 className={cn(titleSize, "font-bold tracking-tight leading-tight")}>
+          json-render
+        </h1>
+        <p className={cn(subtitleSize, "text-muted-foreground leading-tight")}>
+          React PDF
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function NavItem({
+  label,
+  description,
+  active,
+  onClick,
+}: {
+  label: string;
+  description: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-start gap-0.5 w-full rounded-lg border px-3 py-2.5 text-left text-[13px] transition-colors",
+        active
+          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+          : "border-border hover:bg-accent hover:border-accent-foreground/20",
+      )}
+    >
+      <span className="font-semibold text-[13px] leading-snug">{label}</span>
+      <span
+        className={cn(
+          "text-[11px] leading-snug",
+          active ? "text-primary-foreground/80" : "text-muted-foreground",
+        )}
+      >
+        {description}
+      </span>
+    </button>
+  );
+}
 
 export default function Page() {
   const [selection, setSelection] = useState<Selection>({
@@ -29,77 +98,11 @@ export default function Page() {
   const [generating, setGenerating] = useState(false);
   const [generatedSpec, setGeneratedSpec] = useState<Spec | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [showSpec, setShowSpec] = useState(false);
+  const [mainTab, setMainTab] = useState<MainTab>("preview");
   const [error, setError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const pdfUrlRef = useRef<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR);
-  const [specPanelWidth, setSpecPanelWidth] = useState(DEFAULT_SPEC_PANEL);
-  const [isResizing, setIsResizing] = useState(false);
-  const dragging = useRef<"sidebar" | "spec" | null>(null);
-  const dragStartX = useRef(0);
-  const dragStartWidth = useRef(0);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      if (dragging.current === "sidebar") {
-        const delta = e.clientX - dragStartX.current;
-        const next = Math.min(
-          MAX_SIDEBAR,
-          Math.max(MIN_SIDEBAR, dragStartWidth.current + delta),
-        );
-        setSidebarWidth(next);
-      } else {
-        const delta = dragStartX.current - e.clientX;
-        const next = Math.min(
-          MAX_SPEC_PANEL,
-          Math.max(MIN_SPEC_PANEL, dragStartWidth.current + delta),
-        );
-        setSpecPanelWidth(next);
-      }
-    };
-    const onMouseUp = () => {
-      if (!dragging.current) return;
-      dragging.current = null;
-      setIsResizing(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, []);
-
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      dragging.current = "sidebar";
-      setIsResizing(true);
-      dragStartX.current = e.clientX;
-      dragStartWidth.current = sidebarWidth;
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
-    },
-    [sidebarWidth],
-  );
-
-  const handleSpecResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      dragging.current = "spec";
-      setIsResizing(true);
-      dragStartX.current = e.clientX;
-      dragStartWidth.current = specPanelWidth;
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
-    },
-    [specPanelWidth],
-  );
 
   const currentExample =
     selection.mode === "example"
@@ -112,6 +115,8 @@ export default function Page() {
     selection.mode === "example" && !generatedSpec
       ? `/api/pdf?name=${selection.exampleName}`
       : null;
+
+  const displayPdfUrl = pdfUrl ?? examplePdfUrl;
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -145,7 +150,7 @@ export default function Page() {
     if (!prompt.trim()) return;
     setGenerating(true);
     setError(null);
-    setShowSpec(true);
+    setMainTab("preview");
 
     try {
       const startingSpec =
@@ -193,20 +198,14 @@ export default function Page() {
     }
   }, [prompt, selection, currentExample, fetchPdfBlob]);
 
-  const handleSelectExample = (name: string) => {
-    setSelection({ mode: "example", exampleName: name });
+  const select = (next: Selection) => {
+    setSelection(next);
     setGeneratedSpec(null);
     setPdfUrl(null);
     setError(null);
     setPrompt("");
-  };
-
-  const handleSelectScratch = () => {
-    setSelection({ mode: "scratch" });
-    setGeneratedSpec(null);
-    setPdfUrl(null);
-    setError(null);
-    setPrompt("");
+    setMainTab("preview");
+    setSheetOpen(false);
   };
 
   const handleDownload = async () => {
@@ -233,414 +232,189 @@ export default function Page() {
     }
   };
 
-  const displayPdfUrl = pdfUrl ?? examplePdfUrl;
+  const sidebarBody = (
+    <>
+      <ScrollArea className="flex-1">
+        <div className="flex flex-col gap-1 p-3">
+          <p className="px-1 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Start
+          </p>
+          <NavItem
+            label="From scratch"
+            description="Describe the PDF you want to create"
+            active={selection.mode === "scratch"}
+            onClick={() => select({ mode: "scratch" })}
+          />
+
+          <p className="px-1 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Examples
+          </p>
+          {examples.map((ex) => (
+            <NavItem
+              key={ex.name}
+              label={ex.label}
+              description={ex.description}
+              active={
+                selection.mode === "example" &&
+                selection.exampleName === ex.name
+              }
+              onClick={() => select({ mode: "example", exampleName: ex.name })}
+            />
+          ))}
+        </div>
+      </ScrollArea>
+
+      <Separator />
+
+      <div className="flex flex-col gap-2 p-3">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Prompt
+        </p>
+        <Textarea
+          ref={textareaRef}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              handleGenerate();
+            }
+          }}
+          placeholder={
+            selection.mode === "scratch"
+              ? "Describe the PDF you want to generate..."
+              : `Modify the ${currentExample?.label ?? "example"}...`
+          }
+          rows={3}
+          className="min-h-[72px] resize-y text-[13px]"
+        />
+        <Button
+          onClick={handleGenerate}
+          disabled={generating || !prompt.trim()}
+          className="w-full"
+        >
+          {generating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <PenLine className="h-4 w-4" />
+              Generate PDF
+            </>
+          )}
+        </Button>
+        <p className="text-center text-[11px] text-muted-foreground">
+          Cmd+Enter to generate
+        </p>
+      </div>
+
+      {error && (
+        <div className="mx-3 mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {error}
+        </div>
+      )}
+    </>
+  );
 
   return (
-    <div style={styles.container}>
-      <aside
-        style={{
-          ...styles.sidebar,
-          width: sidebarWidth,
-          minWidth: sidebarWidth,
-        }}
-      >
-        <h1 style={styles.logo}>json-render</h1>
-        <p style={styles.subtitle}>React PDF</p>
-
-        <nav style={styles.nav}>
-          {/* From scratch */}
-          <button
-            onClick={handleSelectScratch}
-            style={{
-              ...styles.navItem,
-              ...(selection.mode === "scratch" ? styles.navItemActive : {}),
-            }}
-          >
-            <span style={styles.navLabel}>From scratch</span>
-            <span style={styles.navDesc}>
-              Describe the PDF you want to create
-            </span>
-          </button>
-
-          <div style={styles.divider} />
-
-          {/* Examples */}
-          {examples.map((ex) => (
-            <button
-              key={ex.name}
-              onClick={() => handleSelectExample(ex.name)}
-              style={{
-                ...styles.navItem,
-                ...(selection.mode === "example" &&
-                selection.exampleName === ex.name
-                  ? styles.navItemActive
-                  : {}),
-              }}
-            >
-              <span style={styles.navLabel}>{ex.label}</span>
-              <span style={styles.navDesc}>{ex.description}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* Prompt area */}
-        <div style={styles.promptArea}>
-          <textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                handleGenerate();
-              }
-            }}
-            placeholder={
-              selection.mode === "scratch"
-                ? "Describe the PDF you want to generate..."
-                : `Modify the ${currentExample?.label ?? "example"}...`
-            }
-            style={styles.textarea}
-            rows={3}
-          />
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !prompt.trim()}
-            style={{
-              ...styles.generateBtn,
-              opacity: generating || !prompt.trim() ? 0.5 : 1,
-            }}
-          >
-            {generating ? "Generating..." : "Generate PDF"}
-          </button>
-          <span style={styles.hint}>Cmd+Enter to generate</span>
+    <div className="flex h-dvh">
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-80 min-w-80 flex-col border-r bg-card">
+        <div className="shrink-0 border-b px-4 py-4">
+          <Logo />
         </div>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        {/* Actions */}
-        <div style={styles.actions}>
-          {activeSpec && (
-            <button onClick={handleDownload} style={styles.downloadBtn}>
-              Download PDF
-            </button>
-          )}
-          {activeSpec && (
-            <button
-              onClick={() => setShowSpec((v) => !v)}
-              style={styles.specToggle}
-            >
-              {showSpec ? "Hide" : "Show"} JSON Spec
-            </button>
-          )}
-        </div>
+        {sidebarBody}
       </aside>
 
-      {/* Resize handle */}
-      <div onMouseDown={handleResizeStart} style={styles.resizeHandle} />
+      {/* Main area */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Toolbar */}
+        <div className="flex items-center gap-2 border-b bg-card px-3 py-2">
+          {/* Mobile menu */}
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0 flex flex-col">
+              <SheetHeader className="shrink-0 border-b px-4 py-4">
+                <SheetTitle>
+                  <Logo size="sm" />
+                </SheetTitle>
+              </SheetHeader>
+              {sidebarBody}
+            </SheetContent>
+          </Sheet>
 
-      {/* Main content */}
-      <main style={styles.main}>
-        {generating && (
-          <div style={styles.loadingOverlay}>
-            <div style={styles.spinner} />
-            <p style={styles.loadingText}>Generating PDF...</p>
-          </div>
-        )}
+          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)}>
+            <TabsList>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+              {activeSpec && <TabsTrigger value="json">JSON</TabsTrigger>}
+            </TabsList>
+          </Tabs>
 
-        {!generating && displayPdfUrl ? (
-          <iframe
-            key={displayPdfUrl}
-            src={displayPdfUrl}
-            style={styles.iframe}
-            title="PDF preview"
-          />
-        ) : !generating ? (
-          <div style={styles.empty}>
-            <p style={styles.emptyText}>
-              {selection.mode === "scratch"
-                ? "Describe the PDF you want and hit Generate"
-                : "Select an example or type a prompt to modify it"}
-            </p>
-          </div>
-        ) : null}
-      </main>
+          <div className="flex-1" />
 
-      {/* JSON Spec panel */}
-      {showSpec && activeSpec && (
-        <>
-          <div
-            onMouseDown={handleSpecResizeStart}
-            style={styles.specResizeHandle}
-          />
-          <div
-            style={{
-              ...styles.specViewer,
-              width: specPanelWidth,
-              minWidth: specPanelWidth,
-            }}
-          >
-            <div style={styles.specHeader}>
-              <h2 style={styles.specTitle}>JSON Spec</h2>
-              <button
-                onClick={() => setShowSpec(false)}
-                style={styles.specClose}
-              >
-                Close
-              </button>
-            </div>
-            <pre style={styles.specCode}>
-              {JSON.stringify(activeSpec, null, 2)}
-            </pre>
-          </div>
-        </>
-      )}
+          {activeSpec && (
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-3.5 w-3.5" />
+              Download
+            </Button>
+          )}
+        </div>
 
-      {isResizing && <div style={styles.resizeOverlay} />}
+        {/* Content */}
+        <div className="relative flex flex-1 min-h-0 bg-neutral-600">
+          {mainTab === "preview" && (
+            <>
+              {generating && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-neutral-600/90 backdrop-blur-sm">
+                  <div className="h-9 w-9 rounded-full border-[3px] border-white/15 border-t-white animate-[spin_0.8s_linear_infinite]" />
+                  <p className="text-sm font-medium text-white/80">
+                    Generating your PDF...
+                  </p>
+                </div>
+              )}
+
+              {!generating && displayPdfUrl ? (
+                <iframe
+                  key={displayPdfUrl}
+                  src={displayPdfUrl}
+                  className="h-full w-full border-none"
+                  title="PDF preview"
+                />
+              ) : !generating ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/6">
+                    <FileText className="h-10 w-10 text-neutral-400" />
+                  </div>
+                  <p className="text-base font-semibold text-neutral-300">
+                    {selection.mode === "scratch"
+                      ? "Start from scratch"
+                      : "PDF Preview"}
+                  </p>
+                  <p className="max-w-[280px] text-center text-sm text-neutral-400">
+                    {selection.mode === "scratch"
+                      ? "Describe the PDF you want and hit Generate"
+                      : "Select an example or type a prompt to modify it"}
+                  </p>
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {mainTab === "json" && activeSpec && (
+            <ScrollArea className="flex-1">
+              <pre className="p-5 text-xs leading-relaxed font-mono text-foreground/70 bg-muted">
+                {JSON.stringify(activeSpec, null, 2)}
+              </pre>
+            </ScrollArea>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: "flex",
-    height: "100vh",
-    overflow: "hidden",
-  },
-  sidebar: {
-    background: "var(--surface)",
-    display: "flex",
-    flexDirection: "column",
-    padding: 20,
-    gap: 4,
-    overflow: "auto",
-  },
-  resizeHandle: {
-    width: 5,
-    cursor: "col-resize",
-    background: "var(--border)",
-    flexShrink: 0,
-    transition: "background 0.15s",
-  },
-  resizeOverlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 9999,
-    cursor: "col-resize",
-  },
-  logo: {
-    fontSize: 18,
-    fontWeight: 700,
-    margin: 0,
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "var(--text-muted)",
-    margin: 0,
-    marginBottom: 12,
-  },
-  nav: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-  divider: {
-    height: 1,
-    background: "var(--border)",
-    margin: "6px 0",
-  },
-  navItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 2,
-    padding: "8px 10px",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "var(--border)",
-    borderRadius: "var(--radius)",
-    background: "transparent",
-    textAlign: "left",
-    fontSize: 13,
-    transition: "all 0.15s",
-    width: "100%",
-    cursor: "pointer",
-  },
-  navItemActive: {
-    background: "var(--primary)",
-    color: "#fff",
-    borderColor: "var(--primary)",
-  },
-  navLabel: {
-    fontWeight: 600,
-    fontSize: 13,
-  },
-  navDesc: {
-    fontSize: 11,
-    opacity: 0.8,
-    lineHeight: "1.3",
-  },
-  promptArea: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    marginTop: 12,
-    flex: 1,
-    minHeight: 0,
-  },
-  textarea: {
-    resize: "vertical",
-    padding: "10px 12px",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--radius)",
-    fontFamily: "var(--font)",
-    fontSize: 13,
-    lineHeight: "1.5",
-    outline: "none",
-    minHeight: 72,
-  },
-  generateBtn: {
-    padding: "10px 16px",
-    background: "var(--primary)",
-    color: "#fff",
-    border: "none",
-    borderRadius: "var(--radius)",
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-  hint: {
-    fontSize: 11,
-    color: "var(--text-muted)",
-    textAlign: "center",
-  },
-  error: {
-    padding: "8px 12px",
-    background: "#fef2f2",
-    color: "#b91c1c",
-    borderRadius: "var(--radius)",
-    fontSize: 12,
-    marginTop: 8,
-  },
-  actions: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    marginTop: 12,
-  },
-  downloadBtn: {
-    display: "block",
-    textAlign: "center",
-    padding: "9px 16px",
-    background: "transparent",
-    color: "var(--text)",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--radius)",
-    textDecoration: "none",
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-  },
-  specToggle: {
-    padding: "9px 16px",
-    background: "transparent",
-    color: "var(--text-muted)",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--radius)",
-    fontSize: 13,
-    cursor: "pointer",
-  },
-  main: {
-    flex: 1,
-    background: "#525659",
-    display: "flex",
-    position: "relative",
-  },
-  iframe: {
-    width: "100%",
-    height: "100%",
-    border: "none",
-  },
-  empty: {
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: "#a0a4a8",
-    fontSize: 15,
-    maxWidth: 280,
-    textAlign: "center",
-    lineHeight: "1.5",
-  },
-  loadingOverlay: {
-    position: "absolute",
-    inset: 0,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(82, 86, 89, 0.85)",
-    zIndex: 10,
-  },
-  spinner: {
-    width: 32,
-    height: 32,
-    border: "3px solid rgba(255,255,255,0.2)",
-    borderTopColor: "#fff",
-    borderRadius: "50%",
-    animation: "spin 0.8s linear infinite",
-  },
-  loadingText: {
-    color: "#fff",
-    fontSize: 14,
-    marginTop: 12,
-  },
-  specViewer: {
-    display: "flex",
-    flexDirection: "column",
-    background: "var(--surface)",
-    overflow: "hidden",
-    flexShrink: 0,
-  },
-  specResizeHandle: {
-    width: 5,
-    cursor: "col-resize",
-    background: "var(--border)",
-    flexShrink: 0,
-    transition: "background 0.15s",
-  },
-  specHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px 20px",
-    borderBottom: "1px solid var(--border)",
-  },
-  specTitle: {
-    fontSize: 15,
-    fontWeight: 600,
-    margin: 0,
-  },
-  specClose: {
-    padding: "5px 10px",
-    background: "transparent",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--radius)",
-    fontSize: 12,
-    color: "var(--text-muted)",
-    cursor: "pointer",
-  },
-  specCode: {
-    flex: 1,
-    overflow: "auto",
-    padding: 20,
-    margin: 0,
-    fontSize: 12,
-    lineHeight: "1.5",
-    fontFamily: "var(--font-mono)",
-    background: "#fafafa",
-  },
-};
