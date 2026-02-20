@@ -119,29 +119,29 @@ export default function Page() {
 
   // Progressive PDF refresh during generation
   const lastRefreshSpec = useRef<string>("");
-  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const generatedSpecRef = useRef<Spec | null>(null);
+  generatedSpecRef.current = generatedSpec;
 
   useEffect(() => {
-    if (!generating || !generatedSpec) return;
+    if (!generating) return;
 
-    const specKey = JSON.stringify(generatedSpec);
-    if (specKey === lastRefreshSpec.current) return;
-    if (!isRenderableSpec(generatedSpec)) return;
+    const interval = setInterval(() => {
+      const spec = generatedSpecRef.current;
+      if (!spec) return;
 
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      const specKey = JSON.stringify(spec);
+      if (specKey === lastRefreshSpec.current) return;
+      if (!isRenderableSpec(spec)) return;
 
-    refreshTimer.current = setTimeout(() => {
       lastRefreshSpec.current = specKey;
       setRefreshing(true);
-      fetchPdfBlob(generatedSpec)
+      fetchPdfBlob(spec)
         .catch(() => {})
         .finally(() => setRefreshing(false));
     }, PDF_REFRESH_INTERVAL_MS);
 
-    return () => {
-      if (refreshTimer.current) clearTimeout(refreshTimer.current);
-    };
-  }, [generating, generatedSpec, fetchPdfBlob]);
+    return () => clearInterval(interval);
+  }, [generating, fetchPdfBlob]);
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) return;
@@ -188,7 +188,6 @@ export default function Page() {
       setGeneratedSpec(finalSpec);
       setGenerating(false);
 
-      if (refreshTimer.current) clearTimeout(refreshTimer.current);
       await fetchPdfBlob(finalSpec);
     } catch (e) {
       if (controller.signal.aborted) return;
@@ -200,7 +199,6 @@ export default function Page() {
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
     setGenerating(false);
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
 
     if (isRenderableSpec(generatedSpec)) {
       fetchPdfBlob(generatedSpec).catch(() => {});
