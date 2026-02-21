@@ -23,6 +23,7 @@ json-render is a **Generative UI** framework: AI generates interfaces from natur
 - **Guardrailed** - AI can only use components in your catalog
 - **Predictable** - JSON output matches your schema, every time
 - **Fast** - Stream and render progressively as the model responds
+- **Verifiable** - Playground includes a post-generation verification + quick feedback loop
 - **Cross-Platform** - React (web) and React Native (mobile) from the same catalog
 - **Batteries Included** - 36 pre-built shadcn/ui components ready to use
 
