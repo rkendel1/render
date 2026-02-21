@@ -163,6 +163,19 @@ export function Playground() {
     ? streamRawLines
     : (selectedVersion?.rawLines ?? []);
 
+  const handleVisualChange = useCallback(
+    (value: JsonValue) => {
+      const updatedSpec = value as unknown as Spec;
+      if (!selectedVersionId) return;
+      setVersions((prev) =>
+        prev.map((v) =>
+          v.id === selectedVersionId ? { ...v, tree: updatedSpec } : v,
+        ),
+      );
+    },
+    [selectedVersionId],
+  );
+
   // Keep the ref updated with the current tree for use in handleSubmit
   if (
     currentTree &&
@@ -640,16 +653,23 @@ ${jsx}
         ) : activeTab === "visual" ? (
           currentTree && currentTree.root ? (
             <JsonEditor
-              value={JSON.parse(JSON.stringify(currentTree)) as JsonValue}
-              readOnly
+              key={selectedVersionId}
+              defaultValue={
+                JSON.parse(JSON.stringify(currentTree)) as JsonValue
+              }
+              onChange={handleVisualChange}
               sidebarOpen={false}
               height="100%"
               style={
                 {
-                  "--vj-bg": "hsl(var(--background))",
-                  "--vj-text": "hsl(var(--foreground))",
-                  "--vj-border": "hsl(var(--border))",
-                  "--vj-accent": "hsl(var(--primary))",
+                  "--vj-bg": "var(--background)",
+                  "--vj-text": "var(--foreground)",
+                  "--vj-border": "var(--border)",
+                  "--vj-accent": "var(--primary)",
+                  "--vj-bg-selected": "var(--primary)",
+                  "--vj-bg-selected-muted":
+                    "color-mix(in oklch, var(--primary) 50%, transparent)",
+                  "--vj-text-selected": "var(--primary-foreground)",
                 } as React.CSSProperties
               }
             />
@@ -941,16 +961,23 @@ ${jsx}
           ) : mobileView === "visual" ? (
             currentTree && currentTree.root ? (
               <JsonEditor
-                value={JSON.parse(JSON.stringify(currentTree)) as JsonValue}
-                readOnly
+                key={selectedVersionId}
+                defaultValue={
+                  JSON.parse(JSON.stringify(currentTree)) as JsonValue
+                }
+                onChange={handleVisualChange}
                 sidebarOpen={false}
                 height="100%"
                 style={
                   {
-                    "--vj-bg": "hsl(var(--background))",
-                    "--vj-text": "hsl(var(--foreground))",
-                    "--vj-border": "hsl(var(--border))",
-                    "--vj-accent": "hsl(var(--primary))",
+                    "--vj-bg": "var(--background)",
+                    "--vj-text": "var(--foreground)",
+                    "--vj-border": "var(--border)",
+                    "--vj-accent": "var(--primary)",
+                    "--vj-bg-selected": "var(--primary)",
+                    "--vj-bg-selected-muted":
+                      "color-mix(in oklch, var(--primary) 50%, transparent)",
+                    "--vj-text-selected": "var(--primary-foreground)",
                   } as React.CSSProperties
                 }
               />
