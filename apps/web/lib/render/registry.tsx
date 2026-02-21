@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 
 import { playgroundCatalog } from "./catalog";
+import { normalizeChoiceOptions } from "./option-utils";
 
 // shadcn components
 import { Button } from "@/components/ui/button";
@@ -607,9 +608,17 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
       </PopoverPrimitive>
     ),
 
-    Rating: ({ props }) => {
-      const ratingValue = props.value || 0;
+    Rating: ({ props, bindings, emit }) => {
+      const [boundValue, setBoundValue] = useBoundProp<number>(
+        props.value as number | undefined,
+        bindings?.value,
+      );
+      const [localValue, setLocalValue] = useState(props.value || 0);
+      const isBound = !!bindings?.value;
+      const ratingValue = isBound ? (boundValue ?? 0) : localValue;
+      const setValue = isBound ? setBoundValue : setLocalValue;
       const maxRating = props.max ?? 5;
+
       return (
         <div className="space-y-2">
           {props.label && (
@@ -619,12 +628,26 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
           )}
           <div className="flex gap-1">
             {Array.from({ length: maxRating }).map((_, i) => (
-              <span
+              <button
                 key={i}
-                className={`text-lg ${i < ratingValue ? "text-yellow-400" : "text-muted"}`}
+                type="button"
+                className={`text-lg transition-colors ${i < ratingValue ? "text-yellow-400" : "text-muted-foreground/40"} hover:text-yellow-400`}
+                onClick={() => {
+                  setValue(i + 1);
+                  emit("change");
+                }}
+                aria-label={`Set rating to ${i + 1}`}
               >
-                *
-              </span>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill={i < ratingValue ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path d="M12 2.5 15.2 8.9 22.2 9.9 17.1 14.8 18.3 21.8 12 18.5 5.7 21.8 6.9 14.8 1.8 9.9 8.8 8.9 12 2.5Z" />
+                </svg>
+              </button>
             ))}
           </div>
         </div>
@@ -858,12 +881,9 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
       const isBound = !!bindings?.value;
       const value = isBound ? (boundValue ?? "") : localValue;
       const setValue = isBound ? setBoundValue : setLocalValue;
-      const rawOptions = props.options ?? [];
-      // Coerce options to strings – AI may produce objects/numbers instead of
-      // plain strings which would cause duplicate `[object Object]` keys.
-      const options = rawOptions.map((opt) =>
-        typeof opt === "string" ? opt : String(opt ?? ""),
-      );
+      const rawOptions = Array.isArray(props.options) ? props.options : [];
+      // Normalize options so object shapes render as readable label/value pairs.
+      const options = normalizeChoiceOptions(rawOptions).options;
 
       const hasValidation = !!(bindings?.value && props.checks?.length);
       const { errors, validate } = useFieldValidation(
@@ -888,10 +908,10 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
             <SelectContent>
               {options.map((opt, idx) => (
                 <SelectItem
-                  key={`${idx}-${opt}`}
-                  value={opt || `option-${idx}`}
+                  key={`${idx}-${opt.value}`}
+                  value={opt.value || `option-${idx}`}
                 >
-                  {opt}
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -931,15 +951,13 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
     },
 
     Radio: ({ props, bindings, emit }) => {
-      const rawOptions = props.options ?? [];
-      const options = rawOptions.map((opt) =>
-        typeof opt === "string" ? opt : String(opt ?? ""),
-      );
+      const rawOptions = Array.isArray(props.options) ? props.options : [];
+      const options = normalizeChoiceOptions(rawOptions).options;
       const [boundValue, setBoundValue] = useBoundProp<string>(
         props.value as string | undefined,
         bindings?.value,
       );
-      const [localValue, setLocalValue] = useState(options[0] ?? "");
+      const [localValue, setLocalValue] = useState(options[0]?.value ?? "");
       const isBound = !!bindings?.value;
       const value = isBound ? (boundValue ?? "") : localValue;
       const setValue = isBound ? setBoundValue : setLocalValue;
@@ -956,18 +974,18 @@ export const { registry, executeAction } = defineRegistry(playgroundCatalog, {
           >
             {options.map((opt, idx) => (
               <div
-                key={`${idx}-${opt}`}
+                key={`${idx}-${opt.value}`}
                 className="flex items-center space-x-2"
               >
                 <RadioGroupItem
-                  value={opt || `option-${idx}`}
-                  id={`${props.name}-${idx}-${opt}`}
+                  value={opt.value || `option-${idx}`}
+                  id={`${props.name}-${idx}-${opt.value}`}
                 />
                 <Label
-                  htmlFor={`${props.name}-${idx}-${opt}`}
+                  htmlFor={`${props.name}-${idx}-${opt.value}`}
                   className="cursor-pointer"
                 >
-                  {opt}
+                  {opt.label}
                 </Label>
               </div>
             ))}

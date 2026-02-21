@@ -15,6 +15,8 @@ const SYSTEM_PROMPT = playgroundCatalog.prompt({
     "Wrap each repeated item in a Card for visual separation and structure.",
     "Use realistic, professional sample data. Include 3-5 items with varied content. Never leave state arrays empty.",
     'For form inputs (Input, Textarea, Select), always include checks for validation (e.g. required, email, minLength). Always pair checks with a $bindState expression on the value prop (e.g. { "$bindState": "/path" }).',
+    'For Rating used in forms/feedback, make it interactive: bind props.value with { "$bindState": "/path" } and provide on.change to update state.',
+    "For Select and Radio options, output plain string arrays only (e.g. ['Small','Medium','Large']). Do not output raw option objects.",
   ],
 });
 
