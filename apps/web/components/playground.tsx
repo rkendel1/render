@@ -16,14 +16,16 @@ import { CopyButton } from "./copy-button";
 import { Toaster } from "./ui/sonner";
 import { Header } from "./header";
 import { Sheet, SheetContent, SheetTitle } from "./ui/sheet";
+import { JsonEditor, type JsonValue } from "@visual-json/react";
 import { PlaygroundRenderer } from "@/lib/render/renderer";
 import { playgroundCatalog } from "@/lib/render/catalog";
 import { buildCatalogDisplayData } from "@/lib/render/catalog-display";
 
-type Tab = "json" | "nested" | "stream" | "catalog";
+type Tab = "json" | "visual" | "nested" | "stream" | "catalog";
 type RenderView = "preview" | "code";
 type MobileView =
   | "json"
+  | "visual"
   | "nested"
   | "stream"
   | "catalog"
@@ -484,21 +486,23 @@ ${jsx}
   const codePane = (
     <div className="h-full flex flex-col border-t border-border">
       <div className="border-b border-border px-3 h-9 flex items-center gap-3">
-        {(["json", "nested", "stream", "catalog"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`text-xs font-mono transition-colors ${
-              activeTab === tab
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {(["json", "visual", "nested", "stream", "catalog"] as const).map(
+          (tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`text-xs font-mono transition-colors ${
+                activeTab === tab
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ),
+        )}
         <div className="flex-1" />
-        {activeTab !== "catalog" && (
+        {activeTab !== "catalog" && activeTab !== "visual" && (
           <CopyButton text={copyText} className="text-muted-foreground" />
         )}
       </div>
@@ -633,6 +637,28 @@ ${jsx}
               {isStreaming ? "streaming..." : "// waiting for generation"}
             </div>
           )
+        ) : activeTab === "visual" ? (
+          currentTree && currentTree.root ? (
+            <JsonEditor
+              value={JSON.parse(JSON.stringify(currentTree)) as JsonValue}
+              readOnly
+              height="100%"
+              style={
+                {
+                  "--vj-bg": "hsl(var(--background))",
+                  "--vj-text": "hsl(var(--foreground))",
+                  "--vj-border": "hsl(var(--border))",
+                  "--vj-accent": "hsl(var(--primary))",
+                } as React.CSSProperties
+              }
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground/50 text-sm">
+              {isStreaming
+                ? "generating..."
+                : "// enter a prompt to generate UI"}
+            </div>
+          )
         ) : activeTab === "nested" ? (
           <CodeBlock code={nestedCode} lang="json" fillHeight hideCopyButton />
         ) : (
@@ -735,19 +761,21 @@ ${jsx}
               : 0}
           </button>
           {/* Code tabs */}
-          {(["json", "nested", "stream", "catalog"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setMobileView(tab)}
-              className={`text-xs font-mono transition-colors shrink-0 ${
-                mobileView === tab
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          {(["json", "visual", "nested", "stream", "catalog"] as const).map(
+            (tab) => (
+              <button
+                key={tab}
+                onClick={() => setMobileView(tab)}
+                className={`text-xs font-mono transition-colors shrink-0 ${
+                  mobileView === tab
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab}
+              </button>
+            ),
+          )}
           <div className="flex-1" />
           {/* Preview / code toggle */}
           {[
@@ -909,6 +937,28 @@ ${jsx}
             />
           ) : mobileView === "json" ? (
             <CodeBlock code={jsonCode} lang="json" fillHeight hideCopyButton />
+          ) : mobileView === "visual" ? (
+            currentTree && currentTree.root ? (
+              <JsonEditor
+                value={JSON.parse(JSON.stringify(currentTree)) as JsonValue}
+                readOnly
+                height="100%"
+                style={
+                  {
+                    "--vj-bg": "hsl(var(--background))",
+                    "--vj-text": "hsl(var(--foreground))",
+                    "--vj-border": "hsl(var(--border))",
+                    "--vj-accent": "hsl(var(--primary))",
+                  } as React.CSSProperties
+                }
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground/50 text-sm">
+                {isStreaming
+                  ? "generating..."
+                  : "// enter a prompt to generate UI"}
+              </div>
+            )
           ) : mobileView === "preview" ? (
             currentTree && currentTree.root ? (
               <div className="w-full min-h-full flex items-center justify-center p-6">

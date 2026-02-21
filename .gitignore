@@ -6,11 +6,8 @@ node_modules
 .pnp.js
 
 # Local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env*
+!.env.example
 
 # Testing
 coverage
@@ -43,10 +40,6 @@ yarn-error.log*
 
 # opensrc - source code for packages
 opensrc/
-
-# json-studio (separate repo)
-json-studio/
-.env*.local
 
 # Stripe apps (generated from template + build artifacts)
 examples/stripe-app/*/stripe-app.json
