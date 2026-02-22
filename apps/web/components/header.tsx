@@ -57,7 +57,7 @@ export function Header() {
             </svg>
           </span>
           <Link href="/">
-            <span className="font-medium tracking-tight text-lg">
+            <span className="font-medium tracking-tight text-lg font-(family-name:--font-geist-pixel-square)">
               json-render
             </span>
           </Link>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { GeistPixelSquare } from "geist/font/pixel";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DocsChat } from "@/components/docs-chat";
@@ -91,7 +92,9 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${GeistPixelSquare.variable}`}
+      >
         <ThemeProvider>
           {children}
           <DocsChat defaultOpen={chatOpen} defaultWidth={chatWidth} />
