@@ -114,6 +114,9 @@ function Dashboard({ spec }) {
 | `@json-render/react-native` | React Native renderer with standard mobile components |
 | `@json-render/remotion` | Remotion video renderer, timeline schema |
 | `@json-render/react-pdf` | React PDF renderer for generating PDF documents from specs |
+| `@json-render/redux` | Redux / Redux Toolkit adapter for `StateStore` |
+| `@json-render/zustand` | Zustand adapter for `StateStore` |
+| `@json-render/jotai` | Jotai adapter for `StateStore` |
 
 ## Renderers
 
