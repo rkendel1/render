@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -67,9 +68,19 @@ export function StateProvider({
 
   const store = externalStore ?? internalStoreRef.current!;
 
-  // Sync external initialState changes into the internal store (uncontrolled only).
+  const initialModeRef = useRef(externalStore ? "controlled" : "uncontrolled");
+  if (process.env.NODE_ENV !== "production") {
+    const currentMode = externalStore ? "controlled" : "uncontrolled";
+    if (currentMode !== initialModeRef.current) {
+      console.warn(
+        `StateProvider: switching from ${initialModeRef.current} to ${currentMode} mode is not supported.`,
+      );
+    }
+  }
+
   const prevInitialJsonRef = useRef<string>(JSON.stringify(initialState));
-  if (!externalStore) {
+  useEffect(() => {
+    if (externalStore) return;
     const json = JSON.stringify(initialState);
     if (json !== prevInitialJsonRef.current) {
       prevInitialJsonRef.current = json;
@@ -81,9 +92,13 @@ export function StateProvider({
         );
       }
     }
-  }
+  }, [externalStore, initialState, store]);
 
-  const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const state = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  );
 
   const onStateChangeRef = useRef(onStateChange);
   onStateChangeRef.current = onStateChange;

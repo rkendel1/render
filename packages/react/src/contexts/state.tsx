@@ -4,6 +4,7 @@ import React, {
   createContext,
   useContext,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -70,9 +71,21 @@ export function StateProvider({
 
   const store = externalStore ?? internalStoreRef.current!;
 
+  // Warn in dev if the component switches between controlled and uncontrolled.
+  const initialModeRef = useRef(externalStore ? "controlled" : "uncontrolled");
+  if (process.env.NODE_ENV !== "production") {
+    const currentMode = externalStore ? "controlled" : "uncontrolled";
+    if (currentMode !== initialModeRef.current) {
+      console.warn(
+        `StateProvider: switching from ${initialModeRef.current} to ${currentMode} mode is not supported.`,
+      );
+    }
+  }
+
   // Sync external initialState changes into the internal store (uncontrolled only).
   const prevInitialJsonRef = useRef<string>(JSON.stringify(initialState));
-  if (!externalStore) {
+  useEffect(() => {
+    if (externalStore) return;
     const json = JSON.stringify(initialState);
     if (json !== prevInitialJsonRef.current) {
       prevInitialJsonRef.current = json;
@@ -84,10 +97,14 @@ export function StateProvider({
         );
       }
     }
-  }
+  }, [externalStore, initialState, store]);
 
   // Subscribe to the store (works for both internal and external stores).
-  const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const state = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  );
 
   // Wrap set/update to fire onStateChange in uncontrolled mode.
   const onStateChangeRef = useRef(onStateChange);
