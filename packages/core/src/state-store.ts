@@ -151,6 +151,19 @@ export function flattenToPointers(
         ),
       );
     } else {
+      if (
+        process.env.NODE_ENV !== "production" &&
+        _depth >= MAX_FLATTEN_DEPTH &&
+        value !== null &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        Object.getPrototypeOf(value) === Object.prototype &&
+        !seen.has(value as object)
+      ) {
+        console.warn(
+          `flattenToPointers: depth limit (${MAX_FLATTEN_DEPTH}) reached at "${pointer}". Nested state beyond this depth will be treated as a leaf value.`,
+        );
+      }
       result[pointer] = value;
     }
   }
