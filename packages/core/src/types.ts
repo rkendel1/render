@@ -179,6 +179,77 @@ export interface Spec {
 export type StateModel = Record<string, unknown>;
 
 /**
+ * An abstract store that owns state and notifies subscribers on change.
+ *
+ * Consumers can supply their own implementation (backed by Redux, Zustand,
+ * XState, etc.) or use the built-in {@link createStateStore} for a simple
+ * in-memory store.
+ */
+export interface StateStore {
+  /** Read a value by JSON Pointer path. */
+  get: (path: string) => unknown;
+  /** Write a value by JSON Pointer path and notify subscribers. */
+  set: (path: string, value: unknown) => void;
+  /** Write multiple values at once and notify subscribers. */
+  update: (updates: Record<string, unknown>) => void;
+  /** Return the full state object (used by `useSyncExternalStore`). */
+  getSnapshot: () => StateModel;
+  /** Register a listener that is called on every state change. Returns an unsubscribe function. */
+  subscribe: (listener: () => void) => () => void;
+}
+
+/**
+ * Create a simple in-memory {@link StateStore}.
+ *
+ * This is the default store used by `StateProvider` when no external store is
+ * provided. It mirrors the previous `useState`-based behaviour but is
+ * framework-agnostic so it can also be used in tests or non-React contexts.
+ */
+export function createStateStore(initialState: StateModel = {}): StateStore {
+  let state: StateModel = { ...initialState };
+  const listeners = new Set<() => void>();
+
+  function notify() {
+    for (const listener of listeners) {
+      listener();
+    }
+  }
+
+  return {
+    get(path: string): unknown {
+      return getByPath(state, path);
+    },
+
+    set(path: string, value: unknown): void {
+      const next = { ...state };
+      setByPath(next, path, value);
+      state = next;
+      notify();
+    },
+
+    update(updates: Record<string, unknown>): void {
+      const next = { ...state };
+      for (const [path, value] of Object.entries(updates)) {
+        setByPath(next, path, value);
+      }
+      state = next;
+      notify();
+    },
+
+    getSnapshot(): StateModel {
+      return state;
+    },
+
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+/**
  * Component schema definition using Zod
  */
 export type ComponentSchema = z.ZodType<Record<string, unknown>>;

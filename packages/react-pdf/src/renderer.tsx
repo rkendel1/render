@@ -11,6 +11,7 @@ import type {
   ActionBinding,
   Catalog,
   SchemaDefinition,
+  StateStore,
 } from "@json-render/core";
 import {
   resolveElementProps,
@@ -343,6 +344,7 @@ export function Renderer({
 
 export interface JSONUIProviderProps {
   registry?: ComponentRegistry;
+  store?: StateStore;
   initialState?: Record<string, unknown>;
   handlers?: Record<
     string,
@@ -358,6 +360,7 @@ export interface JSONUIProviderProps {
 }
 
 export function JSONUIProvider({
+  store,
   initialState,
   handlers,
   navigate,
@@ -366,7 +369,11 @@ export function JSONUIProvider({
   children,
 }: JSONUIProviderProps) {
   return (
-    <StateProvider initialState={initialState} onStateChange={onStateChange}>
+    <StateProvider
+      store={store}
+      initialState={initialState}
+      onStateChange={onStateChange}
+    >
       <VisibilityProvider>
         <ActionProvider handlers={handlers} navigate={navigate}>
           <ValidationProvider customFunctions={validationFunctions}>
@@ -430,6 +437,7 @@ export function defineRegistry<C extends Catalog>(
 
 export interface CreateRendererProps {
   spec: Spec | null;
+  store?: StateStore;
   state?: Record<string, unknown>;
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
   onStateChange?: (path: string, value: unknown) => void;
@@ -461,6 +469,7 @@ export function createRenderer<
 
   return function CatalogRenderer({
     spec,
+    store,
     state,
     onAction,
     onStateChange,
@@ -484,7 +493,11 @@ export function createRenderer<
       : undefined;
 
     return (
-      <StateProvider initialState={state} onStateChange={onStateChange}>
+      <StateProvider
+        store={store}
+        initialState={state}
+        onStateChange={onStateChange}
+      >
         <VisibilityProvider>
           <ActionProvider handlers={actionHandlers}>
             <ValidationProvider>

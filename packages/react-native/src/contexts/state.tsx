@@ -1,14 +1,18 @@
 import React, {
   createContext,
   useContext,
-  useState,
   useCallback,
   useMemo,
-  useEffect,
   useRef,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { getByPath, setByPath, type StateModel } from "@json-render/core";
+import {
+  getByPath,
+  createStateStore,
+  type StateModel,
+  type StateStore,
+} from "@json-render/core";
 
 /**
  * State context value
@@ -30,86 +34,86 @@ const StateContext = createContext<StateContextValue | null>(null);
  * Props for StateProvider
  */
 export interface StateProviderProps {
-  /** Initial state model */
+  /**
+   * External store that owns the state. When provided, the provider operates
+   * in **controlled mode** — `initialState` and `onStateChange` are ignored
+   * and the store is the single source of truth.
+   */
+  store?: StateStore;
+  /** Initial state model (used only in uncontrolled mode) */
   initialState?: StateModel;
-  /** Callback when state changes */
+  /** Callback when state changes (used only in uncontrolled mode) */
   onStateChange?: (path: string, value: unknown) => void;
   children: ReactNode;
 }
 
 /**
- * Provider for state model context
+ * Provider for state model context.
+ *
+ * Supports two modes:
+ * - **Controlled**: pass a `store` prop (e.g. backed by Redux / Zustand).
+ * - **Uncontrolled** (default): omit `store` and optionally pass
+ *   `initialState` / `onStateChange`.
  */
 export function StateProvider({
+  store: externalStore,
   initialState = {},
   onStateChange,
   children,
 }: StateProviderProps) {
-  const [state, setStateInternal] = useState<StateModel>(initialState);
+  const internalStoreRef = useRef<StateStore | undefined>(
+    externalStore ? undefined : createStateStore(initialState),
+  );
 
-  // Keep a ref to the latest state so `get` doesn't change on every update.
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const store = externalStore ?? internalStoreRef.current!;
 
-  // Track the serialized initialState to detect actual value changes (not just reference changes)
-  const initialStateJsonRef = useRef<string>(JSON.stringify(initialState));
-
-  // Sync external state changes with internal state - only when values actually change
-  useEffect(() => {
-    const newJson = JSON.stringify(initialState);
-    if (newJson !== initialStateJsonRef.current) {
-      initialStateJsonRef.current = newJson;
+  // Sync external initialState changes into the internal store (uncontrolled only).
+  const prevInitialJsonRef = useRef<string>(JSON.stringify(initialState));
+  if (!externalStore) {
+    const json = JSON.stringify(initialState);
+    if (json !== prevInitialJsonRef.current) {
+      prevInitialJsonRef.current = json;
       if (initialState && Object.keys(initialState).length > 0) {
-        setStateInternal((prev) => ({ ...prev, ...initialState }));
+        store.update(
+          Object.fromEntries(
+            Object.entries(initialState).map(([k, v]) => [`/${k}`, v]),
+          ),
+        );
       }
     }
-  }, [initialState]);
+  }
 
-  // `get` uses a ref so it never changes identity — consumers that only
-  // need `get` won't re-render on every state change.
-  const get = useCallback(
-    (path: string) => getByPath(stateRef.current, path),
-    [],
-  );
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
+
+  const onStateChangeRef = useRef(onStateChange);
+  onStateChangeRef.current = onStateChange;
 
   const set = useCallback(
     (path: string, value: unknown) => {
-      setStateInternal((prev) => {
-        const next = { ...prev };
-        setByPath(next, path, value);
-        return next;
-      });
-      // Side effect after the state update
-      onStateChange?.(path, value);
+      store.set(path, value);
+      if (!externalStore) {
+        onStateChangeRef.current?.(path, value);
+      }
     },
-    [onStateChange],
+    [store, externalStore],
   );
 
   const update = useCallback(
     (updates: Record<string, unknown>) => {
-      const entries = Object.entries(updates);
-      setStateInternal((prev) => {
-        const next = { ...prev };
-        for (const [path, value] of entries) {
-          setByPath(next, path, value);
+      store.update(updates);
+      if (!externalStore) {
+        for (const [path, value] of Object.entries(updates)) {
+          onStateChangeRef.current?.(path, value);
         }
-        return next;
-      });
-      // Side effects after the state update
-      for (const [path, value] of entries) {
-        onStateChange?.(path, value);
       }
     },
-    [onStateChange],
+    [store, externalStore],
   );
 
+  const get = useCallback((path: string) => store.get(path), [store]);
+
   const value = useMemo<StateContextValue>(
-    () => ({
-      state,
-      get,
-      set,
-      update,
-    }),
+    () => ({ state, get, set, update }),
     [state, get, set, update],
   );
 

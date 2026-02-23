@@ -15,6 +15,7 @@ export type {
   AndCondition,
   OrCondition,
   StateModel,
+  StateStore,
   ComponentSchema,
   ValidationMode,
   PatchOp,
@@ -41,6 +42,7 @@ export {
   addByPath,
   removeByPath,
   findFormValue,
+  createStateStore,
   // SpecStream - streaming format for building specs (RFC 6902)
   parseSpecStreamLine,
   applySpecStreamPatch,

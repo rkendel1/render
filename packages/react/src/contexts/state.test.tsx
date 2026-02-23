@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderHook, act } from "@testing-library/react";
+import { createStateStore, type StateStore } from "@json-render/core";
 import {
   StateProvider,
   useStateStore,
@@ -177,5 +178,161 @@ describe("useStateBinding", () => {
     rerender();
     const [value] = result.current;
     expect(value).toBe("Alice");
+  });
+});
+
+// ============================================================================
+// External store (controlled mode)
+// ============================================================================
+
+describe("StateProvider with external store (controlled mode)", () => {
+  it("reads initial state from the external store", () => {
+    const store = createStateStore({ count: 7 });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider store={store}>{children}</StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateStore(), { wrapper });
+
+    expect(result.current.state).toEqual({ count: 7 });
+    expect(result.current.get("/count")).toBe(7);
+  });
+
+  it("re-renders when the external store updates", () => {
+    const store = createStateStore({ count: 0 });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider store={store}>{children}</StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateValue<number>("/count"), {
+      wrapper,
+    });
+
+    expect(result.current).toBe(0);
+
+    act(() => {
+      store.set("/count", 42);
+    });
+
+    expect(result.current).toBe(42);
+  });
+
+  it("set() writes through to the external store", () => {
+    const store = createStateStore({});
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider store={store}>{children}</StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateStore(), { wrapper });
+
+    act(() => {
+      result.current.set("/name", "Alice");
+    });
+
+    expect(store.getSnapshot().name).toBe("Alice");
+    expect(result.current.state.name).toBe("Alice");
+  });
+
+  it("update() writes multiple values through to the external store", () => {
+    const store = createStateStore({});
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider store={store}>{children}</StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateStore(), { wrapper });
+
+    act(() => {
+      result.current.update({ "/a": 1, "/b": 2 });
+    });
+
+    expect(store.getSnapshot().a).toBe(1);
+    expect(store.getSnapshot().b).toBe(2);
+  });
+
+  it("does NOT call onStateChange when using an external store", () => {
+    const store = createStateStore({});
+    const onStateChange = vi.fn();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider store={store} onStateChange={onStateChange}>
+        {children}
+      </StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateStore(), { wrapper });
+
+    act(() => {
+      result.current.set("/x", 99);
+    });
+
+    expect(onStateChange).not.toHaveBeenCalled();
+  });
+
+  it("ignores initialState when an external store is provided", () => {
+    const store = createStateStore({ fromStore: true });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider store={store} initialState={{ fromProp: true }}>
+        {children}
+      </StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateStore(), { wrapper });
+
+    expect(result.current.state).toEqual({ fromStore: true });
+    expect(result.current.get("/fromProp")).toBeUndefined();
+  });
+});
+
+describe("createStateStore", () => {
+  it("creates a store with initial state", () => {
+    const store = createStateStore({ name: "test" });
+    expect(store.getSnapshot()).toEqual({ name: "test" });
+    expect(store.get("/name")).toBe("test");
+  });
+
+  it("set notifies subscribers", () => {
+    const store = createStateStore({});
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    store.set("/x", 1);
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(store.get("/x")).toBe(1);
+  });
+
+  it("update notifies subscribers once", () => {
+    const store = createStateStore({});
+    const listener = vi.fn();
+    store.subscribe(listener);
+
+    store.update({ "/a": 1, "/b": 2 });
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(store.get("/a")).toBe(1);
+    expect(store.get("/b")).toBe(2);
+  });
+
+  it("unsubscribe stops notifications", () => {
+    const store = createStateStore({});
+    const listener = vi.fn();
+    const unsubscribe = store.subscribe(listener);
+
+    store.set("/x", 1);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    store.set("/x", 2);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("getSnapshot returns a new reference after mutation", () => {
+    const store = createStateStore({ x: 1 });
+    const snap1 = store.getSnapshot();
+
+    store.set("/x", 2);
+    const snap2 = store.getSnapshot();
+
+    expect(snap1).not.toBe(snap2);
+    expect(snap2.x).toBe(2);
   });
 });

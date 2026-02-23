@@ -171,6 +171,35 @@ const name = get("/user/name");  // "John"
 set("/user/age", 25);
 ```
 
+#### External Store (Controlled Mode)
+
+For full control over state, pass a `StateStore` to bypass the internal state and wire json-render to any state management library (Redux, Zustand, XState, etc.):
+
+```tsx
+import { createStateStore, type StateStore } from "@json-render/react";
+
+// Option 1: Use the built-in store outside of React
+const store = createStateStore({ count: 0 });
+
+<StateProvider store={store}>
+  {children}
+</StateProvider>
+
+// Mutate from anywhere — React will re-render automatically:
+store.set("/count", 1);
+
+// Option 2: Implement the StateStore interface with your own backend
+const zustandStore: StateStore = {
+  get: (path) => getByPath(useStore.getState(), path),
+  set: (path, value) => useStore.setState(prev => { /* ... */ }),
+  update: (updates) => useStore.setState(prev => { /* ... */ }),
+  getSnapshot: () => useStore.getState(),
+  subscribe: (listener) => useStore.subscribe(listener),
+};
+```
+
+When `store` is provided, `initialState` and `onStateChange` are ignored. The store is the single source of truth. The same `store` prop is available on `createRenderer`, `JSONUIProvider`, and `StateProvider`.
+
 ### ActionProvider
 
 Handle actions from components:
@@ -428,6 +457,7 @@ function App() {
 | `useActions` | Access actions context |
 | `useAction` | Get a single action dispatch function |
 | `useUIStream` | Stream specs from an API endpoint |
+| `createStateStore` | Create a framework-agnostic in-memory `StateStore` |
 
 ### Types
 
@@ -439,3 +469,4 @@ function App() {
 | `ComponentFn` | Component render function type |
 | `SetState` | State setter type |
 | `StateModel` | State model type |
+| `StateStore` | Interface for plugging in external state management |

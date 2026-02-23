@@ -13,6 +13,7 @@ import type {
   ActionBinding,
   Catalog,
   SchemaDefinition,
+  StateStore,
 } from "@json-render/core";
 import {
   resolveElementProps,
@@ -394,7 +395,12 @@ export function Renderer({ spec, registry, loading, fallback }: RendererProps) {
 export interface JSONUIProviderProps {
   /** Component registry */
   registry: ComponentRegistry;
-  /** Initial state model */
+  /**
+   * External store (controlled mode). When provided, `initialState` and
+   * `onStateChange` are ignored.
+   */
+  store?: StateStore;
+  /** Initial state model (uncontrolled mode) */
   initialState?: Record<string, unknown>;
   /** Action handlers */
   handlers?: Record<
@@ -408,7 +414,7 @@ export interface JSONUIProviderProps {
     string,
     (value: unknown, args?: Record<string, unknown>) => boolean
   >;
-  /** Callback when state changes */
+  /** Callback when state changes (uncontrolled mode) */
   onStateChange?: (path: string, value: unknown) => void;
   children: ReactNode;
 }
@@ -418,6 +424,7 @@ export interface JSONUIProviderProps {
  */
 export function JSONUIProvider({
   registry,
+  store,
   initialState,
   handlers,
   navigate,
@@ -426,7 +433,11 @@ export function JSONUIProvider({
   children,
 }: JSONUIProviderProps) {
   return (
-    <StateProvider initialState={initialState} onStateChange={onStateChange}>
+    <StateProvider
+      store={store}
+      initialState={initialState}
+      onStateChange={onStateChange}
+    >
       <VisibilityProvider>
         <ActionProvider handlers={handlers} navigate={navigate}>
           <ValidationProvider customFunctions={validationFunctions}>
@@ -623,11 +634,16 @@ type DefineRegistryActionFn = (
 export interface CreateRendererProps {
   /** The spec to render (AI-generated JSON) */
   spec: Spec | null;
-  /** State context for dynamic values */
+  /**
+   * External store (controlled mode). When provided, `state` and
+   * `onStateChange` are ignored.
+   */
+  store?: StateStore;
+  /** State context for dynamic values (uncontrolled mode) */
   state?: Record<string, unknown>;
   /** Action handler */
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
-  /** Callback when state changes (e.g., from form inputs) */
+  /** Callback when state changes (uncontrolled mode) */
   onStateChange?: (path: string, value: unknown) => void;
   /** Whether the spec is currently loading/streaming */
   loading?: boolean;
@@ -678,6 +694,7 @@ export function createRenderer<
   // Return the renderer component
   return function CatalogRenderer({
     spec,
+    store,
     state,
     onAction,
     onStateChange,
@@ -702,7 +719,11 @@ export function createRenderer<
       : undefined;
 
     return (
-      <StateProvider initialState={state} onStateChange={onStateChange}>
+      <StateProvider
+        store={store}
+        initialState={state}
+        onStateChange={onStateChange}
+      >
         <VisibilityProvider>
           <ActionProvider handlers={actionHandlers}>
             <ValidationProvider>
