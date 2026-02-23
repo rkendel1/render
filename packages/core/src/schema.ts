@@ -1188,7 +1188,14 @@ function formatZodType(schema: z.ZodType): string {
     }
     case "ZodArray":
     case "array": {
-      const inner = (def.type as z.ZodType) ?? (def.element as z.ZodType);
+      // safely resolve inner type for Zod arrays
+      const inner = (
+        typeof def.element === "object"
+          ? def.element
+          : typeof def.type === "object"
+            ? def.type
+            : undefined
+      ) as z.ZodType | undefined;
       return inner ? `Array<${formatZodType(inner)}>` : "Array<unknown>";
     }
     case "ZodObject":
