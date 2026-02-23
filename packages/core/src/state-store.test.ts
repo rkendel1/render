@@ -186,7 +186,7 @@ describe("flattenToPointers", () => {
     });
   });
 
-  it("handles circular references without stack overflow", () => {
+  it("stops recursion on circular references via seen set", () => {
     const obj: Record<string, unknown> = { name: "root" };
     obj.self = obj;
 

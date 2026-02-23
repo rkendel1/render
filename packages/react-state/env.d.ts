@@ -1,2 +1,9 @@
-// Minimal process.env typing so dev-only warnings compile without a bundler define plugin.
-declare const process: { readonly env: { readonly NODE_ENV?: string } };
+// Minimal process.env typing for dev-only warnings.
+// Uses a namespaced interface so it merges cleanly with @types/node if present.
+declare namespace NodeJS {
+  interface ProcessEnv {
+    readonly NODE_ENV?: string;
+  }
+}
+
+declare const process: { readonly env: NodeJS.ProcessEnv };

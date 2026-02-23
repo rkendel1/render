@@ -85,9 +85,7 @@ export function StateProvider({
   }
 
   const prevInitialStateRef = useRef(initialState);
-  const prevFlatRef = useRef<Record<string, unknown>>(
-    flattenToPointers(initialState),
-  );
+  const prevFlatRef = useRef<Record<string, unknown> | null>(null);
   useEffect(() => {
     if (externalStore) return;
     if (initialState === prevInitialStateRef.current) return;
@@ -96,7 +94,7 @@ export function StateProvider({
       initialState && Object.keys(initialState).length > 0
         ? flattenToPointers(initialState)
         : {};
-    const prevFlat = prevFlatRef.current;
+    const prevFlat = prevFlatRef.current ?? {};
     const allKeys = new Set([
       ...Object.keys(prevFlat),
       ...Object.keys(nextFlat),

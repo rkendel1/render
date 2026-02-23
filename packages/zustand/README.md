@@ -57,4 +57,4 @@ Creates a `StateStore` backed by a Zustand store.
 |--------|------|----------|-------------|
 | `store` | `StoreApi<S>` | Yes | A Zustand vanilla store (from `createStore` in `zustand/vanilla`) |
 | `selector` | `(state) => StateModel` | No | Select the json-render slice from the store state. Defaults to the entire state. |
-| `updater` | `(nextState, store) => void` | No | Apply the next state back to the Zustand store. Defaults to full state replacement. Override for nested slices. |
+| `updater` | `(nextState, store) => void` | No | Apply the next state back to the Zustand store. Defaults to a shallow merge so that keys outside the json-render model are preserved. Override for nested slices, or pass `(next, s) => s.setState(next, true)` for full replacement. |

@@ -17,9 +17,10 @@ export interface ZustandStateStoreOptions<S extends StateModel = StateModel> {
   selector?: (state: S) => StateModel;
   /**
    * Apply a state change back to the Zustand store.
-   * Defaults to `(next, store) => store.setState(next)` which replaces the
-   * full state. Override this if you use a selector and only want to update
-   * a nested slice.
+   * Defaults to a shallow merge (`store.setState(next)`) so that keys
+   * outside the json-render model are preserved. Override this if you use
+   * a selector and only want to update a nested slice, or pass
+   * `(next, s) => s.setState(next as S, true)` for full replacement.
    */
   updater?: (nextState: StateModel, store: StoreApi<S>) => void;
 }
@@ -59,7 +60,7 @@ export function zustandStateStore<S extends StateModel = StateModel>(
   const {
     store,
     selector = (s: S) => s as StateModel,
-    updater = (next, s) => s.setState(next as S, true),
+    updater = (next, s) => s.setState(next as Partial<S>),
   } = options;
 
   function getSnapshot(): StateModel {

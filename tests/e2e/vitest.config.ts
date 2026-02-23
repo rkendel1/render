@@ -26,7 +26,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/e2e/**/*.test.ts"],
+    include: ["**/*.test.ts"],
     testTimeout: 60_000,
   },
 });

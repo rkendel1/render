@@ -157,6 +157,24 @@ describe("zustandStateStore", () => {
     expect(store.get("/count")).toBe(0);
   });
 
+  it("default updater preserves keys outside the json-render model", () => {
+    interface AppState extends Record<string, unknown> {
+      count: number;
+      theme: string;
+    }
+
+    const zStore = createStore<AppState>()(() => ({
+      count: 0,
+      theme: "dark",
+    }));
+    const store = zustandStateStore({ store: zStore });
+
+    store.set("/count", 5);
+
+    expect(store.get("/count")).toBe(5);
+    expect(zStore.getState().theme).toBe("dark");
+  });
+
   it("works with custom selector and updater", () => {
     interface AppState extends Record<string, unknown> {
       ui: Record<string, unknown>;
