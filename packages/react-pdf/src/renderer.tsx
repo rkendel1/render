@@ -355,7 +355,7 @@ export interface JSONUIProviderProps {
     string,
     (value: unknown, args?: Record<string, unknown>) => boolean
   >;
-  onStateChange?: (path: string, value: unknown) => void;
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   children: ReactNode;
 }
 
@@ -440,7 +440,7 @@ export interface CreateRendererProps {
   store?: StateStore;
   state?: Record<string, unknown>;
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
-  onStateChange?: (path: string, value: unknown) => void;
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   loading?: boolean;
   fallback?: ComponentRenderer;
 }

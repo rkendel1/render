@@ -49,6 +49,9 @@
   "peerDependenciesMeta": {
     "@reduxjs/toolkit": {
       "optional": true
+    },
+    "redux": {
+      "optional": true
     }
   },
   "devDependencies": {

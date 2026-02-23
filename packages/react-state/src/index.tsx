@@ -46,9 +46,21 @@ export interface StateProviderProps {
   store?: StateStore;
   /** Initial state model (used only in uncontrolled mode) */
   initialState?: StateModel;
-  /** Callback when state changes (used only in uncontrolled mode) */
-  onStateChange?: (path: string, value: unknown) => void;
+  /**
+   * Callback when state changes (used only in uncontrolled mode).
+   * Called once per `set` or `update` with all changed entries.
+   */
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   children: ReactNode;
+}
+
+function computeInitialFlat(
+  isControlled: boolean,
+  initialState: StateModel,
+): Record<string, unknown> | null {
+  if (isControlled) return null;
+  if (Object.keys(initialState).length === 0) return {};
+  return flattenToPointers(initialState);
 }
 
 /**
@@ -72,12 +84,20 @@ export function StateProvider({
 
   const store = externalStore ?? internalStoreRef.current!;
 
+  // Refs for stable callback identity — callbacks never change regardless of
+  // whether the consumer passes a new store / onStateChange reference.
+  const storeRef = useRef(store);
+  storeRef.current = store;
+
+  const isControlledRef = useRef(!!externalStore);
+  isControlledRef.current = !!externalStore;
+
   const initialModeRef = useRef(externalStore ? "controlled" : "uncontrolled");
-  const warnedRef = useRef(false);
+  const modeWarnedRef = useRef(false);
   if (process.env.NODE_ENV !== "production") {
     const currentMode = externalStore ? "controlled" : "uncontrolled";
-    if (currentMode !== initialModeRef.current && !warnedRef.current) {
-      warnedRef.current = true;
+    if (currentMode !== initialModeRef.current && !modeWarnedRef.current) {
+      modeWarnedRef.current = true;
       console.warn(
         `StateProvider: switching from ${initialModeRef.current} to ${currentMode} mode is not supported.`,
       );
@@ -86,11 +106,7 @@ export function StateProvider({
 
   const prevInitialStateRef = useRef(initialState);
   const prevFlatRef = useRef<Record<string, unknown> | null>(
-    !externalStore && initialState && Object.keys(initialState).length > 0
-      ? flattenToPointers(initialState)
-      : !externalStore
-        ? {}
-        : null,
+    computeInitialFlat(!!externalStore, initialState),
   );
   useEffect(() => {
     if (externalStore) return;
@@ -126,33 +142,33 @@ export function StateProvider({
   const onStateChangeRef = useRef(onStateChange);
   onStateChangeRef.current = onStateChange;
 
-  const set = useCallback(
-    (path: string, value: unknown) => {
-      const prev = store.getSnapshot();
-      store.set(path, value);
-      if (!externalStore && store.getSnapshot() !== prev) {
-        onStateChangeRef.current?.(path, value);
-      }
-    },
-    [store, externalStore],
-  );
+  const set = useCallback((path: string, value: unknown) => {
+    const s = storeRef.current;
+    const prev = s.getSnapshot();
+    s.set(path, value);
+    if (!isControlledRef.current && s.getSnapshot() !== prev) {
+      onStateChangeRef.current?.([{ path, value }]);
+    }
+  }, []);
 
-  const update = useCallback(
-    (updates: Record<string, unknown>) => {
-      const prev = store.getSnapshot();
-      store.update(updates);
-      if (!externalStore && store.getSnapshot() !== prev) {
-        for (const [path, value] of Object.entries(updates)) {
-          if (getByPath(prev, path) !== value) {
-            onStateChangeRef.current?.(path, value);
-          }
+  const update = useCallback((updates: Record<string, unknown>) => {
+    const s = storeRef.current;
+    const prev = s.getSnapshot();
+    s.update(updates);
+    if (!isControlledRef.current && s.getSnapshot() !== prev) {
+      const changes: Array<{ path: string; value: unknown }> = [];
+      for (const [path, value] of Object.entries(updates)) {
+        if (getByPath(prev, path) !== value) {
+          changes.push({ path, value });
         }
       }
-    },
-    [store, externalStore],
-  );
+      if (changes.length > 0) {
+        onStateChangeRef.current?.(changes);
+      }
+    }
+  }, []);
 
-  const get = useCallback((path: string) => store.get(path), [store]);
+  const get = useCallback((path: string) => storeRef.current.get(path), []);
 
   const value = useMemo<StateContextValue>(
     () => ({ state, get, set, update }),

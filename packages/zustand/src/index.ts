@@ -69,10 +69,11 @@ export function zustandStateStore<S extends StateModel = StateModel>(
     subscribe(listener) {
       let prev = selector(store.getState());
       return store.subscribe(() => {
-        const next = selector(store.getState());
-        if (next !== prev) {
-          prev = next;
+        const current = selector(store.getState());
+        if (current !== prev) {
+          prev = current;
           listener();
+          prev = selector(store.getState());
         }
       });
     },

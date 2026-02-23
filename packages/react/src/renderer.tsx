@@ -415,7 +415,7 @@ export interface JSONUIProviderProps {
     (value: unknown, args?: Record<string, unknown>) => boolean
   >;
   /** Callback when state changes (uncontrolled mode) */
-  onStateChange?: (path: string, value: unknown) => void;
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   children: ReactNode;
 }
 
@@ -644,7 +644,7 @@ export interface CreateRendererProps {
   /** Action handler */
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
   /** Callback when state changes (uncontrolled mode) */
-  onStateChange?: (path: string, value: unknown) => void;
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   /** Whether the spec is currently loading/streaming */
   loading?: boolean;
   /** Fallback component for unknown types */

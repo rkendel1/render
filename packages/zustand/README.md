@@ -8,6 +8,9 @@ Zustand adapter for json-render's `StateStore` interface. Wire a Zustand vanilla
 npm install @json-render/zustand @json-render/core @json-render/react zustand
 ```
 
+> **Note:** This adapter requires Zustand v5+. Zustand v4 is not supported due to
+> breaking API changes in the vanilla store interface (`createStore`, `StoreApi`).
+
 ## Usage
 
 ```ts

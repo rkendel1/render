@@ -15,9 +15,19 @@ The `StateStore` interface lets you plug in your own state management (Redux, Zu
 
 New adapter packages: `@json-render/redux`, `@json-render/zustand`, `@json-render/jotai`.
 
-### Changed: `onStateChange` no longer fires for no-op updates
+### Changed: `onStateChange` signature updated (breaking)
 
-The `onStateChange` callback is now only called when a `set()` or `update()` call actually changes the state. Previously it fired unconditionally, even when the new value was identical to the current value. If your code relied on the callback firing for every `set()` call regardless of whether the value changed, you may need to adjust.
+The `onStateChange` callback now receives a single array of changed entries instead of being called once per path. This makes batch updates via `update()` easier to handle:
+
+```ts
+// Before
+onStateChange?: (path: string, value: unknown) => void
+
+// After
+onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void
+```
+
+The callback is only called when a `set()` or `update()` call actually changes the state. A `set()` call produces a single-element array; an `update()` call produces one array with all changed paths.
 
 ### New: `@json-render/react-pdf`
 

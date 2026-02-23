@@ -66,7 +66,7 @@ describe("useStateStore (uncontrolled)", () => {
     );
   });
 
-  it("calls onStateChange callback when state changes", () => {
+  it("calls onStateChange callback with changes array on set", () => {
     const onStateChange = vi.fn();
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <StateProvider initialState={{}} onStateChange={onStateChange}>
@@ -80,7 +80,29 @@ describe("useStateStore (uncontrolled)", () => {
       result.current.set("/count", 42);
     });
 
-    expect(onStateChange).toHaveBeenCalledWith("/count", 42);
+    expect(onStateChange).toHaveBeenCalledTimes(1);
+    expect(onStateChange).toHaveBeenCalledWith([{ path: "/count", value: 42 }]);
+  });
+
+  it("calls onStateChange callback once with all changes on update", () => {
+    const onStateChange = vi.fn();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <StateProvider initialState={{}} onStateChange={onStateChange}>
+        {children}
+      </StateProvider>
+    );
+
+    const { result } = renderHook(() => useStateStore(), { wrapper });
+
+    act(() => {
+      result.current.update({ "/name": "John", "/age": 30 });
+    });
+
+    expect(onStateChange).toHaveBeenCalledTimes(1);
+    expect(onStateChange).toHaveBeenCalledWith([
+      { path: "/name", value: "John" },
+      { path: "/age", value: 30 },
+    ]);
   });
 
   it("allows updating multiple values with update function", () => {

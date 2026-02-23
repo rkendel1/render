@@ -182,8 +182,10 @@ export function flattenToPointers(
   prefix = "",
   _depth = 0,
   _seen?: Set<object>,
+  _warned?: { current: boolean },
 ): Record<string, unknown> {
   const seen = _seen ?? new Set<object>();
+  const warned = _warned ?? { current: false };
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     const pointer = `${prefix}/${key}`;
@@ -203,11 +205,13 @@ export function flattenToPointers(
           pointer,
           _depth + 1,
           seen,
+          warned,
         ),
       );
     } else {
       if (
         process.env.NODE_ENV !== "production" &&
+        !warned.current &&
         _depth >= MAX_FLATTEN_DEPTH &&
         value !== null &&
         typeof value === "object" &&
@@ -215,8 +219,9 @@ export function flattenToPointers(
         Object.getPrototypeOf(value) === Object.prototype &&
         !seen.has(value as object)
       ) {
+        warned.current = true;
         console.warn(
-          `flattenToPointers: depth limit (${MAX_FLATTEN_DEPTH}) reached at "${pointer}". Nested state beyond this depth will be treated as a leaf value.`,
+          `flattenToPointers: depth limit (${MAX_FLATTEN_DEPTH}) reached. Nested state beyond this depth will be treated as a leaf value.`,
         );
       }
       result[pointer] = value;
