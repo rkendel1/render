@@ -1,3 +1,5 @@
+"use client";
+
 import React, {
   createContext,
   useContext,
@@ -11,10 +13,10 @@ import React, {
 import {
   getByPath,
   createStateStore,
-  flattenToPointers,
   type StateModel,
   type StateStore,
 } from "@json-render/core";
+import { flattenToPointers } from "@json-render/core/store-utils";
 
 /**
  * State context value
@@ -63,9 +65,10 @@ export function StateProvider({
   onStateChange,
   children,
 }: StateProviderProps) {
-  const internalStoreRef = useRef<StateStore | undefined>(
-    externalStore ? undefined : createStateStore(initialState),
-  );
+  const internalStoreRef = useRef<StateStore | undefined>(undefined);
+  if (!externalStore && !internalStoreRef.current) {
+    internalStoreRef.current = createStateStore(initialState);
+  }
 
   const store = externalStore ?? internalStoreRef.current!;
 
@@ -81,30 +84,29 @@ export function StateProvider({
     }
   }
 
-  const prevInitialJsonRef = useRef<string>(JSON.stringify(initialState));
-  const prevFlatRef = useRef<Record<string, unknown> | null>(null);
-  if (prevFlatRef.current === null) {
-    prevFlatRef.current = flattenToPointers(initialState);
-  }
+  const prevFlatRef = useRef<Record<string, unknown>>(
+    flattenToPointers(initialState),
+  );
   useEffect(() => {
     if (externalStore) return;
-    const json = JSON.stringify(initialState);
-    if (json !== prevInitialJsonRef.current) {
-      prevInitialJsonRef.current = json;
-      const nextFlat =
-        initialState && Object.keys(initialState).length > 0
-          ? flattenToPointers(initialState)
-          : {};
-      const updates: Record<string, unknown> = { ...nextFlat };
-      for (const key of Object.keys(prevFlatRef.current!)) {
-        if (!(key in nextFlat)) {
-          updates[key] = undefined;
-        }
+    const nextFlat =
+      initialState && Object.keys(initialState).length > 0
+        ? flattenToPointers(initialState)
+        : {};
+    const prevFlat = prevFlatRef.current;
+    const allKeys = new Set([
+      ...Object.keys(prevFlat),
+      ...Object.keys(nextFlat),
+    ]);
+    const updates: Record<string, unknown> = {};
+    for (const key of allKeys) {
+      if (prevFlat[key] !== nextFlat[key]) {
+        updates[key] = key in nextFlat ? nextFlat[key] : undefined;
       }
-      prevFlatRef.current = nextFlat;
-      if (Object.keys(updates).length > 0) {
-        store.update(updates);
-      }
+    }
+    prevFlatRef.current = nextFlat;
+    if (Object.keys(updates).length > 0) {
+      store.update(updates);
     }
   }, [externalStore, initialState, store]);
 

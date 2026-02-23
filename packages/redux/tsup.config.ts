@@ -6,5 +6,10 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  external: ["@json-render/core", "redux", "@reduxjs/toolkit"],
+  external: [
+    "@json-render/core",
+    "@json-render/core/store-utils",
+    "redux",
+    "@reduxjs/toolkit",
+  ],
 });

@@ -55,7 +55,7 @@ Creates a `StateStore` backed by a Redux store.
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
 | `store` | `Store` | Yes | The Redux store instance |
-| `selector` | `(state) => StateModel` | No | Select the json-render slice from the Redux state tree. Defaults to the entire state. |
+| `selector` | `(state) => StateModel` | Yes | Select the json-render slice from the Redux state tree. For a simple store where the entire state is the model, use `(s) => s`. |
 | `dispatch` | `(nextState, store) => void` | Yes | Dispatch an action that replaces the selected slice with the next state |
 
 The `dispatch` callback receives the full next state model and the Redux store, so you can dispatch any action shape your reducers expect.

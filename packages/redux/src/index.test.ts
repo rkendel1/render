@@ -179,7 +179,7 @@ describe("reduxStateStore", () => {
     expect(store.getSnapshot()).toBe(snap1);
   });
 
-  it("works without a selector (defaults to entire state)", () => {
+  it("works with identity selector (entire state is the model)", () => {
     const slice = createSlice({
       name: "root",
       initialState: { x: 1 } as Record<string, unknown>,
@@ -194,6 +194,7 @@ describe("reduxStateStore", () => {
 
     const store = reduxStateStore({
       store: reduxStore,
+      selector: (s) => s as Record<string, unknown>,
       dispatch: (next, s) => s.dispatch(slice.actions.replace(next)),
     });
 

@@ -108,9 +108,14 @@ export function createStateStore(initialState: StateModel = {}): StateStore {
   };
 }
 
+const MAX_FLATTEN_DEPTH = 20;
+
 /**
  * Recursively flatten a plain object into a `Record<string, unknown>` keyed by
  * JSON Pointer paths. Only leaf values (non-plain-object) appear in the output.
+ *
+ * Includes circular reference protection and a depth cap to prevent stack
+ * overflow on pathological inputs.
  *
  * ```ts
  * flattenToPointers({ user: { name: "Alice" }, count: 1 })
@@ -120,19 +125,30 @@ export function createStateStore(initialState: StateModel = {}): StateStore {
 export function flattenToPointers(
   obj: Record<string, unknown>,
   prefix = "",
+  _depth = 0,
+  _seen?: Set<object>,
 ): Record<string, unknown> {
+  const seen = _seen ?? new Set<object>();
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     const pointer = `${prefix}/${key}`;
     if (
+      _depth < MAX_FLATTEN_DEPTH &&
       value !== null &&
       typeof value === "object" &&
       !Array.isArray(value) &&
-      Object.getPrototypeOf(value) === Object.prototype
+      Object.getPrototypeOf(value) === Object.prototype &&
+      !seen.has(value)
     ) {
+      seen.add(value);
       Object.assign(
         result,
-        flattenToPointers(value as Record<string, unknown>, pointer),
+        flattenToPointers(
+          value as Record<string, unknown>,
+          pointer,
+          _depth + 1,
+          seen,
+        ),
       );
     } else {
       result[pointer] = value;

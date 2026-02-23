@@ -1,9 +1,5 @@
-import {
-  getByPath,
-  immutableSetByPath,
-  type StateModel,
-  type StateStore,
-} from "@json-render/core";
+import { getByPath, type StateModel, type StateStore } from "@json-render/core";
+import { immutableSetByPath } from "@json-render/core/store-utils";
 import type { WritableAtom } from "jotai";
 import { createStore as createJotaiStore } from "jotai/vanilla";
 

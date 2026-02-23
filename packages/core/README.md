@@ -249,6 +249,21 @@ const unsubscribe = store.subscribe(() => {
 
 Pass the store to `StateProvider` in any renderer package (`@json-render/react`, `@json-render/react-native`, `@json-render/react-pdf`) for controlled mode.
 
+### Store Utilities (for adapter authors)
+
+Available via `@json-render/core/store-utils`:
+
+| Export | Purpose |
+|--------|---------|
+| `immutableSetByPath(root, path, value)` | Immutably set a value at a JSON Pointer path with structural sharing |
+| `flattenToPointers(obj)` | Flatten a nested object into JSON Pointer keyed entries |
+
+```typescript
+import { immutableSetByPath, flattenToPointers } from "@json-render/core/store-utils";
+```
+
+These utilities are used internally by `createStateStore` and the official adapter packages (`@json-render/redux`, `@json-render/zustand`, `@json-render/jotai`).
+
 ### Types
 
 | Export | Purpose |

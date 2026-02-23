@@ -185,4 +185,29 @@ describe("flattenToPointers", () => {
       "/tags": ["a", "b"],
     });
   });
+
+  it("handles circular references without stack overflow", () => {
+    const obj: Record<string, unknown> = { name: "root" };
+    obj.self = obj;
+
+    const result = flattenToPointers(obj);
+
+    expect(result["/name"]).toBe("root");
+    expect(result["/self/name"]).toBe("root");
+    expect(result["/self/self"]).toBe(obj);
+  });
+
+  it("caps recursion at depth limit", () => {
+    let current: Record<string, unknown> = { leaf: true };
+    for (let i = 0; i < 25; i++) {
+      current = { nested: current };
+    }
+
+    const result = flattenToPointers(current);
+
+    const keys = Object.keys(result);
+    expect(keys.length).toBe(1);
+    const key = keys[0]!;
+    expect(key.split("/").length).toBeLessThanOrEqual(22);
+  });
 });

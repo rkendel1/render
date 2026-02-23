@@ -34,6 +34,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./store-utils": {
+      "types": "./dist/store-utils.d.ts",
+      "import": "./dist/store-utils.mjs",
+      "require": "./dist/store-utils.js"
     }
   },
   "files": [

@@ -3,6 +3,5 @@
   "extends": "./base.json",
   "compilerOptions": {
     "jsx": "react-jsx"
-  },
-  "files": ["env.d.ts"]
+  }
 }

@@ -1,9 +1,5 @@
-import {
-  getByPath,
-  immutableSetByPath,
-  type StateModel,
-  type StateStore,
-} from "@json-render/core";
+import { getByPath, type StateModel, type StateStore } from "@json-render/core";
+import { immutableSetByPath } from "@json-render/core/store-utils";
 import type { Store, Action, UnknownAction } from "redux";
 
 export type { StateStore } from "@json-render/core";
@@ -12,16 +8,17 @@ export type { StateStore } from "@json-render/core";
  * Options for {@link reduxStateStore}.
  */
 export interface ReduxStateStoreOptions<
-  S extends StateModel = StateModel,
+  S = Record<string, unknown>,
   A extends Action = UnknownAction,
 > {
   /** The Redux store instance. */
   store: Store<S, A>;
   /**
    * Select the json-render state slice from the Redux state tree.
-   * Defaults to `(state) => state` (the entire tree is the state model).
+   * For a simple store where the entire state is the model, use
+   * `selector: (s) => s`.
    */
-  selector?: (state: S) => StateModel;
+  selector: (state: S) => StateModel;
   /**
    * Dispatch a state change back to the Redux store.
    *
@@ -67,10 +64,10 @@ export interface ReduxStateStoreOptions<
  * ```
  */
 export function reduxStateStore<
-  S extends StateModel = StateModel,
+  S = Record<string, unknown>,
   A extends Action = UnknownAction,
 >(options: ReduxStateStoreOptions<S, A>): StateStore {
-  const { store, selector = (s: S) => s as StateModel, dispatch } = options;
+  const { store, selector, dispatch } = options;
 
   function getSnapshot(): StateModel {
     return selector(store.getState());

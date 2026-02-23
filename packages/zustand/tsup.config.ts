@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  external: ["@json-render/core", "zustand"],
+  external: ["@json-render/core", "@json-render/core/store-utils", "zustand"],
 });
