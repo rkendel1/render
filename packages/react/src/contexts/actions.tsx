@@ -239,6 +239,10 @@ export function ActionProvider({
 
       // Built-in: validateForm triggers validateAll from the ValidationProvider
       // and writes the result to a state path (default: /formValidation).
+      // IMPORTANT: validateAll() is synchronous — it runs all registered field
+      // validations and returns immediately. This guarantees that the next action
+      // in a sequential list (e.g. [validateForm, submitForm]) can read the
+      // validation result from state without awaiting an extra tick.
       if (resolved.action === "validateForm") {
         const validateAll = validateAllRef?.current;
         if (validateAll) {

@@ -187,11 +187,11 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
    */
   lessThan: (value: unknown, args?: Record<string, unknown>) => {
     const other = args?.other;
+    if (value === "" || other === "") return false;
     if (typeof value === "number" && typeof other === "number")
       return value < other;
     if (typeof value === "string" && typeof other === "string")
       return value < other;
-    if (value === "" || other === "") return false;
     const numVal = Number(value);
     const numOther = Number(other);
     if (!isNaN(numVal) && !isNaN(numOther)) return numVal < numOther;
@@ -205,11 +205,11 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
    */
   greaterThan: (value: unknown, args?: Record<string, unknown>) => {
     const other = args?.other;
+    if (value === "" || other === "") return false;
     if (typeof value === "number" && typeof other === "number")
       return value > other;
     if (typeof value === "string" && typeof other === "string")
       return value > other;
-    if (value === "" || other === "") return false;
     const numVal = Number(value);
     const numOther = Number(other);
     if (!isNaN(numVal) && !isNaN(numOther)) return numVal > numOther;
@@ -383,6 +383,11 @@ export const check = {
 
   url: (message = "Invalid URL"): ValidationCheck => ({
     type: "url",
+    message,
+  }),
+
+  numeric: (message = "Must be a number"): ValidationCheck => ({
+    type: "numeric",
     message,
   }),
 

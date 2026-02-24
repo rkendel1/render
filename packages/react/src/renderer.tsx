@@ -247,21 +247,25 @@ const ElementRenderer = React.memo(function ElementRenderer({
 
   // Watch effect: fire actions when watched state paths change.
   // Must be called before any early return to satisfy Rules of Hooks.
+  //
+  // Two refs serve distinct roles:
+  // - `stableWatchRef` (useMemo): holds the last emitted values object so we
+  //   can return the same reference when watched values haven't changed,
+  //   preventing the downstream useEffect from firing on unrelated state updates.
+  // - `prevWatchValues` (useEffect): tracks the previous watched-values snapshot
+  //   for change detection. Starts as `null` to skip the initial mount.
   const watchConfig = element.watch;
   const { state: watchState } = useStateStore();
   const prevWatchValues = useRef<Record<string, unknown> | null>(null);
-  const prevWatchRef = useRef<Record<string, unknown> | undefined>(undefined);
+  const stableWatchRef = useRef<Record<string, unknown> | undefined>(undefined);
 
-  // Produce a stable object reference — only creates a new object when one of
-  // the watched values actually changed (shallow compare).  This prevents the
-  // downstream useEffect from firing on every unrelated state change.
   const watchedValues = useMemo(() => {
     if (!watchConfig) return undefined;
     const values: Record<string, unknown> = {};
     for (const path of Object.keys(watchConfig)) {
       values[path] = getByPath(watchState, path);
     }
-    const prev = prevWatchRef.current;
+    const prev = stableWatchRef.current;
     if (prev) {
       const keys = Object.keys(values);
       if (
@@ -271,7 +275,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
         return prev;
       }
     }
-    prevWatchRef.current = values;
+    stableWatchRef.current = values;
     return values;
   }, [watchConfig, watchState]);
 

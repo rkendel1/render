@@ -248,6 +248,18 @@ describe("builtInValidationFunctions", () => {
     it("returns false when other is empty string", () => {
       expect(builtInValidationFunctions.lessThan(3, { other: "" })).toBe(false);
     });
+
+    it("returns false when value is empty string vs non-empty string", () => {
+      expect(builtInValidationFunctions.lessThan("", { other: "abc" })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when other is empty string vs non-empty string", () => {
+      expect(builtInValidationFunctions.lessThan("abc", { other: "" })).toBe(
+        false,
+      );
+    });
   });
 
   describe("greaterThan", () => {
@@ -305,6 +317,18 @@ describe("builtInValidationFunctions", () => {
 
     it("returns false when other is empty string", () => {
       expect(builtInValidationFunctions.greaterThan(3, { other: "" })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when value is empty string vs non-empty string", () => {
+      expect(builtInValidationFunctions.greaterThan("", { other: "abc" })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when other is empty string vs non-empty string", () => {
+      expect(builtInValidationFunctions.greaterThan("abc", { other: "" })).toBe(
         false,
       );
     });
@@ -548,6 +572,22 @@ describe("check helper", () => {
 
       expect(c.type).toBe("url");
       expect(c.message).toBe("Must be a URL");
+    });
+  });
+
+  describe("numeric", () => {
+    it("creates numeric check with default message", () => {
+      const c = check.numeric();
+
+      expect(c.type).toBe("numeric");
+      expect(c.message).toBe("Must be a number");
+    });
+
+    it("creates numeric check with custom message", () => {
+      const c = check.numeric("Numbers only");
+
+      expect(c.type).toBe("numeric");
+      expect(c.message).toBe("Numbers only");
     });
   });
 

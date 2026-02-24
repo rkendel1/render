@@ -83,6 +83,7 @@ export {
   resolveElementProps,
   resolveBindings,
   resolveActionParam,
+  _resetWarnedComputedFns,
 } from "./props";
 
 // Actions

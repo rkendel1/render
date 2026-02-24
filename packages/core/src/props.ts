@@ -151,6 +151,11 @@ function isTemplateExpression(value: unknown): value is { $template: string } {
 const WARNED_COMPUTED_MAX = 100;
 const warnedComputedFns = new Set<string>();
 
+/** @internal Test-only: clear the deduplication set for $computed warnings. */
+export function _resetWarnedComputedFns(): void {
+  warnedComputedFns.clear();
+}
+
 // =============================================================================
 // Prop Expression Resolution
 // =============================================================================
