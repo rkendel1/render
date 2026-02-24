@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   resolvePropValue,
   resolveElementProps,
@@ -548,6 +548,18 @@ describe("$computed expressions", () => {
     expect(resolvePropValue({ $computed: "any" }, ctx)).toBeUndefined();
   });
 
+  it("deduplicates warnings for the same unknown function", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const ctx: PropResolutionContext = { stateModel: {}, functions: {} };
+    resolvePropValue({ $computed: "dedupTest" }, ctx);
+    resolvePropValue({ $computed: "dedupTest" }, ctx);
+    const calls = warnSpy.mock.calls.filter((c) =>
+      String(c[0]).includes("dedupTest"),
+    );
+    expect(calls).toHaveLength(1);
+    warnSpy.mockRestore();
+  });
+
   it("resolves nested expressions in args", () => {
     const ctx: PropResolutionContext = {
       stateModel: { active: true, values: { a: 10, b: 20 } },
@@ -619,5 +631,17 @@ describe("$template expressions", () => {
     expect(resolvePropValue({ $template: "${/num} is ${/bool}" }, ctx)).toBe(
       "42 is true",
     );
+  });
+
+  it("warns when path does not start with /", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const ctx: PropResolutionContext = { stateModel: { name: "Bob" } };
+    const result = resolvePropValue({ $template: "Hi ${name}!" }, ctx);
+    // Still resolves (getByPath tolerates non-pointer paths) but emits a warning
+    expect(result).toBe("Hi Bob!");
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('$template path "name"'),
+    );
+    warnSpy.mockRestore();
   });
 });

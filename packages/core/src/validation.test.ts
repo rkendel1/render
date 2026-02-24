@@ -240,6 +240,14 @@ describe("builtInValidationFunctions", () => {
         }),
       ).toBe(false);
     });
+
+    it("returns false when value is empty string", () => {
+      expect(builtInValidationFunctions.lessThan("", { other: 5 })).toBe(false);
+    });
+
+    it("returns false when other is empty string", () => {
+      expect(builtInValidationFunctions.lessThan(3, { other: "" })).toBe(false);
+    });
   });
 
   describe("greaterThan", () => {
@@ -287,6 +295,18 @@ describe("builtInValidationFunctions", () => {
           other: "2026-06-15",
         }),
       ).toBe(false);
+    });
+
+    it("returns false when value is empty string", () => {
+      expect(builtInValidationFunctions.greaterThan("", { other: 5 })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when other is empty string", () => {
+      expect(builtInValidationFunctions.greaterThan(3, { other: "" })).toBe(
+        false,
+      );
     });
   });
 

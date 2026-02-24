@@ -191,6 +191,7 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
       return value < other;
     if (typeof value === "string" && typeof other === "string")
       return value < other;
+    if (value === "" || other === "") return false;
     const numVal = Number(value);
     const numOther = Number(other);
     if (!isNaN(numVal) && !isNaN(numOther)) return numVal < numOther;
@@ -208,6 +209,7 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
       return value > other;
     if (typeof value === "string" && typeof other === "string")
       return value > other;
+    if (value === "" || other === "") return false;
     const numVal = Number(value);
     const numOther = Number(other);
     if (!isNaN(numVal) && !isNaN(numOther)) return numVal > numOther;

@@ -250,15 +250,28 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const watchConfig = element.watch;
   const { state: watchState } = useStateStore();
   const prevWatchValues = useRef<Record<string, unknown> | null>(null);
+  const prevWatchRef = useRef<Record<string, unknown> | undefined>(undefined);
 
-  // Select only the watched path values so the effect doesn't re-run on
-  // every unrelated state change.
+  // Produce a stable object reference — only creates a new object when one of
+  // the watched values actually changed (shallow compare).  This prevents the
+  // downstream useEffect from firing on every unrelated state change.
   const watchedValues = useMemo(() => {
     if (!watchConfig) return undefined;
     const values: Record<string, unknown> = {};
     for (const path of Object.keys(watchConfig)) {
       values[path] = getByPath(watchState, path);
     }
+    const prev = prevWatchRef.current;
+    if (prev) {
+      const keys = Object.keys(values);
+      if (
+        keys.length === Object.keys(prev).length &&
+        keys.every((k) => values[k] === prev[k])
+      ) {
+        return prev;
+      }
+    }
+    prevWatchRef.current = values;
     return values;
   }, [watchConfig, watchState]);
 
@@ -296,7 +309,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
           }
         }
       }
-    })();
+    })().catch(console.error);
   }, [watchConfig, watchedValues, execute, fullCtx, getSnapshot]);
 
   // Don't render if not visible

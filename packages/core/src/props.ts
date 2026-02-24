@@ -145,8 +145,9 @@ function isTemplateExpression(value: unknown): value is { $template: string } {
 }
 
 // Module-level set to avoid spamming console.warn on every render for the same
-// unknown $computed function name. Capped to prevent unbounded growth in
-// long-lived processes (e.g. SSR).
+// unknown $computed function name. Once the set reaches WARNED_COMPUTED_MAX,
+// new names are no longer deduplicated (warnings still fire) but the set stops
+// growing, preventing unbounded memory use in long-lived processes (e.g. SSR).
 const WARNED_COMPUTED_MAX = 100;
 const warnedComputedFns = new Set<string>();
 
@@ -238,9 +239,8 @@ export function resolvePropValue(
     const fn = ctx.functions?.[value.$computed];
     if (!fn) {
       if (!warnedComputedFns.has(value.$computed)) {
-        warnedComputedFns.add(value.$computed);
-        if (warnedComputedFns.size > WARNED_COMPUTED_MAX) {
-          warnedComputedFns.clear();
+        if (warnedComputedFns.size < WARNED_COMPUTED_MAX) {
+          warnedComputedFns.add(value.$computed);
         }
         console.warn(`Unknown $computed function: "${value.$computed}"`);
       }
@@ -258,6 +258,11 @@ export function resolvePropValue(
   // $template: interpolate ${/path} references with state values
   if (isTemplateExpression(value)) {
     return value.$template.replace(/\$\{([^}]+)\}/g, (_match, path: string) => {
+      if (!path.startsWith("/")) {
+        console.warn(
+          `$template path "${path}" should be a JSON Pointer starting with "/". Did you mean "/${path}"?`,
+        );
+      }
       const resolved = getByPath(ctx.stateModel, path);
       return resolved != null ? String(resolved) : "";
     });
