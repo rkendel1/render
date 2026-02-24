@@ -271,18 +271,25 @@ export function resolvePropValue(
 
   // $template: interpolate ${/path} references with state values
   if (isTemplateExpression(value)) {
-    return value.$template.replace(/\$\{([^}]+)\}/g, (_match, path: string) => {
-      if (!path.startsWith("/") && !warnedTemplatePaths.has(path)) {
-        if (warnedTemplatePaths.size < WARNED_TEMPLATE_MAX) {
-          warnedTemplatePaths.add(path);
+    return value.$template.replace(
+      /\$\{([^}]+)\}/g,
+      (_match, rawPath: string) => {
+        let path = rawPath;
+        if (!path.startsWith("/")) {
+          if (!warnedTemplatePaths.has(path)) {
+            if (warnedTemplatePaths.size < WARNED_TEMPLATE_MAX) {
+              warnedTemplatePaths.add(path);
+            }
+            console.warn(
+              `$template path "${path}" should be a JSON Pointer starting with "/". Automatically resolving as "/${path}".`,
+            );
+          }
+          path = "/" + path;
         }
-        console.warn(
-          `$template path "${path}" should be a JSON Pointer starting with "/". Did you mean "/${path}"?`,
-        );
-      }
-      const resolved = getByPath(ctx.stateModel, path);
-      return resolved != null ? String(resolved) : "";
-    });
+        const resolved = getByPath(ctx.stateModel, path);
+        return resolved != null ? String(resolved) : "";
+      },
+    );
   }
 
   // Arrays: resolve each element

@@ -254,6 +254,8 @@ Use the built-in `validateForm` action to validate all registered fields at once
 
 The `validateForm` action runs `validateAll()` and writes `{ valid: boolean }` to the specified state path (defaults to `/formValidation`). Your submit handler can then check `{ "$state": "/formResult/valid" }` to decide whether to proceed.
 
+> **Note:** Actions in a list execute sequentially, but `submitForm` does not automatically gate on validation. Guard submission with a `$cond` visibility condition on the button or check `{ "$state": "/formResult/valid" }` inside your action handler to skip submission when the form is invalid.
+
 ## Next
 
 - [Computed Values](/docs/computed-values) — derive dynamic prop values

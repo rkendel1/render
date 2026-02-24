@@ -143,11 +143,11 @@ class ElementErrorBoundary extends React.Component<
 // FunctionsContext – provides $computed functions to the element tree
 // ---------------------------------------------------------------------------
 
-const FunctionsContext = React.createContext<
-  Record<string, ComputedFunction> | undefined
->(undefined);
+const FunctionsContext = React.createContext<Record<string, ComputedFunction>>(
+  {},
+);
 
-function useFunctions(): Record<string, ComputedFunction> | undefined {
+function useFunctions(): Record<string, ComputedFunction> {
   return React.useContext(FunctionsContext);
 }
 
@@ -173,7 +173,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const repeatScope = useRepeatScope();
   const { ctx } = useVisibility();
   const { execute } = useActions();
-  const { getSnapshot } = useStateStore();
+  const { getSnapshot, state: watchState } = useStateStore();
   const functions = useFunctions();
 
   // Build context with repeat scope and $computed functions
@@ -186,9 +186,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
           repeatBasePath: repeatScope.basePath,
         }
       : { ...ctx };
-    if (functions) {
-      base.functions = functions;
-    }
+    base.functions = functions;
     return base;
   }, [ctx, repeatScope, functions]);
 
@@ -255,7 +253,6 @@ const ElementRenderer = React.memo(function ElementRenderer({
   // - `prevWatchValues` (useEffect): tracks the previous watched-values snapshot
   //   for change detection. Starts as `null` to skip the initial mount.
   const watchConfig = element.watch;
-  const { state: watchState } = useStateStore();
   const prevWatchValues = useRef<Record<string, unknown> | null>(null);
   const stableWatchRef = useRef<Record<string, unknown> | undefined>(undefined);
 
@@ -302,6 +299,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
             if (cancelled) break;
             if (!b.params) {
               await execute(b);
+              if (cancelled) break;
               continue;
             }
             const liveCtx: PropResolutionContext = {
@@ -313,6 +311,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
               resolved[key] = resolveActionParam(val, liveCtx);
             }
             await execute({ ...b, params: resolved });
+            if (cancelled) break;
           }
         }
       }
@@ -554,7 +553,7 @@ export function JSONUIProvider({
             customFunctions={validationFunctions}
             validateAllRef={validateAllRef}
           >
-            <FunctionsContext.Provider value={functions}>
+            <FunctionsContext.Provider value={functions ?? {}}>
               {children}
               <ConfirmationDialogManager />
             </FunctionsContext.Provider>
@@ -850,7 +849,7 @@ export function createRenderer<
             validateAllRef={validateAllRef}
           >
             <ValidationProvider validateAllRef={validateAllRef}>
-              <FunctionsContext.Provider value={functions}>
+              <FunctionsContext.Provider value={functions ?? {}}>
                 <Renderer
                   spec={spec}
                   registry={registry}

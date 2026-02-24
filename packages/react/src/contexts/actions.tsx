@@ -245,12 +245,17 @@ export function ActionProvider({
       // validation result from state without awaiting an extra tick.
       if (resolved.action === "validateForm") {
         const validateAll = validateAllRef?.current;
-        if (validateAll) {
-          const valid = validateAll();
-          const statePath =
-            (resolved.params?.statePath as string) || "/formValidation";
-          set(statePath, { valid });
+        if (!validateAll) {
+          console.warn(
+            "validateForm action was dispatched but no ValidationProvider is connected. " +
+              "Ensure ValidationProvider is rendered inside the provider tree.",
+          );
+          return;
         }
+        const valid = validateAll();
+        const statePath =
+          (resolved.params?.statePath as string) || "/formValidation";
+        set(statePath, { valid });
         return;
       }
 
