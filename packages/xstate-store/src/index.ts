@@ -5,7 +5,7 @@ import type { Atom } from "@xstate/store";
 export type { StateStore } from "@json-render/core";
 
 /**
- * Options for {@link xstateStore}.
+ * Options for {@link xstateStoreStateStore}.
  */
 export interface XstateStoreStateStoreOptions {
   /** An `@xstate/store` atom (created with `createAtom`). */
@@ -27,7 +27,9 @@ export interface XstateStoreStateStoreOptions {
  * <StateProvider store={store}>...</StateProvider>
  * ```
  */
-export function xstateStore(options: XstateStoreStateStoreOptions): StateStore {
+export function xstateStoreStateStore(
+  options: XstateStoreStateStoreOptions,
+): StateStore {
   const { atom } = options;
 
   return createStoreAdapter({
