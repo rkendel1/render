@@ -90,6 +90,79 @@ function SelectField({
   return <span data-testid="select-value">{boundValue ?? ""}</span>;
 }
 
+/**
+ * Select stub that mirrors the real shadcn Select validation behavior:
+ * calls setValue then validate() synchronously in onValueChange.
+ */
+function ValidatedSelect({
+  element,
+  bindings,
+  emit,
+}: ComponentRenderProps<{
+  label?: string;
+  name?: string;
+  options?: string[];
+  placeholder?: string;
+  value?: string;
+  checks?: Array<{
+    type: string;
+    message: string;
+    args?: Record<string, unknown>;
+  }>;
+  validateOn?: "change" | "blur" | "submit";
+}>) {
+  const props = element.props;
+  const [boundValue, setBoundValue] = useBoundProp<string>(
+    props.value as string | undefined,
+    bindings?.value,
+  );
+  const [localValue, setLocalValue] = useState("");
+  const isBound = !!bindings?.value;
+  const value = isBound ? (boundValue ?? "") : localValue;
+  const setValue = isBound ? setBoundValue : setLocalValue;
+  const validateOn = props.validateOn ?? "change";
+
+  const hasValidation = !!(bindings?.value && props.checks?.length);
+  const config = useMemo(
+    () =>
+      hasValidation ? { checks: props.checks ?? [], validateOn } : undefined,
+    [hasValidation, props.checks, validateOn],
+  );
+  const { errors, validate } = useFieldValidation(
+    bindings?.value ?? "",
+    config,
+  );
+
+  const options = props.options ?? [];
+
+  return (
+    <div>
+      {props.label && <label>{props.label}</label>}
+      <select
+        data-testid={`select-${props.name ?? "default"}`}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          if (hasValidation && validateOn === "change") validate();
+          emit("change");
+        }}
+      >
+        <option value="">{props.placeholder ?? "Select..."}</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+      {errors.length > 0 && (
+        <span data-testid={`select-error-${props.name ?? "default"}`}>
+          {errors[0]}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function StateProbe() {
   const { state } = useStateStore();
   return <pre data-testid="state-probe">{JSON.stringify(state)}</pre>;
@@ -579,5 +652,119 @@ describe("validateForm action", () => {
 
     const state = getState();
     expect(state.formValidation).toEqual({ valid: true });
+  });
+});
+
+// =============================================================================
+// Select validate-on-change timing (#151)
+// =============================================================================
+
+describe("Select validate-on-change sees the new value, not the stale value", () => {
+  const Stack = ({
+    children,
+  }: ComponentRenderProps<Record<string, unknown>>) => <div>{children}</div>;
+
+  const regWithSelect = {
+    ...registry,
+    Stack,
+    Select: ValidatedSelect,
+  };
+
+  it("does not show 'required' error when selecting the first value", async () => {
+    const spec: Spec = {
+      state: { form: { country: "" } },
+      root: "wrapper",
+      elements: {
+        wrapper: {
+          type: "Stack",
+          props: {},
+          children: ["countrySelect"],
+        },
+        countrySelect: {
+          type: "Select",
+          props: {
+            label: "Country",
+            name: "country",
+            options: ["US", "Canada", "UK"],
+            placeholder: "Choose a country",
+            value: { $bindState: "/form/country" },
+            checks: [{ type: "required", message: "Country is required" }],
+            validateOn: "change",
+          },
+          children: [],
+        },
+      },
+    };
+
+    render(
+      <JSONUIProvider registry={regWithSelect} initialState={spec.state}>
+        <Renderer spec={spec} registry={regWithSelect} />
+        <StateProbe />
+      </JSONUIProvider>,
+    );
+
+    // Select "US" for the first time (from empty)
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("select-country"), {
+        target: { value: "US" },
+      });
+    });
+
+    // The value should be set in state
+    const state = getState();
+    expect((state.form as Record<string, unknown>).country).toBe("US");
+
+    // No validation error should appear -- "US" is non-empty
+    expect(screen.queryByTestId("select-error-country")).toBeNull();
+  });
+
+  it("does not show 'required' error when selecting the first city after country change resets it", async () => {
+    const spec: Spec = {
+      state: {
+        form: { country: "US", city: "" },
+        availableCities: ["New York", "Chicago"],
+      },
+      root: "wrapper",
+      elements: {
+        wrapper: {
+          type: "Stack",
+          props: {},
+          children: ["citySelect"],
+        },
+        citySelect: {
+          type: "Select",
+          props: {
+            label: "City",
+            name: "city",
+            options: ["New York", "Chicago"],
+            placeholder: "Select a city",
+            value: { $bindState: "/form/city" },
+            checks: [{ type: "required", message: "City is required" }],
+            validateOn: "change",
+          },
+          children: [],
+        },
+      },
+    };
+
+    render(
+      <JSONUIProvider registry={regWithSelect} initialState={spec.state}>
+        <Renderer spec={spec} registry={regWithSelect} />
+        <StateProbe />
+      </JSONUIProvider>,
+    );
+
+    // Select "New York" for the first time (from empty)
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("select-city"), {
+        target: { value: "New York" },
+      });
+    });
+
+    const state = getState();
+    expect((state.form as Record<string, unknown>).city).toBe("New York");
+
+    // No validation error should appear
+    expect(screen.queryByTestId("select-error-city")).toBeNull();
   });
 });
