@@ -600,7 +600,7 @@ type DefineRegistryOptions<C extends Catalog> = {
  * ```
  */
 export function defineRegistry<C extends Catalog>(
-  _catalog: C,
+  catalog: C,
   options: DefineRegistryOptions<C>,
 ): DefineRegistryResult {
   // Build component registry
