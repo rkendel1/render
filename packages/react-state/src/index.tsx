@@ -30,6 +30,8 @@ export interface StateContextValue {
   set: (path: string, value: unknown) => void;
   /** Update multiple values at once */
   update: (updates: Record<string, unknown>) => void;
+  /** Return the live state snapshot from the underlying store (not the React render snapshot). */
+  getSnapshot: () => StateModel;
 }
 
 const StateContext = createContext<StateContextValue | null>(null);
@@ -170,9 +172,11 @@ export function StateProvider({
 
   const get = useCallback((path: string) => storeRef.current.get(path), []);
 
+  const getSnapshot = useCallback(() => storeRef.current.getSnapshot(), []);
+
   const value = useMemo<StateContextValue>(
-    () => ({ state, get, set, update }),
-    [state, get, set, update],
+    () => ({ state, get, set, update, getSnapshot }),
+    [state, get, set, update, getSnapshot],
   );
 
   return (

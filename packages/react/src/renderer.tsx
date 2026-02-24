@@ -158,6 +158,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const repeatScope = useRepeatScope();
   const { ctx } = useVisibility();
   const { execute } = useActions();
+  const { getSnapshot } = useStateStore();
 
   // Build context with repeat scope (used for both visibility and props)
   const fullCtx: PropResolutionContext = useMemo(
@@ -183,25 +184,29 @@ const ElementRenderer = React.memo(function ElementRenderer({
   // Must be called before any early return to satisfy Rules of Hooks.
   const onBindings = element.on;
   const emit = useCallback(
-    (eventName: string) => {
+    async (eventName: string) => {
       const binding = onBindings?.[eventName];
       if (!binding) return;
       const actionBindings = Array.isArray(binding) ? binding : [binding];
       for (const b of actionBindings) {
         if (!b.params) {
-          execute(b);
+          await execute(b);
           continue;
         }
-        // Resolve all action params via resolveActionParam which handles
-        // $item (→ absolute state path), $index (→ number), $state, $cond, and literals.
+        // Build a fresh context with live store state so that $state
+        // references in later actions see mutations from earlier ones.
+        const liveCtx: PropResolutionContext = {
+          ...fullCtx,
+          stateModel: getSnapshot(),
+        };
         const resolved: Record<string, unknown> = {};
         for (const [key, val] of Object.entries(b.params)) {
-          resolved[key] = resolveActionParam(val, fullCtx);
+          resolved[key] = resolveActionParam(val, liveCtx);
         }
-        execute({ ...b, params: resolved });
+        await execute({ ...b, params: resolved });
       }
     },
-    [onBindings, execute, fullCtx],
+    [onBindings, execute, fullCtx, getSnapshot],
   );
 
   // Create on() function that returns an EventHandle with metadata for a specific event.

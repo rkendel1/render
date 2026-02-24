@@ -123,6 +123,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const repeatScope = useRepeatScope();
   const { ctx } = useVisibility();
   const { execute } = useActions();
+  const { getSnapshot } = useStateStore();
 
   const fullCtx: PropResolutionContext = useMemo(
     () =>
@@ -144,23 +145,29 @@ const ElementRenderer = React.memo(function ElementRenderer({
 
   const onBindings = element.on;
   const emit = useCallback(
-    (eventName: string) => {
+    async (eventName: string) => {
       const binding = onBindings?.[eventName];
       if (!binding) return;
       const actionBindings = Array.isArray(binding) ? binding : [binding];
       for (const b of actionBindings) {
         if (!b.params) {
-          execute(b);
+          await execute(b);
           continue;
         }
+        // Build a fresh context with live store state so that $state
+        // references in later actions see mutations from earlier ones.
+        const liveCtx: PropResolutionContext = {
+          ...fullCtx,
+          stateModel: getSnapshot(),
+        };
         const resolved: Record<string, unknown> = {};
         for (const [key, val] of Object.entries(b.params)) {
-          resolved[key] = resolveActionParam(val, fullCtx);
+          resolved[key] = resolveActionParam(val, liveCtx);
         }
-        execute({ ...b, params: resolved });
+        await execute({ ...b, params: resolved });
       }
     },
-    [onBindings, execute, fullCtx],
+    [onBindings, execute, fullCtx, getSnapshot],
   );
 
   if (!isVisible) {
