@@ -14,6 +14,8 @@ npm install @json-render/core @json-render/react-native
 npm install @json-render/core @json-render/remotion
 # or for PDF documents
 npm install @json-render/core @json-render/react-pdf
+# or for HTML email
+npm install @json-render/core @json-render/react-email @react-email/components @react-email/render
 ```
 
 ## Why json-render?
@@ -114,6 +116,7 @@ function Dashboard({ spec }) {
 | `@json-render/react-native` | React Native renderer with standard mobile components |
 | `@json-render/remotion` | Remotion video renderer, timeline schema |
 | `@json-render/react-pdf` | React PDF renderer for generating PDF documents from specs |
+| `@json-render/react-email` | React Email renderer for HTML/plain-text emails from specs |
 
 ## Renderers
 
@@ -258,6 +261,40 @@ const spec = {
 const buffer = await renderToBuffer(spec);
 ```
 
+### React Email (Email)
+
+```typescript
+import { renderToHtml } from "@json-render/react-email";
+import { schema, standardComponentDefinitions } from "@json-render/react-email";
+import { defineCatalog } from "@json-render/core";
+
+const catalog = defineCatalog(schema, {
+  components: standardComponentDefinitions,
+});
+
+const spec = {
+  root: "html-1",
+  elements: {
+    "html-1": { type: "Html", props: { lang: "en", dir: "ltr" }, children: ["head-1", "body-1"] },
+    "head-1": { type: "Head", props: {}, children: [] },
+    "body-1": {
+      type: "Body",
+      props: { style: { backgroundColor: "#f6f9fc" } },
+      children: ["container-1"],
+    },
+    "container-1": {
+      type: "Container",
+      props: { style: { maxWidth: "600px", margin: "0 auto", padding: "20px" } },
+      children: ["heading-1", "text-1"],
+    },
+    "heading-1": { type: "Heading", props: { text: "Welcome" }, children: [] },
+    "text-1": { type: "Text", props: { text: "Thanks for signing up." }, children: [] },
+  },
+};
+
+const html = await renderToHtml(spec);
+```
+
 ## Features
 
 ### Streaming (SpecStream)
@@ -345,6 +382,7 @@ pnpm dev
 
 - http://json-render.localhost:1355 - Docs & Playground
 - http://dashboard-demo.json-render.localhost:1355 - Example Dashboard
+- http://react-email-demo.json-render.localhost:1355 - React Email Example
 - http://remotion-demo.json-render.localhost:1355 - Remotion Video Example
 - Chat Example: run `pnpm dev` in `examples/chat`
 - React Native example: run `npx expo start` in `examples/react-native`
