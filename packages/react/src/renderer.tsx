@@ -251,24 +251,31 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const { state: watchState } = useStateStore();
   const prevWatchValues = useRef<Record<string, unknown> | null>(null);
 
+  // Select only the watched path values so the effect doesn't re-run on
+  // every unrelated state change.
+  const watchedValues = useMemo(() => {
+    if (!watchConfig) return undefined;
+    const values: Record<string, unknown> = {};
+    for (const path of Object.keys(watchConfig)) {
+      values[path] = getByPath(watchState, path);
+    }
+    return values;
+  }, [watchConfig, watchState]);
+
   useEffect(() => {
-    if (!watchConfig) return;
+    if (!watchConfig || !watchedValues) return;
     const paths = Object.keys(watchConfig);
     if (paths.length === 0) return;
 
-    const currentValues: Record<string, unknown> = {};
-    for (const path of paths) {
-      currentValues[path] = getByPath(watchState, path);
-    }
-
     const prev = prevWatchValues.current;
-    prevWatchValues.current = currentValues;
+    prevWatchValues.current = watchedValues;
 
     // Skip the initial mount — only fire on changes
     if (prev === null) return;
 
+    const snapshot = getSnapshot();
     for (const path of paths) {
-      if (currentValues[path] !== prev[path]) {
+      if (watchedValues[path] !== prev[path]) {
         const binding = watchConfig[path];
         if (!binding) continue;
         const bindings = Array.isArray(binding) ? binding : [binding];
@@ -279,7 +286,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
           }
           const liveCtx: PropResolutionContext = {
             ...fullCtx,
-            stateModel: getSnapshot(),
+            stateModel: snapshot,
           };
           const resolved: Record<string, unknown> = {};
           for (const [key, val] of Object.entries(b.params)) {
@@ -289,7 +296,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
         }
       }
     }
-  }, [watchConfig, watchState, execute, fullCtx, getSnapshot]);
+  }, [watchConfig, watchedValues, execute, fullCtx, getSnapshot]);
 
   // Don't render if not visible
   if (!isVisible) {

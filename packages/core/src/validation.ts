@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { DynamicValue, StateModel, VisibilityCondition } from "./types";
-import { DynamicValueSchema, resolveDynamicValue, getByPath } from "./types";
+import { DynamicValueSchema, resolveDynamicValue } from "./types";
 import { VisibilityConditionSchema, evaluateVisibility } from "./visibility";
+import { resolvePropValue } from "./props";
 
 /**
  * Validation check definition
@@ -178,21 +179,29 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
   },
 
   /**
-   * Check if numeric value is less than another field's value
+   * Check if value is less than another field's value.
+   * Supports numbers and strings (useful for ISO date comparison).
    */
   lessThan: (value: unknown, args?: Record<string, unknown>) => {
     const other = args?.other;
-    if (typeof value !== "number" || typeof other !== "number") return false;
-    return value < other;
+    if (typeof value === "number" && typeof other === "number")
+      return value < other;
+    if (typeof value === "string" && typeof other === "string")
+      return value < other;
+    return false;
   },
 
   /**
-   * Check if numeric value is greater than another field's value
+   * Check if value is greater than another field's value.
+   * Supports numbers and strings (useful for ISO date comparison).
    */
   greaterThan: (value: unknown, args?: Record<string, unknown>) => {
     const other = args?.other;
-    if (typeof value !== "number" || typeof other !== "number") return false;
-    return value > other;
+    if (typeof value === "number" && typeof other === "number")
+      return value > other;
+    if (typeof value === "string" && typeof other === "string")
+      return value > other;
+    return false;
   },
 
   /**
@@ -239,36 +248,6 @@ export interface ValidationContext {
 }
 
 /**
- * Recursively resolve `{ $state }` references at any depth within a value.
- * Unlike `resolveDynamicValue` which only handles top-level `$state`,
- * this walks nested objects and arrays to resolve all references.
- */
-function resolveDeepDynamicValue(
-  value: unknown,
-  stateModel: StateModel,
-): unknown {
-  if (value === null || value === undefined) return value;
-
-  if (typeof value === "object" && !Array.isArray(value)) {
-    const obj = value as Record<string, unknown>;
-    if ("$state" in obj && typeof obj.$state === "string") {
-      return getByPath(stateModel, obj.$state);
-    }
-    const resolved: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      resolved[k] = resolveDeepDynamicValue(v, stateModel);
-    }
-    return resolved;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => resolveDeepDynamicValue(item, stateModel));
-  }
-
-  return value;
-}
-
-/**
  * Run a single validation check
  */
 export function runValidationCheck(
@@ -277,11 +256,12 @@ export function runValidationCheck(
 ): ValidationCheckResult {
   const { value, stateModel, customFunctions } = ctx;
 
-  // Resolve args with deep resolution so nested $state refs work
+  // Resolve args using resolvePropValue so nested $state refs (and any other
+  // prop expressions) are handled consistently with the rest of the system.
   const resolvedArgs: Record<string, unknown> = {};
   if (check.args) {
     for (const [key, argValue] of Object.entries(check.args)) {
-      resolvedArgs[key] = resolveDeepDynamicValue(argValue, stateModel);
+      resolvedArgs[key] = resolvePropValue(argValue, { stateModel });
     }
   }
 

@@ -215,10 +215,26 @@ describe("builtInValidationFunctions", () => {
       expect(builtInValidationFunctions.lessThan(7, { other: 5 })).toBe(false);
     });
 
-    it("fails for non-numbers", () => {
+    it("fails for mismatched types", () => {
       expect(builtInValidationFunctions.lessThan("3", { other: 5 })).toBe(
         false,
       );
+    });
+
+    it("passes for string comparison (ISO dates)", () => {
+      expect(
+        builtInValidationFunctions.lessThan("2026-01-01", {
+          other: "2026-06-15",
+        }),
+      ).toBe(true);
+    });
+
+    it("fails for equal strings", () => {
+      expect(
+        builtInValidationFunctions.lessThan("2026-01-01", {
+          other: "2026-01-01",
+        }),
+      ).toBe(false);
     });
   });
 
@@ -239,6 +255,22 @@ describe("builtInValidationFunctions", () => {
       expect(builtInValidationFunctions.greaterThan(3, { other: 5 })).toBe(
         false,
       );
+    });
+
+    it("passes for string comparison (ISO dates)", () => {
+      expect(
+        builtInValidationFunctions.greaterThan("2026-06-15", {
+          other: "2026-01-01",
+        }),
+      ).toBe(true);
+    });
+
+    it("fails for lesser strings", () => {
+      expect(
+        builtInValidationFunctions.greaterThan("2026-01-01", {
+          other: "2026-06-15",
+        }),
+      ).toBe(false);
     });
   });
 

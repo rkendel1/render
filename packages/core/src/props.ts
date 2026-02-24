@@ -144,6 +144,10 @@ function isTemplateExpression(value: unknown): value is { $template: string } {
   );
 }
 
+// Module-level set to avoid spamming console.warn on every render for the same
+// unknown $computed function name.
+const warnedComputedFns = new Set<string>();
+
 // =============================================================================
 // Prop Expression Resolution
 // =============================================================================
@@ -231,7 +235,10 @@ export function resolvePropValue(
   if (isComputedExpression(value)) {
     const fn = ctx.functions?.[value.$computed];
     if (!fn) {
-      console.warn(`Unknown $computed function: "${value.$computed}"`);
+      if (!warnedComputedFns.has(value.$computed)) {
+        warnedComputedFns.add(value.$computed);
+        console.warn(`Unknown $computed function: "${value.$computed}"`);
+      }
       return undefined;
     }
     const resolvedArgs: Record<string, unknown> = {};

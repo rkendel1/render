@@ -821,10 +821,11 @@ export const shadcnComponents = {
     const checked = isBound ? (boundChecked ?? false) : localChecked;
     const setChecked = isBound ? setBoundChecked : setLocalChecked;
 
+    const validateOn = props.validateOn ?? "change";
     const hasValidation = !!(bindings?.checked && props.checks?.length);
     const { errors, validate } = useFieldValidation(
       bindings?.checked ?? "",
-      hasValidation ? { checks: props.checks ?? [] } : undefined,
+      hasValidation ? { checks: props.checks ?? [], validateOn } : undefined,
     );
 
     return (
@@ -835,7 +836,7 @@ export const shadcnComponents = {
             checked={checked}
             onCheckedChange={(c) => {
               setChecked(c === true);
-              if (hasValidation) validate();
+              if (hasValidation && validateOn === "change") validate();
               emit("change");
             }}
           />
@@ -868,10 +869,11 @@ export const shadcnComponents = {
     const value = isBound ? (boundValue ?? "") : localValue;
     const setValue = isBound ? setBoundValue : setLocalValue;
 
+    const validateOn = props.validateOn ?? "change";
     const hasValidation = !!(bindings?.value && props.checks?.length);
     const { errors, validate } = useFieldValidation(
       bindings?.value ?? "",
-      hasValidation ? { checks: props.checks ?? [] } : undefined,
+      hasValidation ? { checks: props.checks ?? [], validateOn } : undefined,
     );
 
     return (
@@ -881,7 +883,7 @@ export const shadcnComponents = {
           value={value}
           onValueChange={(v) => {
             setValue(v);
-            if (hasValidation) validate();
+            if (hasValidation && validateOn === "change") validate();
             emit("change");
           }}
         >
@@ -921,10 +923,11 @@ export const shadcnComponents = {
     const checked = isBound ? (boundChecked ?? false) : localChecked;
     const setChecked = isBound ? setBoundChecked : setLocalChecked;
 
+    const validateOn = props.validateOn ?? "change";
     const hasValidation = !!(bindings?.checked && props.checks?.length);
     const { errors, validate } = useFieldValidation(
       bindings?.checked ?? "",
-      hasValidation ? { checks: props.checks ?? [] } : undefined,
+      hasValidation ? { checks: props.checks ?? [], validateOn } : undefined,
     );
 
     return (
@@ -938,7 +941,7 @@ export const shadcnComponents = {
             checked={checked}
             onCheckedChange={(c) => {
               setChecked(c);
-              if (hasValidation) validate();
+              if (hasValidation && validateOn === "change") validate();
               emit("change");
             }}
           />

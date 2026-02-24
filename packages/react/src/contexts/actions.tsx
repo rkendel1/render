@@ -17,6 +17,7 @@ import {
   type ResolvedAction,
 } from "@json-render/core";
 import { useStateStore } from "./state";
+import { type ValidateAllRef } from "./validation";
 
 /**
  * Generate a unique ID for use with the "$id" token.
@@ -116,11 +117,6 @@ export interface ActionContextValue {
 }
 
 const ActionContext = createContext<ActionContextValue | null>(null);
-
-/**
- * Ref to a validateAll function provided by the ValidationProvider.
- */
-export type ValidateAllRef = React.MutableRefObject<(() => boolean) | null>;
 
 /**
  * Props for ActionProvider

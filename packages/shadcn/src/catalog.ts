@@ -353,10 +353,11 @@ export const shadcnComponentDefinitions = {
           }),
         )
         .nullable(),
+      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
     }),
     events: ["change"],
     description:
-      "Checkbox input. Use { $bindState } on checked for binding. Use checks for validation.",
+      "Checkbox input. Use { $bindState } on checked for binding. Use checks for validation. validateOn controls timing (default: change).",
   },
 
   Radio: {
@@ -374,10 +375,11 @@ export const shadcnComponentDefinitions = {
           }),
         )
         .nullable(),
+      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
     }),
     events: ["change"],
     description:
-      "Radio button group. Use { $bindState } on value for binding. Use checks for validation.",
+      "Radio button group. Use { $bindState } on value for binding. Use checks for validation. validateOn controls timing (default: change).",
   },
 
   Switch: {
@@ -394,10 +396,11 @@ export const shadcnComponentDefinitions = {
           }),
         )
         .nullable(),
+      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
     }),
     events: ["change"],
     description:
-      "Toggle switch. Use { $bindState } on checked for binding. Use checks for validation.",
+      "Toggle switch. Use { $bindState } on checked for binding. Use checks for validation. validateOn controls timing (default: change).",
   },
 
   Slider: {

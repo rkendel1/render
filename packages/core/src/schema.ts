@@ -984,29 +984,32 @@ Note: state patches appear right after the elements that use them, so the UI fil
     lines.push("");
   }
 
-  // State watchers section
-  lines.push("STATE WATCHERS:");
-  lines.push(
-    "Elements can have an optional `watch` field to react to state changes and trigger actions. The `watch` field is a top-level field on the element (sibling of type/props/children), NOT inside props.",
-  );
-  lines.push(
-    "Maps state paths (JSON Pointers) to action bindings. When the value at a watched path changes, the bound actions fire automatically.",
-  );
-  lines.push("");
-  lines.push(
-    "Example (cascading select — country changes trigger city loading):",
-  );
-  lines.push(
-    `  ${JSON.stringify({ type: "Select", props: { value: { $bindState: "/form/country" }, options: ["US", "Canada", "UK"] }, watch: { "/form/country": { action: "loadCities", params: { country: { $state: "/form/country" } } } }, children: [] })}`,
-  );
-  lines.push("");
-  lines.push(
-    "Use `watch` for cascading dependencies where changing one field should trigger side effects (loading data, resetting dependent fields, computing derived values).",
-  );
-  lines.push(
-    "IMPORTANT: `watch` is a top-level field on the element (sibling of type/props/children), NOT inside props. Watchers only fire when the value changes, not on initial render.",
-  );
-  lines.push("");
+  // State watchers section — only emit when actions are available (watchers
+  // trigger actions, so the section is irrelevant without them).
+  if (hasCustomActions || hasBuiltInActions) {
+    lines.push("STATE WATCHERS:");
+    lines.push(
+      "Elements can have an optional `watch` field to react to state changes and trigger actions. The `watch` field is a top-level field on the element (sibling of type/props/children), NOT inside props.",
+    );
+    lines.push(
+      "Maps state paths (JSON Pointers) to action bindings. When the value at a watched path changes, the bound actions fire automatically.",
+    );
+    lines.push("");
+    lines.push(
+      "Example (cascading select — country changes trigger city loading):",
+    );
+    lines.push(
+      `  ${JSON.stringify({ type: "Select", props: { value: { $bindState: "/form/country" }, options: ["US", "Canada", "UK"] }, watch: { "/form/country": { action: "loadCities", params: { country: { $state: "/form/country" } } } }, children: [] })}`,
+    );
+    lines.push("");
+    lines.push(
+      "Use `watch` for cascading dependencies where changing one field should trigger side effects (loading data, resetting dependent fields, computing derived values).",
+    );
+    lines.push(
+      "IMPORTANT: `watch` is a top-level field on the element (sibling of type/props/children), NOT inside props. Watchers only fire when the value changes, not on initial render.",
+    );
+    lines.push("");
+  }
 
   // Rules
   lines.push("RULES:");
