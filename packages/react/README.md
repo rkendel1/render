@@ -14,7 +14,7 @@ npm install @json-render/react @json-render/core zod
 
 ```typescript
 import { defineCatalog } from "@json-render/core";
-import { schema } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
 import { z } from "zod";
 
 export const catalog = defineCatalog(schema, {
@@ -409,7 +409,8 @@ const systemPrompt = catalog.prompt();
 
 ```tsx
 import { defineCatalog } from "@json-render/core";
-import { schema, defineRegistry, Renderer } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
+import { defineRegistry, Renderer } from "@json-render/react";
 import { z } from "zod";
 
 const catalog = defineCatalog(schema, {

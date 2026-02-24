@@ -28,7 +28,8 @@ function App({ spec }) {
 
 ```typescript
 import { defineCatalog } from "@json-render/core";
-import { schema, defineRegistry } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
+import { defineRegistry } from "@json-render/react";
 import { z } from "zod";
 
 // Create catalog with props schemas

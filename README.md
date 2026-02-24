@@ -32,7 +32,7 @@ json-render is a **Generative UI** framework: AI generates interfaces from natur
 
 ```typescript
 import { defineCatalog } from "@json-render/core";
-import { schema } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
 import { z } from "zod";
 
 const catalog = defineCatalog(schema, {
@@ -124,7 +124,7 @@ function Dashboard({ spec }) {
 
 ```tsx
 import { defineRegistry, Renderer } from "@json-render/react";
-import { schema } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
 
 // Flat spec format (root key + elements map)
 const spec = {
@@ -152,7 +152,8 @@ const { registry } = defineRegistry(catalog, { components });
 
 ```tsx
 import { defineCatalog } from "@json-render/core";
-import { schema, defineRegistry, Renderer } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
+import { defineRegistry, Renderer } from "@json-render/react";
 import { shadcnComponentDefinitions } from "@json-render/shadcn/catalog";
 import { shadcnComponents } from "@json-render/shadcn";
 
