@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { createAtom } from "@xstate/store";
-import { xstateStoreStateStore } from "./index";
+import { xstateStore } from "./index";
 
 function createTestStore(initial: Record<string, unknown> = {}) {
   const atom = createAtom<Record<string, unknown>>(initial);
-  const store = xstateStoreStateStore({ atom });
+  const store = xstateStore({ atom });
   return { atom, store };
 }
 
-describe("xstateStoreStateStore", () => {
+describe("xstateStore", () => {
   it("get/set round-trip", () => {
     const { store } = createTestStore({ count: 0 });
 
@@ -126,7 +126,7 @@ describe("xstateStoreStateStore", () => {
 
   it("reads from the shared atom", () => {
     const atom = createAtom<Record<string, unknown>>({ count: 0 });
-    const store = xstateStoreStateStore({ atom });
+    const store = xstateStore({ atom });
 
     atom.set({ count: 99 });
 
