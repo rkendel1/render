@@ -1,5 +1,11 @@
 # @json-render/redux
 
+## 0.9.1
+
+### Patch Changes
+
+- @json-render/core@0.9.1
+
 ## 0.9.0
 
 ### Minor Changes

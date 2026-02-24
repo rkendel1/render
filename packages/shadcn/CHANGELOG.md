@@ -1,5 +1,13 @@
 # @json-render/shadcn
 
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [b103676]
+  - @json-render/react@0.9.1
+  - @json-render/core@0.9.1
+
 ## 0.9.0
 
 ### Minor Changes
