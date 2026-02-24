@@ -156,6 +156,15 @@ export function _resetWarnedComputedFns(): void {
   warnedComputedFns.clear();
 }
 
+// Same deduplication pattern for $template paths that don't start with "/".
+const WARNED_TEMPLATE_MAX = 100;
+const warnedTemplatePaths = new Set<string>();
+
+/** @internal Test-only: clear the deduplication set for $template warnings. */
+export function _resetWarnedTemplatePaths(): void {
+  warnedTemplatePaths.clear();
+}
+
 // =============================================================================
 // Prop Expression Resolution
 // =============================================================================
@@ -263,7 +272,10 @@ export function resolvePropValue(
   // $template: interpolate ${/path} references with state values
   if (isTemplateExpression(value)) {
     return value.$template.replace(/\$\{([^}]+)\}/g, (_match, path: string) => {
-      if (!path.startsWith("/")) {
+      if (!path.startsWith("/") && !warnedTemplatePaths.has(path)) {
+        if (warnedTemplatePaths.size < WARNED_TEMPLATE_MAX) {
+          warnedTemplatePaths.add(path);
+        }
         console.warn(
           `$template path "${path}" should be a JSON Pointer starting with "/". Did you mean "/${path}"?`,
         );

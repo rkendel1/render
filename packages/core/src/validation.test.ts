@@ -260,6 +260,24 @@ describe("builtInValidationFunctions", () => {
         false,
       );
     });
+
+    it("returns false when other is null", () => {
+      expect(builtInValidationFunctions.lessThan(3, { other: null })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when value is null", () => {
+      expect(builtInValidationFunctions.lessThan(null, { other: 5 })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when other is undefined", () => {
+      expect(builtInValidationFunctions.lessThan(3, { other: undefined })).toBe(
+        false,
+      );
+    });
   });
 
   describe("greaterThan", () => {
@@ -329,6 +347,24 @@ describe("builtInValidationFunctions", () => {
 
     it("returns false when other is empty string vs non-empty string", () => {
       expect(builtInValidationFunctions.greaterThan("abc", { other: "" })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when other is null", () => {
+      expect(builtInValidationFunctions.greaterThan(3, { other: null })).toBe(
+        false,
+      );
+    });
+
+    it("returns false when value is undefined", () => {
+      expect(
+        builtInValidationFunctions.greaterThan(undefined, { other: 5 }),
+      ).toBe(false);
+    });
+
+    it("returns false when value is null", () => {
+      expect(builtInValidationFunctions.greaterThan(null, { other: 5 })).toBe(
         false,
       );
     });

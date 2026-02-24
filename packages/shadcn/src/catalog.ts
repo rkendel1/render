@@ -1,6 +1,22 @@
 import { z } from "zod";
 
 // =============================================================================
+// Shared validation schemas used across form components
+// =============================================================================
+
+const validationCheckSchema = z
+  .array(
+    z.object({
+      type: z.string(),
+      message: z.string(),
+      args: z.record(z.string(), z.unknown()).optional(),
+    }),
+  )
+  .nullable();
+
+const validateOnSchema = z.enum(["change", "blur", "submit"]).nullable();
+
+// =============================================================================
 // shadcn/ui Component Definitions
 // =============================================================================
 
@@ -272,16 +288,8 @@ export const shadcnComponentDefinitions = {
       type: z.enum(["text", "email", "password", "number"]).nullable(),
       placeholder: z.string().nullable(),
       value: z.string().nullable(),
-      checks: z
-        .array(
-          z.object({
-            type: z.string(),
-            message: z.string(),
-            args: z.record(z.string(), z.unknown()).optional(),
-          }),
-        )
-        .nullable(),
-      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
+      checks: validationCheckSchema,
+      validateOn: validateOnSchema,
     }),
     events: ["submit", "focus", "blur"],
     description:
@@ -301,16 +309,8 @@ export const shadcnComponentDefinitions = {
       placeholder: z.string().nullable(),
       rows: z.number().nullable(),
       value: z.string().nullable(),
-      checks: z
-        .array(
-          z.object({
-            type: z.string(),
-            message: z.string(),
-            args: z.record(z.string(), z.unknown()).optional(),
-          }),
-        )
-        .nullable(),
-      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
+      checks: validationCheckSchema,
+      validateOn: validateOnSchema,
     }),
     description:
       "Multi-line text input. Use { $bindState } on value for binding. Use checks for validation. validateOn controls timing (default: blur).",
@@ -323,16 +323,8 @@ export const shadcnComponentDefinitions = {
       options: z.array(z.string()),
       placeholder: z.string().nullable(),
       value: z.string().nullable(),
-      checks: z
-        .array(
-          z.object({
-            type: z.string(),
-            message: z.string(),
-            args: z.record(z.string(), z.unknown()).optional(),
-          }),
-        )
-        .nullable(),
-      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
+      checks: validationCheckSchema,
+      validateOn: validateOnSchema,
     }),
     events: ["change"],
     description:
@@ -344,16 +336,8 @@ export const shadcnComponentDefinitions = {
       label: z.string(),
       name: z.string(),
       checked: z.boolean().nullable(),
-      checks: z
-        .array(
-          z.object({
-            type: z.string(),
-            message: z.string(),
-            args: z.record(z.string(), z.unknown()).optional(),
-          }),
-        )
-        .nullable(),
-      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
+      checks: validationCheckSchema,
+      validateOn: validateOnSchema,
     }),
     events: ["change"],
     description:
@@ -366,16 +350,8 @@ export const shadcnComponentDefinitions = {
       name: z.string(),
       options: z.array(z.string()),
       value: z.string().nullable(),
-      checks: z
-        .array(
-          z.object({
-            type: z.string(),
-            message: z.string(),
-            args: z.record(z.string(), z.unknown()).optional(),
-          }),
-        )
-        .nullable(),
-      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
+      checks: validationCheckSchema,
+      validateOn: validateOnSchema,
     }),
     events: ["change"],
     description:
@@ -387,16 +363,8 @@ export const shadcnComponentDefinitions = {
       label: z.string(),
       name: z.string(),
       checked: z.boolean().nullable(),
-      checks: z
-        .array(
-          z.object({
-            type: z.string(),
-            message: z.string(),
-            args: z.record(z.string(), z.unknown()).optional(),
-          }),
-        )
-        .nullable(),
-      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
+      checks: validationCheckSchema,
+      validateOn: validateOnSchema,
     }),
     events: ["change"],
     description:

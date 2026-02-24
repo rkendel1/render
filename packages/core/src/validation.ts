@@ -187,7 +187,8 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
    */
   lessThan: (value: unknown, args?: Record<string, unknown>) => {
     const other = args?.other;
-    if (value === "" || other === "") return false;
+    if (value == null || other == null || value === "" || other === "")
+      return false;
     if (typeof value === "number" && typeof other === "number")
       return value < other;
     if (typeof value === "string" && typeof other === "string")
@@ -205,7 +206,8 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
    */
   greaterThan: (value: unknown, args?: Record<string, unknown>) => {
     const other = args?.other;
-    if (value === "" || other === "") return false;
+    if (value == null || other == null || value === "" || other === "")
+      return false;
     if (typeof value === "number" && typeof other === "number")
       return value > other;
     if (typeof value === "string" && typeof other === "string")

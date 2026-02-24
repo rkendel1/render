@@ -781,11 +781,8 @@ export const shadcnComponents = {
           value={value}
           onValueChange={(v) => {
             setValue(v);
-            if (
-              hasValidation &&
-              (validateOn === "change" || validateOn === "blur")
-            )
-              validate();
+            // Select has no native blur event, so only validate on "change"
+            if (hasValidation && validateOn === "change") validate();
             emit("change");
           }}
         >

@@ -290,13 +290,16 @@ const ElementRenderer = React.memo(function ElementRenderer({
     // Skip the initial mount — only fire on changes
     if (prev === null) return;
 
+    let cancelled = false;
     void (async () => {
       for (const path of paths) {
+        if (cancelled) break;
         if (watchedValues[path] !== prev[path]) {
           const binding = watchConfig[path];
           if (!binding) continue;
           const bindings = Array.isArray(binding) ? binding : [binding];
           for (const b of bindings) {
+            if (cancelled) break;
             if (!b.params) {
               await execute(b);
               continue;
@@ -314,6 +317,10 @@ const ElementRenderer = React.memo(function ElementRenderer({
         }
       }
     })().catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
   }, [watchConfig, watchedValues, execute, fullCtx, getSnapshot]);
 
   // Don't render if not visible

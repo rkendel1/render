@@ -4,6 +4,8 @@ import {
   resolveElementProps,
   resolveBindings,
   resolveActionParam,
+  _resetWarnedComputedFns,
+  _resetWarnedTemplatePaths,
 } from "./props";
 import type { PropResolutionContext } from "./props";
 
@@ -634,14 +636,29 @@ describe("$template expressions", () => {
   });
 
   it("warns when path does not start with /", () => {
+    _resetWarnedTemplatePaths();
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const ctx: PropResolutionContext = { stateModel: { name: "Bob" } };
     const result = resolvePropValue({ $template: "Hi ${name}!" }, ctx);
-    // Still resolves (getByPath tolerates non-pointer paths) but emits a warning
     expect(result).toBe("Hi Bob!");
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('$template path "name"'),
     );
     warnSpy.mockRestore();
+    _resetWarnedTemplatePaths();
+  });
+
+  it("deduplicates warnings for the same $template path", () => {
+    _resetWarnedTemplatePaths();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const ctx: PropResolutionContext = { stateModel: { name: "Bob" } };
+    resolvePropValue({ $template: "Hi ${name}!" }, ctx);
+    resolvePropValue({ $template: "Hi ${name}!" }, ctx);
+    const calls = warnSpy.mock.calls.filter((c) =>
+      String(c[0]).includes('$template path "name"'),
+    );
+    expect(calls).toHaveLength(1);
+    warnSpy.mockRestore();
+    _resetWarnedTemplatePaths();
   });
 });
