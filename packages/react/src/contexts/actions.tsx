@@ -118,6 +118,11 @@ export interface ActionContextValue {
 const ActionContext = createContext<ActionContextValue | null>(null);
 
 /**
+ * Ref to a validateAll function provided by the ValidationProvider.
+ */
+export type ValidateAllRef = React.MutableRefObject<(() => boolean) | null>;
+
+/**
  * Props for ActionProvider
  */
 export interface ActionProviderProps {
@@ -125,6 +130,8 @@ export interface ActionProviderProps {
   handlers?: Record<string, ActionHandler>;
   /** Navigation function */
   navigate?: (path: string) => void;
+  /** Ref bridge to ValidationProvider's validateAll */
+  validateAllRef?: ValidateAllRef;
   children: ReactNode;
 }
 
@@ -134,6 +141,7 @@ export interface ActionProviderProps {
 export function ActionProvider({
   handlers: initialHandlers = {},
   navigate,
+  validateAllRef,
   children,
 }: ActionProviderProps) {
   const { get, set, getSnapshot } = useStateStore();
@@ -227,9 +235,21 @@ export function ActionProvider({
           if (previousScreen) {
             set("/currentScreen", previousScreen);
           } else {
-            // Sentinel empty string = clear currentScreen (return to default)
             set("/currentScreen", undefined);
           }
+        }
+        return;
+      }
+
+      // Built-in: validateForm triggers validateAll from the ValidationProvider
+      // and writes the result to a state path (default: /formValidation).
+      if (resolved.action === "validateForm") {
+        const validateAll = validateAllRef?.current;
+        if (validateAll) {
+          const valid = validateAll();
+          const statePath =
+            (resolved.params?.statePath as string) || "/formValidation";
+          set(statePath, { valid });
         }
         return;
       }
@@ -300,7 +320,7 @@ export function ActionProvider({
         });
       }
     },
-    [handlers, get, set, getSnapshot, navigate],
+    [handlers, get, set, getSnapshot, navigate, validateAllRef],
   );
 
   const confirm = useCallback(() => {

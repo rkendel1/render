@@ -498,3 +498,126 @@ describe("resolveActionParam", () => {
     expect(resolveActionParam(null, ctx)).toBeNull();
   });
 });
+
+// =============================================================================
+// $computed expressions
+// =============================================================================
+
+describe("$computed expressions", () => {
+  it("calls a registered function with resolved args", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: { form: { firstName: "Jane", lastName: "Doe" } },
+      functions: {
+        fullName: (args) => `${args.first} ${args.last}`,
+      },
+    };
+    expect(
+      resolvePropValue(
+        {
+          $computed: "fullName",
+          args: {
+            first: { $state: "/form/firstName" },
+            last: { $state: "/form/lastName" },
+          },
+        },
+        ctx,
+      ),
+    ).toBe("Jane Doe");
+  });
+
+  it("calls function with no args", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: {},
+      functions: {
+        timestamp: () => 1234567890,
+      },
+    };
+    expect(resolvePropValue({ $computed: "timestamp" }, ctx)).toBe(1234567890);
+  });
+
+  it("returns undefined for unknown function", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: {},
+      functions: {},
+    };
+    expect(resolvePropValue({ $computed: "unknown" }, ctx)).toBeUndefined();
+  });
+
+  it("returns undefined when no functions in context", () => {
+    const ctx: PropResolutionContext = { stateModel: {} };
+    expect(resolvePropValue({ $computed: "any" }, ctx)).toBeUndefined();
+  });
+
+  it("resolves nested expressions in args", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: { active: true, values: { a: 10, b: 20 } },
+      functions: {
+        conditionalSum: (args) => {
+          if (args.enabled) return (args.x as number) + (args.y as number);
+          return 0;
+        },
+      },
+    };
+    expect(
+      resolvePropValue(
+        {
+          $computed: "conditionalSum",
+          args: {
+            enabled: { $state: "/active" },
+            x: { $state: "/values/a" },
+            y: { $state: "/values/b" },
+          },
+        },
+        ctx,
+      ),
+    ).toBe(30);
+  });
+});
+
+// =============================================================================
+// $template expressions
+// =============================================================================
+
+describe("$template expressions", () => {
+  it("interpolates state values into a string", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: { user: { name: "Alice" }, count: 3 },
+    };
+    expect(
+      resolvePropValue(
+        { $template: "Hello, ${/user/name}! You have ${/count} messages." },
+        ctx,
+      ),
+    ).toBe("Hello, Alice! You have 3 messages.");
+  });
+
+  it("replaces missing paths with empty string", () => {
+    const ctx: PropResolutionContext = { stateModel: {} };
+    expect(resolvePropValue({ $template: "Hi ${/name}!" }, ctx)).toBe("Hi !");
+  });
+
+  it("handles template with no interpolations", () => {
+    const ctx: PropResolutionContext = { stateModel: {} };
+    expect(resolvePropValue({ $template: "No variables here" }, ctx)).toBe(
+      "No variables here",
+    );
+  });
+
+  it("handles multiple references to the same path", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: { x: "A" },
+    };
+    expect(resolvePropValue({ $template: "${/x} and ${/x}" }, ctx)).toBe(
+      "A and A",
+    );
+  });
+
+  it("converts non-string values to strings", () => {
+    const ctx: PropResolutionContext = {
+      stateModel: { num: 42, bool: true },
+    };
+    expect(resolvePropValue({ $template: "${/num} is ${/bool}" }, ctx)).toBe(
+      "42 is true",
+    );
+  });
+});

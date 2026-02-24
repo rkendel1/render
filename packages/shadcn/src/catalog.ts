@@ -281,10 +281,11 @@ export const shadcnComponentDefinitions = {
           }),
         )
         .nullable(),
+      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
     }),
     events: ["submit", "focus", "blur"],
     description:
-      "Text input field. Use { $bindState } on value for two-way binding. Use checks for validation (e.g. required, email, minLength).",
+      "Text input field. Use { $bindState } on value for two-way binding. Use checks for validation (e.g. required, email, minLength). validateOn controls timing (default: blur).",
     example: {
       label: "Email",
       name: "email",
@@ -309,9 +310,10 @@ export const shadcnComponentDefinitions = {
           }),
         )
         .nullable(),
+      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
     }),
     description:
-      "Multi-line text input. Use { $bindState } on value for binding. Use checks for validation.",
+      "Multi-line text input. Use { $bindState } on value for binding. Use checks for validation. validateOn controls timing (default: blur).",
   },
 
   Select: {
@@ -330,10 +332,11 @@ export const shadcnComponentDefinitions = {
           }),
         )
         .nullable(),
+      validateOn: z.enum(["change", "blur", "submit"]).nullable(),
     }),
     events: ["change"],
     description:
-      "Dropdown select input. Use { $bindState } on value for binding. Use checks for validation.",
+      "Dropdown select input. Use { $bindState } on value for binding. Use checks for validation. validateOn controls timing (default: change).",
   },
 
   Checkbox: {
@@ -341,9 +344,19 @@ export const shadcnComponentDefinitions = {
       label: z.string(),
       name: z.string(),
       checked: z.boolean().nullable(),
+      checks: z
+        .array(
+          z.object({
+            type: z.string(),
+            message: z.string(),
+            args: z.record(z.string(), z.unknown()).optional(),
+          }),
+        )
+        .nullable(),
     }),
     events: ["change"],
-    description: "Checkbox input. Use { $bindState } on checked for binding.",
+    description:
+      "Checkbox input. Use { $bindState } on checked for binding. Use checks for validation.",
   },
 
   Radio: {
@@ -352,9 +365,19 @@ export const shadcnComponentDefinitions = {
       name: z.string(),
       options: z.array(z.string()),
       value: z.string().nullable(),
+      checks: z
+        .array(
+          z.object({
+            type: z.string(),
+            message: z.string(),
+            args: z.record(z.string(), z.unknown()).optional(),
+          }),
+        )
+        .nullable(),
     }),
     events: ["change"],
-    description: "Radio button group. Use { $bindState } on value for binding.",
+    description:
+      "Radio button group. Use { $bindState } on value for binding. Use checks for validation.",
   },
 
   Switch: {
@@ -362,9 +385,19 @@ export const shadcnComponentDefinitions = {
       label: z.string(),
       name: z.string(),
       checked: z.boolean().nullable(),
+      checks: z
+        .array(
+          z.object({
+            type: z.string(),
+            message: z.string(),
+            args: z.record(z.string(), z.unknown()).optional(),
+          }),
+        )
+        .nullable(),
     }),
     events: ["change"],
-    description: "Toggle switch. Use { $bindState } on checked for binding.",
+    description:
+      "Toggle switch. Use { $bindState } on checked for binding. Use checks for validation.",
   },
 
   Slider: {

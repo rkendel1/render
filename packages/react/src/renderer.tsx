@@ -5,7 +5,9 @@ import React, {
   type ErrorInfo,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
 } from "react";
 import type {
   UIElement,
@@ -14,6 +16,7 @@ import type {
   Catalog,
   SchemaDefinition,
   StateStore,
+  ComputedFunction,
 } from "@json-render/core";
 import {
   resolveElementProps,
@@ -136,6 +139,18 @@ class ElementErrorBoundary extends React.Component<
   }
 }
 
+// ---------------------------------------------------------------------------
+// FunctionsContext – provides $computed functions to the element tree
+// ---------------------------------------------------------------------------
+
+const FunctionsContext = React.createContext<
+  Record<string, ComputedFunction> | undefined
+>(undefined);
+
+function useFunctions(): Record<string, ComputedFunction> | undefined {
+  return React.useContext(FunctionsContext);
+}
+
 interface ElementRendererProps {
   element: UIElement;
   spec: Spec;
@@ -159,20 +174,23 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const { ctx } = useVisibility();
   const { execute } = useActions();
   const { getSnapshot } = useStateStore();
+  const functions = useFunctions();
 
-  // Build context with repeat scope (used for both visibility and props)
-  const fullCtx: PropResolutionContext = useMemo(
-    () =>
-      repeatScope
-        ? {
-            ...ctx,
-            repeatItem: repeatScope.item,
-            repeatIndex: repeatScope.index,
-            repeatBasePath: repeatScope.basePath,
-          }
-        : ctx,
-    [ctx, repeatScope],
-  );
+  // Build context with repeat scope and $computed functions
+  const fullCtx: PropResolutionContext = useMemo(() => {
+    const base: PropResolutionContext = repeatScope
+      ? {
+          ...ctx,
+          repeatItem: repeatScope.item,
+          repeatIndex: repeatScope.index,
+          repeatBasePath: repeatScope.basePath,
+        }
+      : { ...ctx };
+    if (functions) {
+      base.functions = functions;
+    }
+    return base;
+  }, [ctx, repeatScope, functions]);
 
   // Evaluate visibility (now supports $item/$index inside repeat scopes)
   const isVisible =
@@ -226,6 +244,52 @@ const ElementRenderer = React.memo(function ElementRenderer({
     },
     [onBindings, emit],
   );
+
+  // Watch effect: fire actions when watched state paths change.
+  // Must be called before any early return to satisfy Rules of Hooks.
+  const watchConfig = element.watch;
+  const { state: watchState } = useStateStore();
+  const prevWatchValues = useRef<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (!watchConfig) return;
+    const paths = Object.keys(watchConfig);
+    if (paths.length === 0) return;
+
+    const currentValues: Record<string, unknown> = {};
+    for (const path of paths) {
+      currentValues[path] = getByPath(watchState, path);
+    }
+
+    const prev = prevWatchValues.current;
+    prevWatchValues.current = currentValues;
+
+    // Skip the initial mount — only fire on changes
+    if (prev === null) return;
+
+    for (const path of paths) {
+      if (currentValues[path] !== prev[path]) {
+        const binding = watchConfig[path];
+        if (!binding) continue;
+        const bindings = Array.isArray(binding) ? binding : [binding];
+        for (const b of bindings) {
+          if (!b.params) {
+            execute(b);
+            continue;
+          }
+          const liveCtx: PropResolutionContext = {
+            ...fullCtx,
+            stateModel: getSnapshot(),
+          };
+          const resolved: Record<string, unknown> = {};
+          for (const [key, val] of Object.entries(b.params)) {
+            resolved[key] = resolveActionParam(val, liveCtx);
+          }
+          execute({ ...b, params: resolved });
+        }
+      }
+    }
+  }, [watchConfig, watchState, execute, fullCtx, getSnapshot]);
 
   // Don't render if not visible
   if (!isVisible) {
@@ -419,6 +483,8 @@ export interface JSONUIProviderProps {
     string,
     (value: unknown, args?: Record<string, unknown>) => boolean
   >;
+  /** Named functions for `$computed` expressions in props */
+  functions?: Record<string, ComputedFunction>;
   /** Callback when state changes (uncontrolled mode) */
   onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   children: ReactNode;
@@ -434,9 +500,12 @@ export function JSONUIProvider({
   handlers,
   navigate,
   validationFunctions,
+  functions,
   onStateChange,
   children,
 }: JSONUIProviderProps) {
+  const validateAllRef = useRef<(() => boolean) | null>(null);
+
   return (
     <StateProvider
       store={store}
@@ -444,10 +513,19 @@ export function JSONUIProvider({
       onStateChange={onStateChange}
     >
       <VisibilityProvider>
-        <ActionProvider handlers={handlers} navigate={navigate}>
-          <ValidationProvider customFunctions={validationFunctions}>
-            {children}
-            <ConfirmationDialogManager />
+        <ActionProvider
+          handlers={handlers}
+          navigate={navigate}
+          validateAllRef={validateAllRef}
+        >
+          <ValidationProvider
+            customFunctions={validationFunctions}
+            validateAllRef={validateAllRef}
+          >
+            <FunctionsContext.Provider value={functions}>
+              {children}
+              <ConfirmationDialogManager />
+            </FunctionsContext.Provider>
           </ValidationProvider>
         </ActionProvider>
       </VisibilityProvider>
@@ -650,6 +728,8 @@ export interface CreateRendererProps {
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
   /** Callback when state changes (uncontrolled mode) */
   onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
+  /** Named functions for `$computed` expressions in props */
+  functions?: Record<string, ComputedFunction>;
   /** Whether the spec is currently loading/streaming */
   loading?: boolean;
   /** Fallback component for unknown types */
@@ -703,9 +783,12 @@ export function createRenderer<
     state,
     onAction,
     onStateChange,
+    functions,
     loading,
     fallback,
   }: CreateRendererProps) {
+    const validateAllRef = useRef<(() => boolean) | null>(null);
+
     // Wrap onAction with a Proxy so any action name routes to the callback
     const actionHandlers = onAction
       ? new Proxy(
@@ -730,15 +813,20 @@ export function createRenderer<
         onStateChange={onStateChange}
       >
         <VisibilityProvider>
-          <ActionProvider handlers={actionHandlers}>
-            <ValidationProvider>
-              <Renderer
-                spec={spec}
-                registry={registry}
-                loading={loading}
-                fallback={fallback}
-              />
-              <ConfirmationDialogManager />
+          <ActionProvider
+            handlers={actionHandlers}
+            validateAllRef={validateAllRef}
+          >
+            <ValidationProvider validateAllRef={validateAllRef}>
+              <FunctionsContext.Provider value={functions}>
+                <Renderer
+                  spec={spec}
+                  registry={registry}
+                  loading={loading}
+                  fallback={fallback}
+                />
+                <ConfirmationDialogManager />
+              </FunctionsContext.Provider>
             </ValidationProvider>
           </ActionProvider>
         </VisibilityProvider>

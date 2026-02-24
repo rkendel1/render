@@ -187,6 +187,98 @@ describe("builtInValidationFunctions", () => {
       ).toBe(false);
     });
   });
+
+  describe("equalTo", () => {
+    it("passes when values are equal", () => {
+      expect(builtInValidationFunctions.equalTo("abc", { other: "abc" })).toBe(
+        true,
+      );
+    });
+
+    it("fails when values differ", () => {
+      expect(builtInValidationFunctions.equalTo("abc", { other: "xyz" })).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("lessThan", () => {
+    it("passes when value is less than other", () => {
+      expect(builtInValidationFunctions.lessThan(3, { other: 5 })).toBe(true);
+    });
+
+    it("fails when value equals other", () => {
+      expect(builtInValidationFunctions.lessThan(5, { other: 5 })).toBe(false);
+    });
+
+    it("fails when value is greater than other", () => {
+      expect(builtInValidationFunctions.lessThan(7, { other: 5 })).toBe(false);
+    });
+
+    it("fails for non-numbers", () => {
+      expect(builtInValidationFunctions.lessThan("3", { other: 5 })).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("greaterThan", () => {
+    it("passes when value is greater than other", () => {
+      expect(builtInValidationFunctions.greaterThan(7, { other: 5 })).toBe(
+        true,
+      );
+    });
+
+    it("fails when value equals other", () => {
+      expect(builtInValidationFunctions.greaterThan(5, { other: 5 })).toBe(
+        false,
+      );
+    });
+
+    it("fails when value is less than other", () => {
+      expect(builtInValidationFunctions.greaterThan(3, { other: 5 })).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("requiredIf", () => {
+    it("passes when condition is falsy (field not required)", () => {
+      expect(builtInValidationFunctions.requiredIf("", { field: false })).toBe(
+        true,
+      );
+      expect(builtInValidationFunctions.requiredIf("", { field: "" })).toBe(
+        true,
+      );
+      expect(builtInValidationFunctions.requiredIf("", { field: null })).toBe(
+        true,
+      );
+      expect(
+        builtInValidationFunctions.requiredIf("", { field: undefined }),
+      ).toBe(true);
+    });
+
+    it("fails when condition is truthy and value is empty", () => {
+      expect(builtInValidationFunctions.requiredIf("", { field: true })).toBe(
+        false,
+      );
+      expect(
+        builtInValidationFunctions.requiredIf(null, { field: "yes" }),
+      ).toBe(false);
+      expect(
+        builtInValidationFunctions.requiredIf(undefined, { field: 1 }),
+      ).toBe(false);
+    });
+
+    it("passes when condition is truthy and value is present", () => {
+      expect(
+        builtInValidationFunctions.requiredIf("hello", { field: true }),
+      ).toBe(true);
+      expect(builtInValidationFunctions.requiredIf(42, { field: true })).toBe(
+        true,
+      );
+    });
+  });
 });
 
 describe("runValidationCheck", () => {
@@ -399,5 +491,110 @@ describe("check helper", () => {
       expect(c.args).toEqual({ other: { $state: "/password" } });
       expect(c.message).toBe("Passwords must match");
     });
+  });
+
+  describe("equalTo", () => {
+    it("creates equalTo check with path reference", () => {
+      const c = check.equalTo("/email", "Emails must match");
+
+      expect(c.type).toBe("equalTo");
+      expect(c.args).toEqual({ other: { $state: "/email" } });
+      expect(c.message).toBe("Emails must match");
+    });
+  });
+
+  describe("lessThan", () => {
+    it("creates lessThan check with path reference", () => {
+      const c = check.lessThan("/maxValue", "Must be less");
+
+      expect(c.type).toBe("lessThan");
+      expect(c.args).toEqual({ other: { $state: "/maxValue" } });
+      expect(c.message).toBe("Must be less");
+    });
+  });
+
+  describe("greaterThan", () => {
+    it("creates greaterThan check with path reference", () => {
+      const c = check.greaterThan("/minValue");
+
+      expect(c.type).toBe("greaterThan");
+      expect(c.args).toEqual({ other: { $state: "/minValue" } });
+    });
+  });
+
+  describe("requiredIf", () => {
+    it("creates requiredIf check with path reference", () => {
+      const c = check.requiredIf("/toggle", "Required when toggle is on");
+
+      expect(c.type).toBe("requiredIf");
+      expect(c.args).toEqual({ field: { $state: "/toggle" } });
+      expect(c.message).toBe("Required when toggle is on");
+    });
+  });
+});
+
+// =============================================================================
+// Deep arg resolution in runValidationCheck
+// =============================================================================
+
+describe("deep arg resolution", () => {
+  it("resolves nested $state refs in validation args", () => {
+    const result = runValidationCheck(
+      {
+        type: "matches",
+        args: { other: { $state: "/form/password" } },
+        message: "Passwords must match",
+      },
+      {
+        value: "secret123",
+        stateModel: { form: { password: "secret123" } },
+      },
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it("resolves $state in cross-field lessThan check", () => {
+    const result = runValidationCheck(
+      {
+        type: "lessThan",
+        args: { other: { $state: "/form/maxPrice" } },
+        message: "Must be less than max price",
+      },
+      {
+        value: 50,
+        stateModel: { form: { maxPrice: 100 } },
+      },
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it("resolves $state in requiredIf check", () => {
+    const result = runValidationCheck(
+      {
+        type: "requiredIf",
+        args: { field: { $state: "/form/enableEmail" } },
+        message: "Email is required",
+      },
+      {
+        value: "",
+        stateModel: { form: { enableEmail: true } },
+      },
+    );
+    expect(result.valid).toBe(false);
+  });
+
+  it("passes requiredIf when condition is false", () => {
+    const result = runValidationCheck(
+      {
+        type: "requiredIf",
+        args: { field: { $state: "/form/enableEmail" } },
+        message: "Email is required",
+      },
+      {
+        value: "",
+        stateModel: { form: { enableEmail: false } },
+      },
+    );
+    expect(result.valid).toBe(true);
   });
 });

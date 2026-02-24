@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { DynamicValue, StateModel, VisibilityCondition } from "./types";
-import { DynamicValueSchema, resolveDynamicValue } from "./types";
+import { DynamicValueSchema, resolveDynamicValue, getByPath } from "./types";
 import { VisibilityConditionSchema, evaluateVisibility } from "./visibility";
 
 /**
@@ -168,6 +168,44 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
     const other = args?.other;
     return value === other;
   },
+
+  /**
+   * Alias for matches with a more descriptive name for cross-field equality
+   */
+  equalTo: (value: unknown, args?: Record<string, unknown>) => {
+    const other = args?.other;
+    return value === other;
+  },
+
+  /**
+   * Check if numeric value is less than another field's value
+   */
+  lessThan: (value: unknown, args?: Record<string, unknown>) => {
+    const other = args?.other;
+    if (typeof value !== "number" || typeof other !== "number") return false;
+    return value < other;
+  },
+
+  /**
+   * Check if numeric value is greater than another field's value
+   */
+  greaterThan: (value: unknown, args?: Record<string, unknown>) => {
+    const other = args?.other;
+    if (typeof value !== "number" || typeof other !== "number") return false;
+    return value > other;
+  },
+
+  /**
+   * Required only when a condition is met (the `field` arg is truthy)
+   */
+  requiredIf: (value: unknown, args?: Record<string, unknown>) => {
+    const condition = args?.field;
+    if (!condition) return true;
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    if (Array.isArray(value)) return value.length > 0;
+    return true;
+  },
 };
 
 /**
@@ -201,6 +239,36 @@ export interface ValidationContext {
 }
 
 /**
+ * Recursively resolve `{ $state }` references at any depth within a value.
+ * Unlike `resolveDynamicValue` which only handles top-level `$state`,
+ * this walks nested objects and arrays to resolve all references.
+ */
+function resolveDeepDynamicValue(
+  value: unknown,
+  stateModel: StateModel,
+): unknown {
+  if (value === null || value === undefined) return value;
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>;
+    if ("$state" in obj && typeof obj.$state === "string") {
+      return getByPath(stateModel, obj.$state);
+    }
+    const resolved: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      resolved[k] = resolveDeepDynamicValue(v, stateModel);
+    }
+    return resolved;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveDeepDynamicValue(item, stateModel));
+  }
+
+  return value;
+}
+
+/**
  * Run a single validation check
  */
 export function runValidationCheck(
@@ -209,11 +277,11 @@ export function runValidationCheck(
 ): ValidationCheckResult {
   const { value, stateModel, customFunctions } = ctx;
 
-  // Resolve args
+  // Resolve args with deep resolution so nested $state refs work
   const resolvedArgs: Record<string, unknown> = {};
   if (check.args) {
     for (const [key, argValue] of Object.entries(check.args)) {
-      resolvedArgs[key] = resolveDynamicValue(argValue, stateModel);
+      resolvedArgs[key] = resolveDeepDynamicValue(argValue, stateModel);
     }
   }
 
@@ -332,6 +400,36 @@ export const check = {
   ): ValidationCheck => ({
     type: "matches",
     args: { other: { $state: otherPath } },
+    message,
+  }),
+
+  equalTo: (
+    otherPath: string,
+    message = "Fields must match",
+  ): ValidationCheck => ({
+    type: "equalTo",
+    args: { other: { $state: otherPath } },
+    message,
+  }),
+
+  lessThan: (otherPath: string, message?: string): ValidationCheck => ({
+    type: "lessThan",
+    args: { other: { $state: otherPath } },
+    message: message ?? "Must be less than the compared field",
+  }),
+
+  greaterThan: (otherPath: string, message?: string): ValidationCheck => ({
+    type: "greaterThan",
+    args: { other: { $state: otherPath } },
+    message: message ?? "Must be greater than the compared field",
+  }),
+
+  requiredIf: (
+    fieldPath: string,
+    message = "This field is required",
+  ): ValidationCheck => ({
+    type: "requiredIf",
+    args: { field: { $state: fieldPath } },
     message,
   }),
 };

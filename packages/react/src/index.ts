@@ -34,6 +34,7 @@ export {
   type ValidationContextValue,
   type ValidationProviderProps,
   type FieldValidationState,
+  type ValidateAllRef,
 } from "./contexts/validation";
 
 export {
