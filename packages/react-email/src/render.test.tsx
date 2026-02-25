@@ -381,9 +381,9 @@ describe("example specs", () => {
       it("root element is Html with Head and Body children", () => {
         const root = example.spec.elements[example.spec.root];
         expect(root).toBeDefined();
-        expect(root.type).toBe("Html");
+        expect(root!.type).toBe("Html");
 
-        const childTypes = root.children?.map(
+        const childTypes = root!.children?.map(
           (id) => example.spec.elements[id]?.type,
         );
         expect(childTypes).toContain("Head");
