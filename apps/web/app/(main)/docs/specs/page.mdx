@@ -174,13 +174,18 @@ Each element in the map has a consistent shape:
 {
   "type": "ComponentName",
   "props": { "label": "Hello" },
-  "children": ["child-1", "child-2"]
+  "children": ["child-1", "child-2"],
+  "slots": {
+    "slot-1": ["child-3"],
+    "slot-2": ["child-4", "child-5"]
+  }
 }
 ```
 
 - `type` — Component type from your catalog
 - `props` — Component properties
-- `children` — Array of child element keys
+- `children` — Array of child element keys (maps to default slot)
+- `slots` — Object mapping slot names to arrays of child element keys
 
 ### Dynamic Data
 

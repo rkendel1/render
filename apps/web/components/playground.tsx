@@ -283,22 +283,64 @@ export function Playground() {
 
       const propsStr = serializeProps(propsObj);
       const hasChildren = element.children && element.children.length > 0;
+      const hasSlots = element.slots && Object.keys(element.slots).length > 0;
 
-      if (!hasChildren) {
+      if (!hasChildren && !hasSlots) {
         return propsStr
           ? `${spaces}<${componentName} ${propsStr} />`
           : `${spaces}<${componentName} />`;
       }
 
       const lines: string[] = [];
-      lines.push(
-        propsStr
-          ? `${spaces}<${componentName} ${propsStr}>`
-          : `${spaces}<${componentName}>`,
-      );
 
-      for (const childKey of element.children!) {
-        lines.push(generateJSX(childKey, indent + 1));
+      // If we have slots, we need to format them as props on the opening tag
+      if (hasSlots) {
+        lines.push(`${spaces}<${componentName}`);
+
+        // Add regular props if any
+        if (propsStr) {
+          lines.push(`${spaces}  ${propsStr}`);
+        }
+
+        // Add slot props
+        for (const [slotName, slotKeys] of Object.entries(element.slots!)) {
+          if (slotKeys.length === 0) continue;
+
+          const slotChildren: string[] = [];
+          for (const childKey of slotKeys) {
+            slotChildren.push(generateJSX(childKey, 0).trim());
+          }
+
+          if (slotChildren.length === 1) {
+            // Single child - inline it
+            lines.push(`${spaces}  ${slotName}={${slotChildren[0]}}`);
+          } else {
+            // Multiple children - use fragment
+            lines.push(`${spaces}  ${slotName}={`);
+            lines.push(`${spaces}    <>`);
+            for (const child of slotChildren) {
+              lines.push(`${spaces}      ${child}`);
+            }
+            lines.push(`${spaces}    </>`);
+            lines.push(`${spaces}  }`);
+          }
+        }
+
+        lines.push(`${spaces}>`);
+      } else {
+        // No slots - regular opening tag
+        lines.push(
+          propsStr
+            ? `${spaces}<${componentName} ${propsStr}>`
+            : `${spaces}<${componentName}>`,
+        );
+      }
+
+      // Render default children
+      if (hasChildren) {
+        for (const childKey of element.children!) {
+          lines.push(generateJSX(childKey, indent + 1));
+        }
       }
 
       lines.push(`${spaces}</${componentName}>`);

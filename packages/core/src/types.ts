@@ -61,8 +61,10 @@ export interface UIElement<
   type: T;
   /** Component props */
   props: P;
-  /** Child element keys (flat structure) */
+  /** Child element keys (flat structure) - maps to the 'default' slot */
   children?: string[];
+  /** Named slots - maps slot names to arrays of child element keys */
+  slots?: Record<string, string[]>;
   /** Visibility condition */
   visible?: VisibilityCondition;
   /** Event bindings — maps event names to action bindings */

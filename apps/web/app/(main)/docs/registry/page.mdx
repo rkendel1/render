@@ -70,7 +70,7 @@ Each component receives a `ComponentContext` object:
 interface ComponentContext {
   props: T;                                // Type-safe props from your catalog
   children?: React.ReactNode;              // Rendered children (for slot components)
-  emit: (event: string) => void;           // Emit a named event (always defined)
+  slots?: Record<string, React.ReactNode>;  // Named slots (header, footer, etc.)
   on: (event: string) => EventHandle;      // Get event handle with metadata
   loading?: boolean;                       // Whether the renderer is in a loading state
   bindings?: Record<string, string>;       // State paths from $bindState/$bindItem expressions
@@ -124,6 +124,26 @@ TextInput: ({ props, bindings }) => {
 ```
 
 `useBoundProp` returns `[resolvedValue, setter]`. The setter writes to the bound state path. If no binding exists (the prop is a literal), the setter is a no-op.
+
+### Named Slots
+
+Components can define multiple named slots:
+
+```tsx
+export const { registry } = defineRegistry(myCatalog, {
+  components: {
+    Layout: ({ children, slots }) => (
+      <div className="layout">
+        <header>{slots?.header}</header>
+        <main>{children}</main>
+        <footer>{slots?.footer}</footer>
+      </div>
+    ),
+  },
+});
+```
+
+The `children` prop receives content from the `children` field in the spec, `slots` receives named slots content. See the [catalog documentation](/docs/catalog#named-slots) for more details.
 
 ### Action Handlers
 

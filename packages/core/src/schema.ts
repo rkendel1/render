@@ -754,14 +754,14 @@ Note: state patches appear right after the elements that use them, so the UI fil
 
     for (const [name, def] of Object.entries(components)) {
       const propsStr = def.props ? formatZodType(def.props) : "{}";
-      const hasChildren = def.slots && def.slots.length > 0;
-      const childrenStr = hasChildren ? " [accepts children]" : "";
+      const hasSlots = def.slots && def.slots.length > 0;
+      const slotsStr = hasSlots ? ` [slots: ${def.slots!.join(", ")}]` : "";
       const eventsStr =
         def.events && def.events.length > 0
           ? ` [events: ${def.events.join(", ")}]`
           : "";
       const descStr = def.description ? ` - ${def.description}` : "";
-      lines.push(`- ${name}: ${propsStr}${descStr}${childrenStr}${eventsStr}`);
+      lines.push(`- ${name}: ${propsStr}${descStr}${slotsStr}${eventsStr}`);
     }
     lines.push("");
   }
@@ -1023,6 +1023,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $bindState, $bindItem, $item, $index, or repeat.",
           "ONLY use components listed above",
           "Each element value needs: type, props, children (array of child keys)",
+          "Use children for the default slot. Use slots object for named slots (e.g., slots: { header: [...], footer: [...] }). Never use slots.default - that's what children is for",
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
         ]
       : [
@@ -1032,6 +1033,7 @@ Note: state patches appear right after the elements that use them, so the UI fil
           "Output /state patches right after the elements that use them, one per array item for progressive loading. REQUIRED whenever using $state, $bindState, $bindItem, $item, $index, or repeat.",
           "ONLY use components listed above",
           "Each element value needs: type, props, children (array of child keys)",
+          "Use children for the default slot. Use slots object for named slots (e.g., slots: { header: [...], footer: [...] }). Never use slots.default - that's what children is for",
           "Use unique keys for the element map entries (e.g., 'header', 'metric-1', 'chart-revenue')",
         ];
   const schemaRules = catalog.schema.defaultRules ?? [];
