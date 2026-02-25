@@ -1,5 +1,11 @@
-import { getContext, setContext } from "svelte";
-import { getByPath, setByPath, type StateModel } from "@json-render/core";
+import { getContext, onDestroy, setContext } from "svelte";
+import {
+  createStateStore,
+  type StateModel,
+  type StateStore,
+  getByPath,
+} from "@json-render/core";
+import { flattenToPointers } from "@json-render/core/store-utils";
 
 const STATE_KEY = Symbol("json-render-state");
 
@@ -15,35 +21,117 @@ export interface StateContext {
   set: (path: string, value: unknown) => void;
   /** Update multiple values at once */
   update: (updates: Record<string, unknown>) => void;
+  /** Return the live state snapshot from the underlying store. */
+  getSnapshot: () => StateModel;
 }
 
 export interface CurrentValue<T> {
   current: T;
 }
 
+type CreateStateContextOptions = {
+  store?: StateStore;
+  initialState?: StateModel;
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
+};
+
+type CreateStateContextInput =
+  | CreateStateContextOptions
+  | (() => CreateStateContextOptions);
+
 /**
- * Create a state context using Svelte 5 $state rune
+ * Create a state context using Svelte 5 $state rune.
+ *
+ * Supports two modes:
+ * - **Controlled**: pass a `store` (external adapter is source of truth)
+ * - **Uncontrolled**: omit `store` and optionally pass `initialState` / `onStateChange`
  */
 export function createStateContext(
-  initialState: StateModel = {},
-  onStateChange?: (path: string, value: unknown) => void,
-): StateContext {
-  // Use $state for reactive state - creates deeply reactive object
-  let state = $state<StateModel>({ ...initialState });
+  optionsOrGetter?: CreateStateContextInput,
+): StateContext;
+export function createStateContext(
+  optionsOrGetter: CreateStateContextInput = {},
+) {
+  const getOptions =
+    typeof optionsOrGetter === "function"
+      ? optionsOrGetter
+      : () => optionsOrGetter;
+  const initialOptions = getOptions();
+  const { store: externalStore, initialState } = initialOptions;
+  const isControlled = !!externalStore;
+  const internalStore = !isControlled
+    ? createStateStore(initialState ?? {})
+    : null;
+  const store: StateStore = externalStore ?? internalStore!;
+
+  // Keep a reactive copy of the current store snapshot.
+  let state = $state.raw<StateModel>(store.getSnapshot());
+
+  const unsubscribe = store.subscribe(() => {
+    state = store.getSnapshot();
+  });
+
+  onDestroy(unsubscribe);
+
+  // In uncontrolled mode, support reactive initialState updates from options getter.
+  if (!isControlled) {
+    let prevFlat: Record<string, unknown> =
+      initialState && Object.keys(initialState).length > 0
+        ? flattenToPointers(initialState)
+        : {};
+
+    $effect.pre(() => {
+      const nextInitialState = getOptions().initialState;
+      if (!nextInitialState) return;
+      const nextFlat =
+        Object.keys(nextInitialState).length > 0
+          ? flattenToPointers(nextInitialState)
+          : {};
+      const allKeys = new Set([
+        ...Object.keys(prevFlat),
+        ...Object.keys(nextFlat),
+      ]);
+      const updates: Record<string, unknown> = {};
+      for (const key of allKeys) {
+        if (prevFlat[key] !== nextFlat[key]) {
+          updates[key] = key in nextFlat ? nextFlat[key] : undefined;
+        }
+      }
+      prevFlat = nextFlat;
+      if (Object.keys(updates).length > 0) {
+        store.update(updates);
+      }
+    });
+  }
 
   const ctx: StateContext = {
     get state() {
       return state;
     },
     get: (path: string) => getByPath(state, path),
+    getSnapshot: () => store.getSnapshot(),
     set: (path: string, value: unknown) => {
-      setByPath(state, path, value);
-      onStateChange?.(path, value);
+      const onStateChange = getOptions().onStateChange;
+      const prev = store.getSnapshot();
+      store.set(path, value);
+      if (!isControlled && store.getSnapshot() !== prev) {
+        onStateChange?.([{ path, value }]);
+      }
     },
     update: (updates: Record<string, unknown>) => {
-      for (const [path, value] of Object.entries(updates)) {
-        setByPath(state, path, value);
-        onStateChange?.(path, value);
+      const onStateChange = getOptions().onStateChange;
+      const prev = store.getSnapshot();
+      store.update(updates);
+      if (!isControlled && store.getSnapshot() !== prev) {
+        const changes: Array<{ path: string; value: unknown }> = [];
+        for (const [path, value] of Object.entries(updates)) {
+          if (getByPath(prev, path) !== value) {
+            changes.push({ path, value });
+          }
+        }
+        if (changes.length > 0) {
+          onStateChange?.(changes);
+        }
       }
     },
   };

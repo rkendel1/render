@@ -1,5 +1,10 @@
 import type { Component, Snippet } from "svelte";
-import type { UIElement, Spec, ActionHandler } from "@json-render/core";
+import type {
+  UIElement,
+  Spec,
+  ActionHandler,
+  StateStore,
+} from "@json-render/core";
 
 /**
  * Props passed to component renderers
@@ -56,6 +61,11 @@ export interface RendererProps {
 export interface JSONUIProviderProps {
   /** Component registry */
   registry: ComponentRegistry;
+  /**
+   * External store (controlled mode). When provided, `initialState` and
+   * `onStateChange` are ignored.
+   */
+  store?: StateStore;
   /** Initial state model */
   initialState?: Record<string, unknown>;
   /** Action handlers */
@@ -67,8 +77,8 @@ export interface JSONUIProviderProps {
     string,
     (value: unknown, args?: Record<string, unknown>) => boolean
   >;
-  /** Callback when state changes */
-  onStateChange?: (path: string, value: unknown) => void;
+  /** Callback when state changes (uncontrolled mode) */
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   /** Children snippet */
   children: Snippet;
 }
@@ -79,12 +89,17 @@ export interface JSONUIProviderProps {
 export interface CreateRendererProps {
   /** The spec to render (AI-generated JSON) */
   spec: Spec | null;
-  /** State context for dynamic values */
+  /**
+   * External store (controlled mode). When provided, `state` and
+   * `onStateChange` are ignored.
+   */
+  store?: StateStore;
+  /** State context for dynamic values (uncontrolled mode) */
   state?: Record<string, unknown>;
   /** Action handler */
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
-  /** Callback when state changes (e.g., from form inputs) */
-  onStateChange?: (path: string, value: unknown) => void;
+  /** Callback when state changes (uncontrolled mode) */
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   /** Whether the spec is currently loading/streaming */
   loading?: boolean;
   /** Fallback component for unknown types */

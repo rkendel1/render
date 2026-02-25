@@ -15,7 +15,6 @@ export default defineConfig({
     alias: {
       react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      svelte: path.resolve(__dirname, "node_modules/svelte"),
       vue: path.resolve(__dirname, "packages/vue/node_modules/vue"),
     },
   },

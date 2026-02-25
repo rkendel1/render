@@ -38,13 +38,26 @@ export interface ValidationContext {
   registerField: (path: string, config: ValidationConfig) => void;
 }
 
+type CreateValidationContextOptions = {
+  stateCtx: StateContext;
+  customFunctions?: Record<string, ValidationFunction>;
+};
+
+type CreateValidationContextInput =
+  | CreateValidationContextOptions
+  | (() => CreateValidationContextOptions);
+
 /**
  * Create a validation context
  */
 export function createValidationContext(
-  stateCtx: StateContext,
-  customFunctions: Record<string, ValidationFunction> = {},
+  optionsOrGetter: CreateValidationContextInput,
 ): ValidationContext {
+  const getOptions =
+    typeof optionsOrGetter === "function"
+      ? optionsOrGetter
+      : () => optionsOrGetter;
+
   let fieldStates = $state<Record<string, FieldValidationState>>({});
   let fieldConfigs = $state<Record<string, ValidationConfig>>({});
 
@@ -52,6 +65,7 @@ export function createValidationContext(
     path: string,
     config: ValidationConfig,
   ): ValidationResult => {
+    const { stateCtx, customFunctions = {} } = getOptions();
     // Walk the nested state object using JSON Pointer segments
     const segments = path.split("/").filter(Boolean);
     let value: unknown = stateCtx.state;
@@ -115,7 +129,9 @@ export function createValidationContext(
   };
 
   const ctx: ValidationContext = {
-    customFunctions,
+    get customFunctions() {
+      return getOptions().customFunctions ?? {};
+    },
     get fieldStates() {
       return fieldStates;
     },

@@ -1,21 +1,27 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { ActionHandler, ValidationFunction } from "@json-render/core";
+  import type {
+    ActionHandler,
+    StateStore,
+    ValidationFunction,
+  } from "@json-render/core";
   import { createStateContext } from "./contexts/state.svelte.js";
   import { createVisibilityContext } from "./contexts/visibility.svelte.js";
   import { createActionContext } from "./contexts/actions.svelte.js";
   import { createValidationContext } from "./contexts/validation.svelte.js";
 
   interface Props {
+    store?: StateStore;
     initialState?: Record<string, unknown>;
     handlers?: Record<string, ActionHandler>;
     navigate?: (path: string) => void;
     validationFunctions?: Record<string, ValidationFunction>;
-    onStateChange?: (path: string, value: unknown) => void;
+    onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
     children: Snippet;
   }
 
   let {
+    store,
     initialState = {},
     handlers = {},
     navigate,
@@ -25,13 +31,25 @@
   }: Props = $props();
 
   // Create and provide contexts
-  const stateCtx = createStateContext(initialState, onStateChange);
+  const stateCtx = createStateContext(() => ({
+    store,
+    initialState,
+    onStateChange,
+  }));
 
   createVisibilityContext(stateCtx);
 
-  createActionContext(stateCtx, handlers, navigate);
+  const validationCtx = createValidationContext(() => ({
+    stateCtx,
+    customFunctions: validationFunctions,
+  }));
 
-  createValidationContext(stateCtx, validationFunctions);
+  createActionContext(() => ({
+    stateCtx,
+    handlers,
+    navigate,
+    validation: validationCtx,
+  }));
 </script>
 
 {@render children()}

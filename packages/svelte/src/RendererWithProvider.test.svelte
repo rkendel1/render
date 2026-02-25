@@ -1,18 +1,10 @@
 <script lang="ts">
   import type { Spec, ActionHandler } from "@json-render/core";
   import type { ComponentRegistry, ComponentRenderer } from "./types.js";
-  import {
-    createStateContext,
-  } from "./contexts/state.svelte.js";
-  import {
-    createVisibilityContext,
-  } from "./contexts/visibility.svelte.js";
-  import {
-    createActionContext,
-  } from "./contexts/actions.svelte.js";
-  import {
-    createValidationContext,
-  } from "./contexts/validation.svelte.js";
+  import { createStateContext } from "./contexts/state.svelte.js";
+  import { createVisibilityContext } from "./contexts/visibility.svelte.js";
+  import { createActionContext } from "./contexts/actions.svelte.js";
+  import { createValidationContext } from "./contexts/validation.svelte.js";
   import Renderer from "./Renderer.svelte";
 
   interface Props {
@@ -34,13 +26,17 @@
   }: Props = $props();
 
   // Create and provide contexts
-  const stateCtx = createStateContext(initialState);
+  const stateCtx = createStateContext(() => ({ initialState }));
 
-  const visibilityCtx = createVisibilityContext(stateCtx);
+  createVisibilityContext(stateCtx);
 
-  const actionCtx = createActionContext(stateCtx, handlers);
+  const validationCtx = createValidationContext(() => ({ stateCtx }));
 
-  const validationCtx = createValidationContext(stateCtx);
+  createActionContext(() => ({
+    stateCtx,
+    handlers,
+    validation: validationCtx,
+  }));
 </script>
 
 <Renderer {spec} {registry} {loading} {fallback} />

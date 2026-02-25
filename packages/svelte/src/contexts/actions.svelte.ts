@@ -8,6 +8,7 @@ import {
   type ResolvedAction,
 } from "@json-render/core";
 import type { StateContext } from "./state.svelte";
+import type { FieldValidationState } from "./validation.svelte.js";
 
 const ACTION_KEY = Symbol("json-render-actions");
 
@@ -100,21 +101,41 @@ export interface ActionContext {
   registerHandler: (name: string, handler: ActionHandler) => void;
 }
 
+interface ValidationContextLike {
+  validateAll: () => boolean;
+  fieldStates: Record<string, FieldValidationState>;
+}
+
+type CreateActionContextOptions = {
+  stateCtx: StateContext;
+  handlers?: Record<string, ActionHandler>;
+  navigate?: (path: string) => void;
+  validation?: ValidationContextLike;
+};
+
+type CreateActionContextInput =
+  | CreateActionContextOptions
+  | (() => CreateActionContextOptions);
+
 /**
  * Create an action context
  */
 export function createActionContext(
-  stateCtx: StateContext,
-  initialHandlers: Record<string, ActionHandler> = {},
-  navigate?: (path: string) => void,
+  optionsOrGetter: CreateActionContextInput,
 ): ActionContext {
+  const getOptions =
+    typeof optionsOrGetter === "function"
+      ? optionsOrGetter
+      : () => optionsOrGetter;
+
   // Use $state for reactive parts
-  let handlers = $state<Record<string, ActionHandler>>({ ...initialHandlers });
+  let registeredHandlers = $state<Record<string, ActionHandler>>({});
   let loadingActions = $state<Set<string>>(new Set());
   let pendingConfirmation = $state<PendingConfirmation | null>(null);
 
   const execute = async (binding: ActionBinding): Promise<void> => {
-    const resolved = resolveAction(binding, stateCtx.state);
+    const { stateCtx, navigate, validation } = getOptions();
+    const resolved = resolveAction(binding, stateCtx.getSnapshot());
 
     // Built-in: setState
     if (resolved.action === "setState" && resolved.params) {
@@ -159,6 +180,28 @@ export function createActionContext(
       return;
     }
 
+    // Built-in: validateForm — triggers validateAll and writes result to state
+    if (resolved.action === "validateForm") {
+      if (!validation?.validateAll) {
+        console.warn(
+          "validateForm action was dispatched but no ValidationProvider is connected. " +
+            "Ensure ValidationProvider is rendered inside the provider tree.",
+        );
+        return;
+      }
+      const valid = validation.validateAll();
+      const errors: Record<string, string[]> = {};
+      for (const [path, fieldState] of Object.entries(validation.fieldStates)) {
+        if (fieldState.result && !fieldState.result.valid) {
+          errors[path] = fieldState.result.errors;
+        }
+      }
+      const statePath =
+        (resolved.params?.statePath as string) || "/formValidation";
+      stateCtx.set(statePath, { valid, errors });
+      return;
+    }
+
     // Built-in: push (navigation)
     if (resolved.action === "push" && resolved.params) {
       const screen = resolved.params.screen as string;
@@ -194,7 +237,9 @@ export function createActionContext(
       return;
     }
 
-    const handler = handlers[resolved.action];
+    const handler =
+      registeredHandlers[resolved.action] ??
+      (getOptions().handlers ?? {})[resolved.action];
 
     if (!handler) {
       console.warn(`No handler registered for action: ${resolved.action}`);
@@ -259,7 +304,10 @@ export function createActionContext(
 
   const ctx: ActionContext = {
     get handlers() {
-      return handlers;
+      return {
+        ...(getOptions().handlers ?? {}),
+        ...registeredHandlers,
+      };
     },
     get loadingActions() {
       return loadingActions;
@@ -275,7 +323,7 @@ export function createActionContext(
       pendingConfirmation?.reject();
     },
     registerHandler: (name: string, handler: ActionHandler) => {
-      handlers = { ...handlers, [name]: handler };
+      registeredHandlers = { ...registeredHandlers, [name]: handler };
     },
   };
 

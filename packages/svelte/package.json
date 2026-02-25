@@ -57,7 +57,7 @@
     "@json-render/core": "workspace:*"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
+    "@internal/typescript-config": "workspace:*",
     "@sveltejs/package": "^2.3.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "svelte": "^5.0.0",
