@@ -68,8 +68,13 @@ export const docsNavigation: NavSection[] = [
         external: true,
       },
       {
-        title: "Vue + Vite",
-        href: "https://github.com/vercel-labs/json-render/tree/main/examples/vue-vite",
+        title: "Vue",
+        href: "https://github.com/vercel-labs/json-render/tree/main/examples/vue",
+        external: true,
+      },
+      {
+        title: "Vite Renderers (Vue / React)",
+        href: "https://github.com/vercel-labs/json-render/tree/main/examples/vite-renderers",
         external: true,
       },
     ],
