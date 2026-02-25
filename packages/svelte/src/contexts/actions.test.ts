@@ -1,14 +1,51 @@
 import { describe, it, expect, vi } from "vitest";
 import { mount, unmount } from "svelte";
-import { createStateContext } from "./state.svelte";
-import { createActionContext } from "./actions.svelte";
+import StateProvider, { getStateContext } from "./StateProvider.svelte";
+import ActionProvider, { getActionContext } from "./ActionProvider.svelte";
+import ValidationProvider, {
+  getValidationContext,
+} from "./ValidationProvider.svelte";
 
-function component(runTest: () => Promise<void>) {
+function component(
+  runTest: () => Promise<void>,
+  options: {
+    initialState?: Record<string, unknown>;
+    handlers?: Record<
+      string,
+      (params: Record<string, unknown>) => Promise<unknown> | unknown
+    >;
+    withValidation?: boolean;
+  } = {},
+) {
   return async () => {
     let promise: Promise<void>;
     const c = mount(
-      (() => {
-        promise = runTest();
+      ((_anchor: any) => {
+        (StateProvider as any)(_anchor, {
+          initialState: options.initialState ?? {},
+          children: ((_inner: any) => {
+            if (options.withValidation) {
+              (ValidationProvider as any)(_inner, {
+                children: ((__inner: any) => {
+                  (ActionProvider as any)(__inner, {
+                    handlers: options.handlers ?? {},
+                    children: (() => {
+                      promise = runTest();
+                    }) as any,
+                  });
+                }) as any,
+              });
+              return;
+            }
+
+            (ActionProvider as any)(_inner, {
+              handlers: options.handlers ?? {},
+              children: (() => {
+                promise = runTest();
+              }) as any,
+            });
+          }) as any,
+        });
       }) as any,
       { target: document.body },
     );
@@ -20,41 +57,45 @@ function component(runTest: () => Promise<void>) {
 describe("createActionContext", () => {
   it(
     "executes built-in setState action",
-    component(async () => {
-      const stateCtx = createStateContext({ initialState: { count: 0 } });
-      const actionCtx = createActionContext({ stateCtx });
+    component(
+      async () => {
+        const stateCtx = getStateContext();
+        const actionCtx = getActionContext();
 
-      await actionCtx.execute({
-        action: "setState",
-        params: { statePath: "/count", value: 5 },
-      });
+        await actionCtx.execute({
+          action: "setState",
+          params: { statePath: "/count", value: 5 },
+        });
 
-      expect(stateCtx.state.count).toBe(5);
-    }),
+        expect(stateCtx.state.count).toBe(5);
+      },
+      { initialState: { count: 0 } },
+    ),
   );
 
   it(
     "executes built-in pushState action",
-    component(async () => {
-      const stateCtx = createStateContext({
-        initialState: { items: ["a", "b"] },
-      });
-      const actionCtx = createActionContext({ stateCtx });
+    component(
+      async () => {
+        const stateCtx = getStateContext();
+        const actionCtx = getActionContext();
 
-      await actionCtx.execute({
-        action: "pushState",
-        params: { statePath: "/items", value: "c" },
-      });
+        await actionCtx.execute({
+          action: "pushState",
+          params: { statePath: "/items", value: "c" },
+        });
 
-      expect(stateCtx.state.items).toEqual(["a", "b", "c"]);
-    }),
+        expect(stateCtx.state.items).toEqual(["a", "b", "c"]);
+      },
+      { initialState: { items: ["a", "b"] } },
+    ),
   );
 
   it(
     "pushState creates array if missing",
     component(async () => {
-      const stateCtx = createStateContext();
-      const actionCtx = createActionContext({ stateCtx });
+      const stateCtx = getStateContext();
+      const actionCtx = getActionContext();
 
       await actionCtx.execute({
         action: "pushState",
@@ -67,83 +108,81 @@ describe("createActionContext", () => {
 
   it(
     "executes built-in removeState action",
-    component(async () => {
-      const stateCtx = createStateContext({
-        initialState: { items: ["a", "b", "c"] },
-      });
-      const actionCtx = createActionContext({ stateCtx });
+    component(
+      async () => {
+        const stateCtx = getStateContext();
+        const actionCtx = getActionContext();
 
-      await actionCtx.execute({
-        action: "removeState",
-        params: { statePath: "/items", index: 1 },
-      });
+        await actionCtx.execute({
+          action: "removeState",
+          params: { statePath: "/items", index: 1 },
+        });
 
-      expect(stateCtx.state.items).toEqual(["a", "c"]);
-    }),
+        expect(stateCtx.state.items).toEqual(["a", "c"]);
+      },
+      { initialState: { items: ["a", "b", "c"] } },
+    ),
   );
 
   it(
     "executes push navigation action",
-    component(async () => {
-      const stateCtx = createStateContext({
-        initialState: { currentScreen: "home" },
-      });
-      const actionCtx = createActionContext({ stateCtx });
+    component(
+      async () => {
+        const stateCtx = getStateContext();
+        const actionCtx = getActionContext();
 
-      await actionCtx.execute({
-        action: "push",
-        params: { screen: "settings" },
-      });
+        await actionCtx.execute({
+          action: "push",
+          params: { screen: "settings" },
+        });
 
-      expect(stateCtx.get("/currentScreen")).toBe("settings");
-      expect(stateCtx.get("/navStack")).toEqual(["home"]);
-    }),
+        expect(stateCtx.get("/currentScreen")).toBe("settings");
+        expect(stateCtx.get("/navStack")).toEqual(["home"]);
+      },
+      { initialState: { currentScreen: "home" } },
+    ),
   );
 
   it(
     "executes pop navigation action",
-    component(async () => {
-      const stateCtx = createStateContext({
-        initialState: {
-          currentScreen: "settings",
-          navStack: ["home"],
-        },
-      });
-      const actionCtx = createActionContext({ stateCtx });
+    component(
+      async () => {
+        const stateCtx = getStateContext();
+        const actionCtx = getActionContext();
 
-      await actionCtx.execute({ action: "pop" });
+        await actionCtx.execute({ action: "pop" });
 
-      expect(stateCtx.get("/currentScreen")).toBe("home");
-      expect(stateCtx.get("/navStack")).toEqual([]);
-    }),
+        expect(stateCtx.get("/currentScreen")).toBe("home");
+        expect(stateCtx.get("/navStack")).toEqual([]);
+      },
+      { initialState: { currentScreen: "settings", navStack: ["home"] } },
+    ),
   );
 
   it(
     "executes custom handlers",
-    component(async () => {
-      const stateCtx = createStateContext();
+    (() => {
       const customHandler = vi.fn().mockResolvedValue(undefined);
-      const actionCtx = createActionContext({
-        stateCtx,
-        handlers: {
-          myAction: customHandler,
+      return component(
+        async () => {
+          const actionCtx = getActionContext();
+
+          await actionCtx.execute({
+            action: "myAction",
+            params: { foo: "bar" },
+          });
+
+          expect(customHandler).toHaveBeenCalledWith({ foo: "bar" });
         },
-      });
-
-      await actionCtx.execute({
-        action: "myAction",
-        params: { foo: "bar" },
-      });
-
-      expect(customHandler).toHaveBeenCalledWith({ foo: "bar" });
-    }),
+        { handlers: { myAction: customHandler } },
+      );
+    })(),
   );
 
   it(
     "warns when no handler registered",
     component(async () => {
-      const stateCtx = createStateContext();
-      const actionCtx = createActionContext({ stateCtx });
+      const actionCtx = getActionContext();
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       await actionCtx.execute({ action: "unknownAction" });
@@ -157,8 +196,7 @@ describe("createActionContext", () => {
 
   it(
     "tracks loading state for actions",
-    component(async () => {
-      const stateCtx = createStateContext();
+    (() => {
       let resolveHandler: () => void;
       const slowHandler = vi.fn(
         () =>
@@ -166,29 +204,31 @@ describe("createActionContext", () => {
             resolveHandler = resolve;
           }),
       );
-      const actionCtx = createActionContext({
-        stateCtx,
-        handlers: {
-          slowAction: slowHandler,
+      return component(
+        async () => {
+          const actionCtx = getActionContext();
+          const executePromise = actionCtx.execute({ action: "slowAction" });
+
+          expect(actionCtx.loadingActions.has("slowAction")).toBe(true);
+
+          resolveHandler!();
+          await executePromise;
+
+          expect(actionCtx.loadingActions.has("slowAction")).toBe(false);
         },
-      });
-
-      const executePromise = actionCtx.execute({ action: "slowAction" });
-
-      expect(actionCtx.loadingActions.has("slowAction")).toBe(true);
-
-      resolveHandler!();
-      await executePromise;
-
-      expect(actionCtx.loadingActions.has("slowAction")).toBe(false);
-    }),
+        {
+          handlers: {
+            slowAction: slowHandler,
+          },
+        },
+      );
+    })(),
   );
 
   it(
     "allows registering handlers dynamically",
     component(async () => {
-      const stateCtx = createStateContext();
-      const actionCtx = createActionContext({ stateCtx });
+      const actionCtx = getActionContext();
       const dynamicHandler = vi.fn();
 
       actionCtx.registerHandler("dynamicAction", dynamicHandler);
@@ -200,36 +240,31 @@ describe("createActionContext", () => {
 
   it(
     "executes validateForm and writes result to /formValidation",
-    component(async () => {
-      const stateCtx = createStateContext();
-      const actionCtx = createActionContext({
-        stateCtx,
-        validation: {
-          validateAll: () => false,
-          fieldStates: {
-            "/form/email": {
-              touched: true,
-              validated: true,
-              result: { valid: false, errors: ["Required"], checks: [] },
-            },
-          },
-        },
-      });
+    component(
+      async () => {
+        const stateCtx = getStateContext();
+        const actionCtx = getActionContext();
+        const validationCtx = getValidationContext();
 
-      await actionCtx.execute({ action: "validateForm" });
+        validationCtx.registerField("/form/email", {
+          checks: [{ type: "required", message: "Required" }],
+        });
 
-      expect(stateCtx.get("/formValidation")).toEqual({
-        valid: false,
-        errors: { "/form/email": ["Required"] },
-      });
-    }),
+        await actionCtx.execute({ action: "validateForm" });
+
+        expect(stateCtx.get("/formValidation")).toEqual({
+          valid: false,
+          errors: { "/form/email": ["Required"] },
+        });
+      },
+      { withValidation: true },
+    ),
   );
 
   it(
     "validateForm defaults to warning when validation context is missing",
     component(async () => {
-      const stateCtx = createStateContext();
-      const actionCtx = createActionContext({ stateCtx });
+      const actionCtx = getActionContext();
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       await actionCtx.execute({ action: "validateForm" });

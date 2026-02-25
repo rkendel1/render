@@ -3,35 +3,36 @@
 // =============================================================================
 
 export {
-  createStateContext,
+  default as StateProvider,
   getStateContext,
   getStateValue,
   getBoundProp,
   type StateContext,
-} from "./contexts/state.svelte.js";
+} from "./contexts/StateProvider.svelte";
 
 export {
-  createVisibilityContext,
+  default as VisibilityProvider,
   getVisibilityContext,
   isVisible,
   type VisibilityContext,
-} from "./contexts/visibility.svelte.js";
+} from "./contexts/VisibilityProvider.svelte";
 
 export {
-  createActionContext,
+  default as ActionProvider,
   getActionContext,
   getAction,
   type ActionContext,
   type PendingConfirmation,
-} from "./contexts/actions.svelte.js";
+} from "./contexts/ActionProvider.svelte";
 
 export {
-  createValidationContext,
+  default as ValidationProvider,
   getValidationContext,
+  getOptionalValidationContext,
   getFieldValidation,
   type ValidationContext,
   type FieldValidationState,
-} from "./contexts/validation.svelte.js";
+} from "./contexts/ValidationProvider.svelte";
 
 export {
   setRepeatScope,

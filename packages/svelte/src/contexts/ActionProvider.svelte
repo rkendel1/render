@@ -1,143 +1,169 @@
-import { getContext, setContext } from "svelte";
-import {
-  resolveAction,
-  executeAction,
-  type ActionBinding,
-  type ActionHandler,
-  type ActionConfirm,
-  type ResolvedAction,
-} from "@json-render/core";
-import type { StateContext } from "./state.svelte";
-import type { FieldValidationState } from "./validation.svelte.js";
+<script module lang="ts">
+  import { getContext } from "svelte";
+  import type {
+    ActionBinding,
+    ActionConfirm,
+    ActionHandler,
+    ResolvedAction,
+  } from "@json-render/core";
 
-const ACTION_KEY = Symbol("json-render-actions");
+  const ACTION_KEY = Symbol.for("json-render-actions");
 
-/**
- * Generate a unique ID for use with the "$id" token.
- */
-let idCounter = 0;
-function generateUniqueId(): string {
-  idCounter += 1;
-  return `${Date.now()}-${idCounter}`;
-}
-
-/**
- * Deep-resolve dynamic value references within an object.
- */
-function deepResolveValue(
-  value: unknown,
-  get: (path: string) => unknown,
-): unknown {
-  if (value === null || value === undefined) return value;
-
-  // "$id" string token -> generate unique ID
-  if (value === "$id") {
-    return generateUniqueId();
+  /**
+   * Pending confirmation state
+   */
+  export interface PendingConfirmation {
+    action: ResolvedAction;
+    handler: ActionHandler;
+    resolve: () => void;
+    reject: () => void;
   }
 
-  if (typeof value === "object" && !Array.isArray(value)) {
-    const obj = value as Record<string, unknown>;
-    const keys = Object.keys(obj);
+  export interface CurrentValue<T> {
+    readonly current: T;
+  }
 
-    // { $state: "/foo" } -> read from state
-    if (keys.length === 1 && typeof obj.$state === "string") {
-      return get(obj.$state as string);
+  /**
+   * Action context value
+   */
+  export interface ActionContext {
+    /** Registered action handlers */
+    handlers: Record<string, ActionHandler>;
+    /** Currently loading action names */
+    loadingActions: Set<string>;
+    /** Pending confirmation dialog */
+    pendingConfirmation: PendingConfirmation | null;
+    /** Execute an action binding */
+    execute: (binding: ActionBinding) => Promise<void>;
+    /** Confirm the pending action */
+    confirm: () => void;
+    /** Cancel the pending action */
+    cancel: () => void;
+    /** Register an action handler */
+    registerHandler: (name: string, handler: ActionHandler) => void;
+  }
+
+  /**
+   * Get the action context from component tree
+   */
+  export function getActionContext(): ActionContext {
+    const ctx = getContext<ActionContext>(ACTION_KEY);
+    if (!ctx) {
+      throw new Error(
+        "getActionContext must be called within an ActionProvider",
+      );
     }
+    return ctx;
+  }
 
-    // { "$id": true } -> generate unique ID
-    if (keys.length === 1 && "$id" in obj) {
+  /**
+   * Convenience helper to get a registered action handler by name
+   */
+  export function getAction(
+    name: string,
+  ): CurrentValue<ActionHandler | undefined> {
+    const context = getActionContext();
+    return {
+      get current() {
+        return context.handlers[name];
+      },
+    };
+  }
+
+  /**
+   * Props for ConfirmDialog component
+   */
+  export interface ConfirmDialogProps {
+    /** The confirmation config */
+    confirm: ActionConfirm;
+    /** Called when confirmed */
+    onConfirm: () => void;
+    /** Called when cancelled */
+    onCancel: () => void;
+  }
+
+  /**
+   * Generate a unique ID for use with the "$id" token.
+   */
+  let idCounter = 0;
+  function generateUniqueId(): string {
+    idCounter += 1;
+    return `${Date.now()}-${idCounter}`;
+  }
+
+  /**
+   * Deep-resolve dynamic value references within an object.
+   */
+  function deepResolveValue(
+    value: unknown,
+    get: (path: string) => unknown,
+  ): unknown {
+    if (value === null || value === undefined) return value;
+
+    if (value === "$id") {
       return generateUniqueId();
     }
-  }
 
-  // Recurse into arrays
-  if (Array.isArray(value)) {
-    return value.map((item) => deepResolveValue(item, get));
-  }
+    if (typeof value === "object" && !Array.isArray(value)) {
+      const obj = value as Record<string, unknown>;
+      const keys = Object.keys(obj);
 
-  // Recurse into plain objects
-  if (typeof value === "object") {
-    const resolved: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      resolved[key] = deepResolveValue(val, get);
+      if (keys.length === 1 && typeof obj.$state === "string") {
+        return get(obj.$state as string);
+      }
+
+      if (keys.length === 1 && "$id" in obj) {
+        return generateUniqueId();
+      }
     }
-    return resolved;
+
+    if (Array.isArray(value)) {
+      return value.map((item) => deepResolveValue(item, get));
+    }
+
+    if (typeof value === "object") {
+      const resolved: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(
+        value as Record<string, unknown>,
+      )) {
+        resolved[key] = deepResolveValue(val, get);
+      }
+      return resolved;
+    }
+
+    return value;
+  }
+</script>
+
+<script lang="ts">
+  import { setContext, type Snippet } from "svelte";
+  import {
+    resolveAction,
+    executeAction,
+    type ActionBinding as CoreActionBinding,
+    type ActionHandler as CoreActionHandler,
+  } from "@json-render/core";
+  import { getStateContext } from "./StateProvider.svelte";
+  import { getOptionalValidationContext } from "./ValidationProvider.svelte";
+
+  interface Props {
+    handlers?: Record<string, CoreActionHandler>;
+    navigate?: (path: string) => void;
+    children?: Snippet;
   }
 
-  return value;
-}
+  let { handlers = {}, navigate, children }: Props = $props();
 
-/**
- * Pending confirmation state
- */
-export interface PendingConfirmation {
-  action: ResolvedAction;
-  handler: ActionHandler;
-  resolve: () => void;
-  reject: () => void;
-}
+  const stateCtx = getStateContext();
+  const validation = getOptionalValidationContext();
 
-export interface CurrentValue<T> {
-  readonly current: T;
-}
-
-/**
- * Action context value
- */
-export interface ActionContext {
-  /** Registered action handlers */
-  handlers: Record<string, ActionHandler>;
-  /** Currently loading action names */
-  loadingActions: Set<string>;
-  /** Pending confirmation dialog */
-  pendingConfirmation: PendingConfirmation | null;
-  /** Execute an action binding */
-  execute: (binding: ActionBinding) => Promise<void>;
-  /** Confirm the pending action */
-  confirm: () => void;
-  /** Cancel the pending action */
-  cancel: () => void;
-  /** Register an action handler */
-  registerHandler: (name: string, handler: ActionHandler) => void;
-}
-
-interface ValidationContextLike {
-  validateAll: () => boolean;
-  fieldStates: Record<string, FieldValidationState>;
-}
-
-type CreateActionContextOptions = {
-  stateCtx: StateContext;
-  handlers?: Record<string, ActionHandler>;
-  navigate?: (path: string) => void;
-  validation?: ValidationContextLike;
-};
-
-type CreateActionContextInput =
-  | CreateActionContextOptions
-  | (() => CreateActionContextOptions);
-
-/**
- * Create an action context
- */
-export function createActionContext(
-  optionsOrGetter: CreateActionContextInput,
-): ActionContext {
-  const getOptions =
-    typeof optionsOrGetter === "function"
-      ? optionsOrGetter
-      : () => optionsOrGetter;
-
-  // Use $state for reactive parts
-  let registeredHandlers = $state<Record<string, ActionHandler>>({});
+  let registeredHandlers = $state<Record<string, CoreActionHandler>>({});
   let loadingActions = $state<Set<string>>(new Set());
   let pendingConfirmation = $state<PendingConfirmation | null>(null);
 
-  const execute = async (binding: ActionBinding): Promise<void> => {
-    const { stateCtx, navigate, validation } = getOptions();
+  const execute = async (binding: CoreActionBinding): Promise<void> => {
     const resolved = resolveAction(binding, stateCtx.getSnapshot());
 
-    // Built-in: setState
     if (resolved.action === "setState" && resolved.params) {
       const statePath = resolved.params.statePath as string;
       const value = resolved.params.value;
@@ -147,7 +173,6 @@ export function createActionContext(
       return;
     }
 
-    // Built-in: pushState
     if (resolved.action === "pushState" && resolved.params) {
       const statePath = resolved.params.statePath as string;
       const rawValue = resolved.params.value;
@@ -155,7 +180,6 @@ export function createActionContext(
         const resolvedValue = deepResolveValue(rawValue, stateCtx.get);
         const arr = (stateCtx.get(statePath) as unknown[] | undefined) ?? [];
         stateCtx.set(statePath, [...arr, resolvedValue]);
-        // Optionally clear a state path after pushing
         const clearStatePath = resolved.params.clearStatePath as
           | string
           | undefined;
@@ -166,7 +190,6 @@ export function createActionContext(
       return;
     }
 
-    // Built-in: removeState
     if (resolved.action === "removeState" && resolved.params) {
       const statePath = resolved.params.statePath as string;
       const index = resolved.params.index as number;
@@ -180,7 +203,6 @@ export function createActionContext(
       return;
     }
 
-    // Built-in: validateForm — triggers validateAll and writes result to state
     if (resolved.action === "validateForm") {
       if (!validation?.validateAll) {
         console.warn(
@@ -202,7 +224,6 @@ export function createActionContext(
       return;
     }
 
-    // Built-in: push (navigation)
     if (resolved.action === "push" && resolved.params) {
       const screen = resolved.params.screen as string;
       if (screen) {
@@ -221,7 +242,6 @@ export function createActionContext(
       return;
     }
 
-    // Built-in: pop (navigation)
     if (resolved.action === "pop") {
       const navStack =
         (stateCtx.get("/navStack") as string[] | undefined) ?? [];
@@ -238,15 +258,13 @@ export function createActionContext(
     }
 
     const handler =
-      registeredHandlers[resolved.action] ??
-      (getOptions().handlers ?? {})[resolved.action];
+      registeredHandlers[resolved.action] ?? handlers[resolved.action];
 
     if (!handler) {
       console.warn(`No handler registered for action: ${resolved.action}`);
       return;
     }
 
-    // If confirmation is required, show dialog
     if (resolved.confirm) {
       return new Promise<void>((resolve, reject) => {
         pendingConfirmation = {
@@ -270,7 +288,7 @@ export function createActionContext(
             setState: stateCtx.set,
             navigate,
             executeAction: async (name) => {
-              const subBinding: ActionBinding = { action: name };
+              const subBinding: CoreActionBinding = { action: name };
               await execute(subBinding);
             },
           });
@@ -282,7 +300,6 @@ export function createActionContext(
       });
     }
 
-    // Execute immediately
     loadingActions = new Set(loadingActions).add(resolved.action);
     try {
       await executeAction({
@@ -291,7 +308,7 @@ export function createActionContext(
         setState: stateCtx.set,
         navigate,
         executeAction: async (name) => {
-          const subBinding: ActionBinding = { action: name };
+          const subBinding: CoreActionBinding = { action: name };
           await execute(subBinding);
         },
       });
@@ -304,10 +321,7 @@ export function createActionContext(
 
   const ctx: ActionContext = {
     get handlers() {
-      return {
-        ...(getOptions().handlers ?? {}),
-        ...registeredHandlers,
-      };
+      return { ...handlers, ...registeredHandlers };
     },
     get loadingActions() {
       return loadingActions;
@@ -322,36 +336,12 @@ export function createActionContext(
     cancel: () => {
       pendingConfirmation?.reject();
     },
-    registerHandler: (name: string, handler: ActionHandler) => {
+    registerHandler: (name: string, handler: CoreActionHandler) => {
       registeredHandlers = { ...registeredHandlers, [name]: handler };
     },
   };
 
   setContext(ACTION_KEY, ctx);
-  return ctx;
-}
+</script>
 
-/**
- * Get the action context from component tree
- */
-export function getActionContext(): ActionContext {
-  const ctx = getContext<ActionContext>(ACTION_KEY);
-  if (!ctx) {
-    throw new Error("getActionContext must be called within a JsonUIProvider");
-  }
-  return ctx;
-}
-
-/**
- * Convenience helper to get a registered action handler by name
- */
-export function getAction(
-  name: string,
-): CurrentValue<ActionHandler | undefined> {
-  const context = getActionContext();
-  return {
-    get current() {
-      return context.handlers[name];
-    },
-  };
-}
+{@render children?.()}

@@ -8,8 +8,8 @@
     type PropResolutionContext,
   } from "@json-render/core";
   import type { ComponentRegistry, ComponentRenderer } from "./types.js";
-  import { getStateContext } from "./contexts/state.svelte.js";
-  import { getActionContext } from "./contexts/actions.svelte.js";
+  import { getStateContext } from "./contexts/StateProvider.svelte";
+  import { getActionContext } from "./contexts/ActionProvider.svelte";
   import { getRepeatScope } from "./contexts/repeat-scope.js";
   import RepeatChildren from "./RepeatChildren.svelte";
   import Self from "./ElementRenderer.svelte";

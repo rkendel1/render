@@ -2,7 +2,7 @@
   import type { Spec, UIElement } from "@json-render/core";
   import { getByPath } from "@json-render/core";
   import type { ComponentRegistry, ComponentRenderer } from "./types.js";
-  import { getStateContext } from "./contexts/state.svelte.js";
+  import { getStateContext } from "./contexts/StateProvider.svelte";
   import { setRepeatScope } from "./contexts/repeat-scope.js";
   import ElementRenderer from "./ElementRenderer.svelte";
 

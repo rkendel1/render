@@ -5,10 +5,10 @@
     StateStore,
     ValidationFunction,
   } from "@json-render/core";
-  import { createStateContext } from "./contexts/state.svelte.js";
-  import { createVisibilityContext } from "./contexts/visibility.svelte.js";
-  import { createActionContext } from "./contexts/actions.svelte.js";
-  import { createValidationContext } from "./contexts/validation.svelte.js";
+  import StateProvider from "./contexts/StateProvider.svelte";
+  import VisibilityProvider from "./contexts/VisibilityProvider.svelte";
+  import ValidationProvider from "./contexts/ValidationProvider.svelte";
+  import ActionProvider from "./contexts/ActionProvider.svelte";
 
   interface Props {
     store?: StateStore;
@@ -29,27 +29,14 @@
     onStateChange,
     children,
   }: Props = $props();
-
-  // Create and provide contexts
-  const stateCtx = createStateContext(() => ({
-    store,
-    initialState,
-    onStateChange,
-  }));
-
-  createVisibilityContext(stateCtx);
-
-  const validationCtx = createValidationContext(() => ({
-    stateCtx,
-    customFunctions: validationFunctions,
-  }));
-
-  createActionContext(() => ({
-    stateCtx,
-    handlers,
-    navigate,
-    validation: validationCtx,
-  }));
 </script>
 
-{@render children()}
+<StateProvider {store} {initialState} {onStateChange}>
+  <VisibilityProvider>
+    <ValidationProvider customFunctions={validationFunctions}>
+      <ActionProvider {handlers} {navigate}>
+        {@render children()}
+      </ActionProvider>
+    </ValidationProvider>
+  </VisibilityProvider>
+</StateProvider>
