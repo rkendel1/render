@@ -1,7 +1,7 @@
 import { defineSchema } from "@json-render/core";
 
 /**
- * The schema for @json-render/react
+ * The schema for @json-render/vue
  *
  * Defines:
  * - Spec: A flat tree of elements with keys, types, props, and children references
@@ -95,23 +95,15 @@ export const schema = defineSchema(
 );
 
 /**
- * Type for the React schema
+ * Type for the Vue schema
  */
-export type ReactSchema = typeof schema;
+export type VueSchema = typeof schema;
 
 /**
  * Infer the spec type from a catalog
  */
-export type ReactSpec<TCatalog> = typeof schema extends {
+export type VueSpec<TCatalog> = typeof schema extends {
   createCatalog: (catalog: TCatalog) => { _specType: infer S };
 }
   ? S
   : never;
-
-// Backward compatibility aliases
-/** @deprecated Use `schema` instead */
-export const elementTreeSchema = schema;
-/** @deprecated Use `ReactSchema` instead */
-export type ElementTreeSchema = ReactSchema;
-/** @deprecated Use `ReactSpec` instead */
-export type ElementTreeSpec<T> = ReactSpec<T>;
