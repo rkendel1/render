@@ -14,7 +14,7 @@ npm install @json-render/react @json-render/core zod
 
 ```typescript
 import { defineCatalog } from "@json-render/core";
-import { schema } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
 import { z } from "zod";
 
 export const catalog = defineCatalog(schema, {
@@ -50,6 +50,8 @@ export const catalog = defineCatalog(schema, {
 ```
 
 ### 2. Define Component Implementations
+
+`defineRegistry` conditionally requires the `actions` field only when the catalog declares actions. Catalogs with `actions: {}` can omit it entirely.
 
 ```tsx
 import { defineRegistry, useBoundProp } from "@json-render/react";
@@ -169,6 +171,35 @@ const name = get("/user/name");  // "John"
 set("/user/age", 25);
 ```
 
+#### External Store (Controlled Mode)
+
+For full control over state, pass a `StateStore` to bypass the internal state and wire json-render to any state management library (Redux, Zustand, XState, etc.):
+
+```tsx
+import { createStateStore, type StateStore } from "@json-render/react";
+
+// Option 1: Use the built-in store outside of React
+const store = createStateStore({ count: 0 });
+
+<StateProvider store={store}>
+  {children}
+</StateProvider>
+
+// Mutate from anywhere — React will re-render automatically:
+store.set("/count", 1);
+
+// Option 2: Implement the StateStore interface with your own backend
+const zustandStore: StateStore = {
+  get: (path) => getByPath(useStore.getState(), path),
+  set: (path, value) => useStore.setState(prev => { /* ... */ }),
+  update: (updates) => useStore.setState(prev => { /* ... */ }),
+  getSnapshot: () => useStore.getState(),
+  subscribe: (listener) => useStore.subscribe(listener),
+};
+```
+
+When `store` is provided, `initialState` and `onStateChange` are ignored. The store is the single source of truth. The same `store` prop is available on `createRenderer`, `JSONUIProvider`, and `StateProvider`.
+
 ### ActionProvider
 
 Handle actions from components:
@@ -230,6 +261,7 @@ const { errors, validate } = useFieldValidation("/form/email", {
 | `useActions()` | Access action context |
 | `useAction(name)` | Get a single action dispatch function |
 | `useFieldValidation(path, config)` | Field validation state |
+| `useOptionalValidation()` | Non-throwing validation context (returns `null` if no provider) |
 | `useUIStream(options)` | Stream specs from an API endpoint |
 
 ## Visibility Conditions
@@ -293,11 +325,60 @@ Any prop value can use data-driven expressions that resolve at render time. The 
 
 For two-way binding, use `{ "$bindState": "/path" }` on the natural value prop (e.g. `value`, `checked`, `pressed`). Inside repeat scopes, use `{ "$bindItem": "field" }` instead. Components receive resolved `bindings` with the state path for each bound prop; use `useBoundProp(props.value, bindings?.value)` to get `[value, setValue]`.
 
+### `$template` and `$computed`
+
+```json
+{
+  "label": { "$template": "Hello, ${/user/name}!" },
+  "fullName": {
+    "$computed": "fullName",
+    "args": {
+      "first": { "$state": "/form/firstName" },
+      "last": { "$state": "/form/lastName" }
+    }
+  }
+}
+```
+
+Register functions via the `functions` prop on `JSONUIProvider` or `createRenderer`:
+
+```tsx
+<JSONUIProvider
+  spec={spec}
+  catalog={catalog}
+  functions={{ fullName: (args) => `${args.first} ${args.last}` }}
+>
+```
+
 See [@json-render/core](../core/README.md) for full expression syntax.
+
+## State Watchers
+
+Elements can declare a `watch` field to trigger actions when state values change:
+
+```json
+{
+  "type": "Select",
+  "props": {
+    "label": "Country",
+    "value": { "$bindState": "/form/country" },
+    "options": ["US", "Canada", "UK"]
+  },
+  "watch": {
+    "/form/country": {
+      "action": "loadCities",
+      "params": { "country": { "$state": "/form/country" } }
+    }
+  },
+  "children": []
+}
+```
+
+`watch` is a top-level field on elements (sibling of `type`/`props`/`children`), not inside `props`. Watchers only fire on value changes, not on initial render.
 
 ## Built-in Actions
 
-The `setState`, `pushState`, and `removeState` actions are handled automatically by `ActionProvider`. They update the state model, which triggers re-evaluation of visibility conditions and dynamic prop expressions:
+The `setState`, `pushState`, `removeState`, and `validateForm` actions are built into the React schema and handled automatically by `ActionProvider`. They are injected into AI prompts without needing to be declared in your catalog's `actions`:
 
 ```json
 {
@@ -313,6 +394,26 @@ The `setState`, `pushState`, and `removeState` actions are handled automatically
 }
 ```
 
+### `validateForm`
+
+Validate all registered form fields at once and write the result to state:
+
+```json
+{
+  "type": "Button",
+  "props": { "label": "Submit" },
+  "on": {
+    "press": [
+      { "action": "validateForm", "params": { "statePath": "/formResult" } },
+      { "action": "submitForm" }
+    ]
+  },
+  "children": []
+}
+```
+
+Writes `{ valid: boolean, errors: Record<string, string[]> }` to the specified state path (defaults to `/formValidation`).
+
 ## Component Props
 
 When using `defineRegistry`, components receive these props:
@@ -321,13 +422,51 @@ When using `defineRegistry`, components receive these props:
 interface ComponentContext<P> {
   props: P;                    // Typed props from the catalog (expressions resolved)
   children?: React.ReactNode;  // Rendered children
-  emit?: (event: string) => void;  // Emit a named event
+  emit: (event: string) => void;   // Emit a named event (always defined)
+  on: (event: string) => EventHandle; // Get event handle with metadata
   loading?: boolean;           // Whether the parent is loading
   bindings?: Record<string, string>;  // State paths for $bindState/$bindItem expressions (e.g. bindings.value)
 }
+
+interface EventHandle {
+  emit: () => void;            // Fire the event
+  shouldPreventDefault: boolean; // Whether any binding requested preventDefault
+  bound: boolean;              // Whether any handler is bound
+}
+```
+
+Use `emit("press")` for simple event firing. Use `on("click")` when you need to check metadata like `shouldPreventDefault` or `bound`:
+
+```tsx
+Link: ({ props, on }) => {
+  const click = on("click");
+  return (
+    <a
+      href={props.href}
+      onClick={(e) => {
+        if (click.shouldPreventDefault) e.preventDefault();
+        click.emit();
+      }}
+    >
+      {props.label}
+    </a>
+  );
+},
 ```
 
 Use `bindings?.value`, `bindings?.checked`, etc. with `useBoundProp()` for two-way bound form components.
+
+### `BaseComponentProps`
+
+For building reusable component libraries that are not tied to a specific catalog (e.g. `@json-render/shadcn`), use the catalog-agnostic `BaseComponentProps` type:
+
+```typescript
+import type { BaseComponentProps } from "@json-render/react";
+
+const Card = ({ props, children }: BaseComponentProps<{ title?: string }>) => (
+  <div>{props.title}{children}</div>
+);
+```
 
 ## Generate AI Prompts
 
@@ -340,7 +479,8 @@ const systemPrompt = catalog.prompt();
 
 ```tsx
 import { defineCatalog } from "@json-render/core";
-import { schema, defineRegistry, Renderer } from "@json-render/react";
+import { schema } from "@json-render/react/schema";
+import { defineRegistry, Renderer } from "@json-render/react";
 import { z } from "zod";
 
 const catalog = defineCatalog(schema, {
@@ -374,3 +514,30 @@ function App() {
   return <Renderer spec={spec} registry={registry} />;
 }
 ```
+
+## Key Exports
+
+| Export | Purpose |
+|--------|---------|
+| `defineRegistry` | Create a type-safe component registry from a catalog |
+| `Renderer` | Render a spec using a registry |
+| `schema` | Element tree schema (includes built-in actions: `setState`, `pushState`, `removeState`, `validateForm`) |
+| `useStateStore` | Access state context |
+| `useStateValue` | Get single value from state |
+| `useBoundProp` | Two-way binding for `$bindState`/`$bindItem` expressions |
+| `useActions` | Access actions context |
+| `useAction` | Get a single action dispatch function |
+| `useUIStream` | Stream specs from an API endpoint |
+| `createStateStore` | Create a framework-agnostic in-memory `StateStore` |
+
+### Types
+
+| Export | Purpose |
+|--------|---------|
+| `ComponentContext` | Typed component render function context (catalog-aware) |
+| `BaseComponentProps` | Catalog-agnostic base type for reusable component libraries |
+| `EventHandle` | Event handle with `emit()`, `shouldPreventDefault`, `bound` |
+| `ComponentFn` | Component render function type |
+| `SetState` | State setter type |
+| `StateModel` | State model type |
+| `StateStore` | Interface for plugging in external state management |

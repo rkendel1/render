@@ -1,0 +1,246 @@
+import { pageMetadata } from "@/lib/page-metadata"
+export const metadata = pageMetadata("docs/api/vue")
+
+# @json-render/vue
+
+Vue 3 components, providers, and composables.
+
+## Providers
+
+### StateProvider
+
+```vue
+<StateProvider :initial-state="object" :on-state-change="fn">
+  <!-- children -->
+</StateProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `store` | `StateStore` | External store (controlled mode). When provided, `initialState` and `onStateChange` are ignored. |
+| `initialState` | `Record<string, unknown>` | Initial state model (uncontrolled mode). |
+| `onStateChange` | `(changes: Array<{ path: string; value: unknown }>) => void` | Callback when state changes (uncontrolled mode). Called once per `set` or `update` with all changed entries. |
+
+#### External Store (Controlled Mode)
+
+Pass a `StateStore` to bypass the internal state and wire json-render to any state management library:
+
+```typescript
+import { createStateStore, type StateStore } from "@json-render/vue";
+
+const store = createStateStore({ count: 0 });
+```
+
+```vue
+<StateProvider :store="store">
+  <!-- children -->
+</StateProvider>
+```
+
+```typescript
+// Mutate from anywhere — Vue re-renders automatically:
+store.set("/count", 1);
+```
+
+### ActionProvider
+
+```vue
+<ActionProvider :handlers="Record<string, ActionHandler>" :navigate="fn">
+  <!-- children -->
+</ActionProvider>
+
+// type ActionHandler = (params: Record<string, unknown>) => void | Promise<void>;
+```
+
+### VisibilityProvider
+
+```vue
+<VisibilityProvider>
+  <!-- children -->
+</VisibilityProvider>
+```
+
+`VisibilityProvider` reads state from the parent `StateProvider` automatically. Conditions in specs use the `VisibilityCondition` format with `$state` paths (e.g. `{ "$state": "/path" }`, `{ "$state": "/path", "eq": value }`). See [visibility](/docs/visibility) for the full syntax.
+
+### ValidationProvider
+
+```vue
+<ValidationProvider :custom-functions="Record<string, ValidationFunction>">
+  <!-- children -->
+</ValidationProvider>
+
+// type ValidationFunction = (value: unknown, args?: object) => boolean | Promise<boolean>;
+```
+
+## defineRegistry
+
+Create a type-safe component registry from a catalog. Components receive `props`, `children`, `emit`, `on`, and `loading` with catalog-inferred types.
+
+When the catalog declares actions, the `actions` field is required. When the catalog has no actions (e.g. `actions: {}`), the field is optional. When passing stubs, any `async () => {}` is sufficient.
+
+```typescript
+import { h } from "vue";
+import { defineRegistry } from "@json-render/vue";
+
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) =>
+      h("div", { class: "card" }, [h("h3", null, props.title), children]),
+    Button: ({ props, emit }) =>
+      h("button", { onClick: () => emit("press") }, props.label),
+  },
+  // Required when catalog declares actions:
+  actions: {
+    submit: async (params) => { /* ... */ },
+  },
+});
+
+// Pass to <Renderer>
+// <Renderer :spec="spec" :registry="registry" />
+```
+
+## Components
+
+### Renderer
+
+```vue
+<Renderer
+  :spec="Spec"           // The UI spec to render
+  :registry="Registry"   // Component registry (from defineRegistry)
+  :loading="boolean"     // Optional loading state
+  :fallback="Component"  // Optional fallback for unknown types
+/>
+```
+
+### Component Props (via defineRegistry)
+
+```typescript
+import type { VNode } from "vue";
+
+interface ComponentContext<P> {
+  props: P;                          // Typed props from catalog
+  children?: VNode | VNode[];        // Rendered children (for container components)
+  emit: (event: string) => void;     // Emit a named event (always defined)
+  on: (event: string) => EventHandle; // Get event handle with metadata
+  loading?: boolean;
+  bindings?: Record<string, string>; // State paths from $bindState/$bindItem expressions
+}
+
+interface EventHandle {
+  emit: () => void;              // Fire the event
+  shouldPreventDefault: boolean; // Whether any binding requested preventDefault
+  bound: boolean;                // Whether any handler is bound
+}
+```
+
+Use `emit("press")` for simple event firing. Use `on("click")` when you need metadata like `shouldPreventDefault`:
+
+```typescript
+Link: ({ props, on }) => {
+  const click = on("click");
+  return h("a", {
+    href: props.href,
+    onClick: (e: MouseEvent) => {
+      if (click.shouldPreventDefault) e.preventDefault();
+      click.emit();
+    },
+  }, props.label);
+},
+```
+
+### BaseComponentProps
+
+Catalog-agnostic base type for building reusable component libraries that are not tied to a specific catalog:
+
+```typescript
+import type { BaseComponentProps } from "@json-render/vue";
+
+const Card = ({ props, children }: BaseComponentProps<{ title?: string }>) =>
+  h("div", null, [props.title, children]);
+```
+
+## Composables
+
+### useStateStore
+
+```typescript
+const {
+  state,   // ShallowRef<StateModel> — access with state.value
+  get,     // (path: string) => unknown
+  set,     // (path: string, value: unknown) => void
+  update,  // (updates: Record<string, unknown>) => void
+} = useStateStore();
+```
+
+> **Note:** `state` is a `ShallowRef<StateModel>`, not a plain object. Use `state.value` to read the current state. This differs from the React renderer.
+
+### useStateValue
+
+```typescript
+const value = useStateValue(path: string); // ComputedRef<T | undefined>
+```
+
+Returns a `ComputedRef` that automatically updates when the state at `path` changes. Use `.value` to access the current value.
+
+### useStateBinding (deprecated)
+
+> **Deprecated.** Use `$bindState` expressions with `bindings` prop instead.
+
+```typescript
+const [value, setValue] = useStateBinding(path: string);
+// value: ComputedRef<T | undefined>
+// setValue: (value: T) => void
+```
+
+### useActions
+
+```typescript
+const { execute } = useActions();
+// execute(binding: ActionBinding) => Promise<void>
+```
+
+### useAction
+
+```typescript
+const { execute, isLoading } = useAction(binding: ActionBinding);
+// execute: () => Promise<void>
+// isLoading: ComputedRef<boolean>
+```
+
+### useIsVisible
+
+```typescript
+const isVisible = useIsVisible(condition?: VisibilityCondition);
+```
+
+### useFieldValidation
+
+```typescript
+const {
+  state,     // ComputedRef<FieldValidationState>
+  validate,  // () => ValidationResult
+  touch,     // () => void
+  clear,     // () => void
+  errors,    // ComputedRef<string[]>
+  isValid,   // ComputedRef<boolean>
+} = useFieldValidation(path: string, config?: ValidationConfig);
+```
+
+`ValidationConfig` is `{ checks?: ValidationCheck[], validateOn?: 'change' | 'blur' | 'submit' }`.
+
+## Differences from `@json-render/react`
+
+| API | React | Vue | Note |
+|-----|-------|-----|------|
+| `useStateStore().state` | `StateModel` (plain object) | `ShallowRef<StateModel>` | Vue reactivity; use `state.value` |
+| `useStateValue()` | `T \| undefined` | `ComputedRef<T \| undefined>` | Vue reactivity; use `.value` |
+| `useStateBinding()` | `[T \| undefined, setter]` | `[ComputedRef<T \| undefined>, setter]` | Vue reactivity; use `value.value` |
+| `useAction().isLoading` | `boolean` | `ComputedRef<boolean>` | Vue reactivity; use `.value` |
+| `useFieldValidation().state` | `FieldValidationState` | `ComputedRef<FieldValidationState>` | Vue reactivity; use `.value` |
+| `useFieldValidation().errors` | `string[]` | `ComputedRef<string[]>` | Vue reactivity; use `.value` |
+| `useFieldValidation().isValid` | `boolean` | `ComputedRef<boolean>` | Vue reactivity; use `.value` |
+| `VisibilityContextValue.ctx` | `CoreVisibilityContext` | `ComputedRef<CoreVisibilityContext>` | Vue reactivity; use `ctx.value` |
+| `children` type | `React.ReactNode` | `VNode \| VNode[]` | Platform-specific |
+| `useBoundProp` | exported | exported | Same API; returns `[value, setValue]` |
+| `VisibilityProviderProps` | exported | not exported (no props) | Vue uses slot, no prop needed |
+| Streaming hooks | `useUIStream`, `useChatUI` | `useUIStream`, `useChatUI` | Same API; returns Vue `Ref` values |

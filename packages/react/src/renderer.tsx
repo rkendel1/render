@@ -5,7 +5,9 @@ import React, {
   type ErrorInfo,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
 } from "react";
 import type {
   UIElement,
@@ -13,6 +15,8 @@ import type {
   ActionBinding,
   Catalog,
   SchemaDefinition,
+  StateStore,
+  ComputedFunction,
 } from "@json-render/core";
 import {
   resolveElementProps,
@@ -29,6 +33,8 @@ import type {
   ActionFn,
   SetState,
   StateModel,
+  CatalogHasActions,
+  EventHandle,
 } from "./catalog-types";
 import { useIsVisible, useVisibility } from "./contexts/visibility";
 import { useActions } from "./contexts/actions";
@@ -50,6 +56,8 @@ export interface ComponentRenderProps<P = Record<string, unknown>> {
   children?: ReactNode;
   /** Emit a named event. The renderer resolves the event to action binding(s) from the element's `on` field. Always provided by the renderer. */
   emit: (event: string) => void;
+  /** Get an event handle with metadata (shouldPreventDefault, bound). Use when you need to inspect event bindings. */
+  on: (event: string) => EventHandle;
   /**
    * Two-way binding paths resolved from `$bindState` / `$bindItem` expressions.
    * Maps prop name → absolute state path for write-back.
@@ -131,6 +139,19 @@ class ElementErrorBoundary extends React.Component<
   }
 }
 
+// ---------------------------------------------------------------------------
+// FunctionsContext – provides $computed functions to the element tree
+// ---------------------------------------------------------------------------
+
+const EMPTY_FUNCTIONS: Record<string, ComputedFunction> = {};
+
+const FunctionsContext =
+  React.createContext<Record<string, ComputedFunction>>(EMPTY_FUNCTIONS);
+
+function useFunctions(): Record<string, ComputedFunction> {
+  return React.useContext(FunctionsContext);
+}
+
 interface ElementRendererProps {
   element: UIElement;
   spec: Spec;
@@ -153,20 +174,22 @@ const ElementRenderer = React.memo(function ElementRenderer({
   const repeatScope = useRepeatScope();
   const { ctx } = useVisibility();
   const { execute } = useActions();
+  const { getSnapshot, state: watchState } = useStateStore();
+  const functions = useFunctions();
 
-  // Build context with repeat scope (used for both visibility and props)
-  const fullCtx: PropResolutionContext = useMemo(
-    () =>
-      repeatScope
-        ? {
-            ...ctx,
-            repeatItem: repeatScope.item,
-            repeatIndex: repeatScope.index,
-            repeatBasePath: repeatScope.basePath,
-          }
-        : ctx,
-    [ctx, repeatScope],
-  );
+  // Build context with repeat scope and $computed functions
+  const fullCtx: PropResolutionContext = useMemo(() => {
+    const base: PropResolutionContext = repeatScope
+      ? {
+          ...ctx,
+          repeatItem: repeatScope.item,
+          repeatIndex: repeatScope.index,
+          repeatBasePath: repeatScope.basePath,
+        }
+      : { ...ctx };
+    base.functions = functions;
+    return base;
+  }, [ctx, repeatScope, functions]);
 
   // Evaluate visibility (now supports $item/$index inside repeat scopes)
   const isVisible =
@@ -178,26 +201,127 @@ const ElementRenderer = React.memo(function ElementRenderer({
   // Must be called before any early return to satisfy Rules of Hooks.
   const onBindings = element.on;
   const emit = useCallback(
-    (eventName: string) => {
+    async (eventName: string) => {
       const binding = onBindings?.[eventName];
       if (!binding) return;
       const actionBindings = Array.isArray(binding) ? binding : [binding];
       for (const b of actionBindings) {
         if (!b.params) {
-          execute(b);
+          await execute(b);
           continue;
         }
-        // Resolve all action params via resolveActionParam which handles
-        // $item (→ absolute state path), $index (→ number), $state, $cond, and literals.
+        // Build a fresh context with live store state so that $state
+        // references in later actions see mutations from earlier ones.
+        const liveCtx: PropResolutionContext = {
+          ...fullCtx,
+          stateModel: getSnapshot(),
+        };
         const resolved: Record<string, unknown> = {};
         for (const [key, val] of Object.entries(b.params)) {
-          resolved[key] = resolveActionParam(val, fullCtx);
+          resolved[key] = resolveActionParam(val, liveCtx);
         }
-        execute({ ...b, params: resolved });
+        await execute({ ...b, params: resolved });
       }
     },
-    [onBindings, execute, fullCtx],
+    [onBindings, execute, fullCtx, getSnapshot],
   );
+
+  // Create on() function that returns an EventHandle with metadata for a specific event.
+  const on = useCallback(
+    (eventName: string): EventHandle => {
+      const binding = onBindings?.[eventName];
+      if (!binding) {
+        return { emit: () => {}, shouldPreventDefault: false, bound: false };
+      }
+      const actionBindings = Array.isArray(binding) ? binding : [binding];
+      const shouldPreventDefault = actionBindings.some((b) => b.preventDefault);
+      return {
+        emit: () => emit(eventName),
+        shouldPreventDefault,
+        bound: true,
+      };
+    },
+    [onBindings, emit],
+  );
+
+  // Watch effect: fire actions when watched state paths change.
+  // Must be called before any early return to satisfy Rules of Hooks.
+  //
+  // Two refs serve distinct roles:
+  // - `stableWatchRef` (useMemo): holds the last emitted values object so we
+  //   can return the same reference when watched values haven't changed,
+  //   preventing the downstream useEffect from firing on unrelated state updates.
+  // - `prevWatchValues` (useEffect): tracks the previous watched-values snapshot
+  //   for change detection. Starts as `null` to skip the initial mount.
+  const watchConfig = element.watch;
+  const prevWatchValues = useRef<Record<string, unknown> | null>(null);
+  const stableWatchRef = useRef<Record<string, unknown> | undefined>(undefined);
+
+  const watchedValues = useMemo(() => {
+    if (!watchConfig) return undefined;
+    const values: Record<string, unknown> = {};
+    for (const path of Object.keys(watchConfig)) {
+      values[path] = getByPath(watchState, path);
+    }
+    const prev = stableWatchRef.current;
+    if (prev) {
+      const keys = Object.keys(values);
+      if (
+        keys.length === Object.keys(prev).length &&
+        keys.every((k) => values[k] === prev[k])
+      ) {
+        return prev;
+      }
+    }
+    stableWatchRef.current = values;
+    return values;
+  }, [watchConfig, watchState]);
+
+  useEffect(() => {
+    if (!watchConfig || !watchedValues) return;
+    const paths = Object.keys(watchConfig);
+    if (paths.length === 0) return;
+
+    const prev = prevWatchValues.current;
+    prevWatchValues.current = watchedValues;
+
+    // Skip the initial mount — only fire on changes
+    if (prev === null) return;
+
+    let cancelled = false;
+    void (async () => {
+      for (const path of paths) {
+        if (cancelled) break;
+        if (watchedValues[path] !== prev[path]) {
+          const binding = watchConfig[path];
+          if (!binding) continue;
+          const bindings = Array.isArray(binding) ? binding : [binding];
+          for (const b of bindings) {
+            if (cancelled) break;
+            if (!b.params) {
+              await execute(b);
+              if (cancelled) break;
+              continue;
+            }
+            const liveCtx: PropResolutionContext = {
+              ...fullCtx,
+              stateModel: getSnapshot(),
+            };
+            const resolved: Record<string, unknown> = {};
+            for (const [key, val] of Object.entries(b.params)) {
+              resolved[key] = resolveActionParam(val, liveCtx);
+            }
+            await execute({ ...b, params: resolved });
+            if (cancelled) break;
+          }
+        }
+      }
+    })().catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [watchConfig, watchedValues, execute, fullCtx, getSnapshot]);
 
   // Don't render if not visible
   if (!isVisible) {
@@ -262,6 +386,7 @@ const ElementRenderer = React.memo(function ElementRenderer({
       <Component
         element={resolvedElement}
         emit={emit}
+        on={on}
         bindings={elementBindings}
         loading={loading}
       >
@@ -371,7 +496,12 @@ export function Renderer({ spec, registry, loading, fallback }: RendererProps) {
 export interface JSONUIProviderProps {
   /** Component registry */
   registry: ComponentRegistry;
-  /** Initial state model */
+  /**
+   * External store (controlled mode). When provided, `initialState` and
+   * `onStateChange` are ignored.
+   */
+  store?: StateStore;
+  /** Initial state model (uncontrolled mode) */
   initialState?: Record<string, unknown>;
   /** Action handlers */
   handlers?: Record<
@@ -385,8 +515,10 @@ export interface JSONUIProviderProps {
     string,
     (value: unknown, args?: Record<string, unknown>) => boolean
   >;
-  /** Callback when state changes */
-  onStateChange?: (path: string, value: unknown) => void;
+  /** Named functions for `$computed` expressions in props */
+  functions?: Record<string, ComputedFunction>;
+  /** Callback when state changes (uncontrolled mode) */
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   children: ReactNode;
 }
 
@@ -395,22 +527,30 @@ export interface JSONUIProviderProps {
  */
 export function JSONUIProvider({
   registry,
+  store,
   initialState,
   handlers,
   navigate,
   validationFunctions,
+  functions,
   onStateChange,
   children,
 }: JSONUIProviderProps) {
   return (
-    <StateProvider initialState={initialState} onStateChange={onStateChange}>
+    <StateProvider
+      store={store}
+      initialState={initialState}
+      onStateChange={onStateChange}
+    >
       <VisibilityProvider>
-        <ActionProvider handlers={handlers} navigate={navigate}>
-          <ValidationProvider customFunctions={validationFunctions}>
-            {children}
-            <ConfirmationDialogManager />
-          </ValidationProvider>
-        </ActionProvider>
+        <ValidationProvider customFunctions={validationFunctions}>
+          <ActionProvider handlers={handlers} navigate={navigate}>
+            <FunctionsContext.Provider value={functions ?? EMPTY_FUNCTIONS}>
+              {children}
+              <ConfirmationDialogManager />
+            </FunctionsContext.Provider>
+          </ActionProvider>
+        </ValidationProvider>
       </VisibilityProvider>
     </StateProvider>
   );
@@ -467,11 +607,25 @@ export interface DefineRegistryResult {
 }
 
 /**
+ * Options for defineRegistry.
+ *
+ * When the catalog declares actions, the `actions` field is required.
+ * When the catalog has no actions (or `actions: {}`), the field is optional.
+ */
+type DefineRegistryOptions<C extends Catalog> = {
+  components?: Components<C>;
+} & (CatalogHasActions<C> extends true
+  ? { actions: Actions<C> }
+  : { actions?: Actions<C> });
+
+/**
  * Create a registry from a catalog with components and/or actions.
+ *
+ * When the catalog declares actions, the `actions` field is required.
  *
  * @example
  * ```tsx
- * // Components only
+ * // Components only (catalog has no actions)
  * const { registry } = defineRegistry(catalog, {
  *   components: {
  *     Card: ({ props, children }) => (
@@ -480,14 +634,7 @@ export interface DefineRegistryResult {
  *   },
  * });
  *
- * // Actions only
- * const { handlers, executeAction } = defineRegistry(catalog, {
- *   actions: {
- *     viewCustomers: async (params, setState) => { ... },
- *   },
- * });
- *
- * // Both
+ * // Both (catalog declares actions)
  * const { registry, handlers, executeAction } = defineRegistry(catalog, {
  *   components: { ... },
  *   actions: { ... },
@@ -496,10 +643,7 @@ export interface DefineRegistryResult {
  */
 export function defineRegistry<C extends Catalog>(
   _catalog: C,
-  options: {
-    components?: Components<C>;
-    actions?: Actions<C>;
-  },
+  options: DefineRegistryOptions<C>,
 ): DefineRegistryResult {
   // Build component registry
   const registry: ComponentRegistry = {};
@@ -509,6 +653,7 @@ export function defineRegistry<C extends Catalog>(
         element,
         children,
         emit,
+        on,
         bindings,
         loading,
       }: ComponentRenderProps) => {
@@ -516,6 +661,7 @@ export function defineRegistry<C extends Catalog>(
           props: element.props,
           children,
           emit,
+          on,
           bindings,
           loading,
         });
@@ -572,6 +718,7 @@ type DefineRegistryComponentFn = (ctx: {
   props: unknown;
   children?: React.ReactNode;
   emit: (event: string) => void;
+  on: (event: string) => EventHandle;
   bindings?: Record<string, string>;
   loading?: boolean;
 }) => React.ReactNode;
@@ -593,12 +740,19 @@ type DefineRegistryActionFn = (
 export interface CreateRendererProps {
   /** The spec to render (AI-generated JSON) */
   spec: Spec | null;
-  /** State context for dynamic values */
+  /**
+   * External store (controlled mode). When provided, `state` and
+   * `onStateChange` are ignored.
+   */
+  store?: StateStore;
+  /** State context for dynamic values (uncontrolled mode) */
   state?: Record<string, unknown>;
   /** Action handler */
   onAction?: (actionName: string, params?: Record<string, unknown>) => void;
-  /** Callback when state changes (e.g., from form inputs) */
-  onStateChange?: (path: string, value: unknown) => void;
+  /** Callback when state changes (uncontrolled mode) */
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
+  /** Named functions for `$computed` expressions in props */
+  functions?: Record<string, ComputedFunction>;
   /** Whether the spec is currently loading/streaming */
   loading?: boolean;
   /** Fallback component for unknown types */
@@ -648,9 +802,11 @@ export function createRenderer<
   // Return the renderer component
   return function CatalogRenderer({
     spec,
+    store,
     state,
     onAction,
     onStateChange,
+    functions,
     loading,
     fallback,
   }: CreateRendererProps) {
@@ -672,19 +828,25 @@ export function createRenderer<
       : undefined;
 
     return (
-      <StateProvider initialState={state} onStateChange={onStateChange}>
+      <StateProvider
+        store={store}
+        initialState={state}
+        onStateChange={onStateChange}
+      >
         <VisibilityProvider>
-          <ActionProvider handlers={actionHandlers}>
-            <ValidationProvider>
-              <Renderer
-                spec={spec}
-                registry={registry}
-                loading={loading}
-                fallback={fallback}
-              />
-              <ConfirmationDialogManager />
-            </ValidationProvider>
-          </ActionProvider>
+          <ValidationProvider>
+            <ActionProvider handlers={actionHandlers}>
+              <FunctionsContext.Provider value={functions ?? EMPTY_FUNCTIONS}>
+                <Renderer
+                  spec={spec}
+                  registry={registry}
+                  loading={loading}
+                  fallback={fallback}
+                />
+                <ConfirmationDialogManager />
+              </FunctionsContext.Provider>
+            </ActionProvider>
+          </ValidationProvider>
         </VisibilityProvider>
       </StateProvider>
     );

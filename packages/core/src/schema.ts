@@ -66,6 +66,8 @@ export interface Schema<TDef extends SchemaDefinition = SchemaDefinition> {
   readonly promptTemplate?: PromptTemplate;
   /** Default rules baked into the schema (injected before customRules) */
   readonly defaultRules?: string[];
+  /** Built-in actions always available at runtime (injected into prompts automatically) */
+  readonly builtInActions?: BuiltInAction[];
   /** Create a catalog from this schema */
   createCatalog<TCatalog extends InferCatalogInput<TDef["catalog"]>>(
     catalog: TCatalog,
@@ -141,6 +143,18 @@ export type PromptTemplate<TCatalog = unknown> = (
 ) => string;
 
 /**
+ * A built-in action that is always available regardless of catalog configuration.
+ * These are handled by the runtime (e.g. ActionProvider) and injected into prompts
+ * automatically so the LLM knows about them.
+ */
+export interface BuiltInAction {
+  /** Action name (e.g. "setState") */
+  name: string;
+  /** Human-readable description for the LLM */
+  description: string;
+}
+
+/**
  * Schema options
  */
 export interface SchemaOptions<TCatalog = unknown> {
@@ -148,6 +162,13 @@ export interface SchemaOptions<TCatalog = unknown> {
   promptTemplate?: PromptTemplate<TCatalog>;
   /** Default rules baked into the schema (injected before customRules in prompts) */
   defaultRules?: string[];
+  /**
+   * Built-in actions that are always available regardless of catalog configuration.
+   * These are injected into prompts automatically so the LLM knows about them,
+   * but they don't require handlers in defineRegistry because the runtime
+   * (e.g. ActionProvider) handles them directly.
+   */
+  builtInActions?: BuiltInAction[];
 }
 
 /**
@@ -347,6 +368,7 @@ export function defineSchema<TDef extends SchemaDefinition>(
     definition,
     promptTemplate: options?.promptTemplate,
     defaultRules: options?.defaultRules,
+    builtInActions: options?.builtInActions,
     createCatalog<TCatalog extends InferCatalogInput<TDef["catalog"]>>(
       catalog: TCatalog,
     ): Catalog<TDef, TCatalog> {
@@ -749,12 +771,26 @@ Note: state patches appear right after the elements that use them, so the UI fil
     | Record<string, { params?: z.ZodType; description?: string }>
     | undefined;
 
-  if (actions && catalog.actionNames.length > 0) {
+  const builtInActions = catalog.schema.builtInActions ?? [];
+  const hasCustomActions = actions && catalog.actionNames.length > 0;
+  const hasBuiltInActions = builtInActions.length > 0;
+
+  if (hasCustomActions || hasBuiltInActions) {
     lines.push("AVAILABLE ACTIONS:");
     lines.push("");
-    for (const [name, def] of Object.entries(actions)) {
-      lines.push(`- ${name}${def.description ? `: ${def.description}` : ""}`);
+
+    // Built-in actions (handled by runtime, always available)
+    for (const action of builtInActions) {
+      lines.push(`- ${action.name}: ${action.description} [built-in]`);
     }
+
+    // Custom actions (declared in catalog, require handlers)
+    if (hasCustomActions) {
+      for (const [name, def] of Object.entries(actions)) {
+        lines.push(`- ${name}${def.description ? `: ${def.description}` : ""}`);
+      }
+    }
+
     lines.push("");
   }
 
@@ -864,6 +900,31 @@ Note: state patches appear right after the elements that use them, so the UI fil
     "Use $bindState for form inputs (text fields, checkboxes, selects, sliders, etc.) and $state for read-only data display. Inside repeat scopes, use $bindItem for form inputs bound to the current item. Use dynamic props instead of duplicating elements with opposing visible conditions when only prop values differ.",
   );
   lines.push("");
+  lines.push(
+    '4. Template: `{ "$template": "Hello, ${/name}!" }` - interpolates `${/path}` references in the string with values from the state model.',
+  );
+  lines.push(
+    '   Example: `"label": { "$template": "Items: ${/cart/count} | Total: ${/cart/total}" }` renders "Items: 3 | Total: 42.00" when /cart/count is 3 and /cart/total is 42.00.',
+  );
+  lines.push("");
+
+  // $computed section — only emit when catalog defines functions
+  const catalogFunctions = (catalog.data as Record<string, unknown>).functions;
+  if (catalogFunctions && Object.keys(catalogFunctions).length > 0) {
+    lines.push(
+      '5. Computed: `{ "$computed": "<functionName>", "args": { "key": <expression> } }` - calls a registered function with resolved args and returns the result.',
+    );
+    lines.push(
+      '   Example: `"value": { "$computed": "fullName", "args": { "first": { "$state": "/form/firstName" }, "last": { "$state": "/form/lastName" } } }`',
+    );
+    lines.push("   Available functions:");
+    for (const name of Object.keys(
+      catalogFunctions as Record<string, unknown>,
+    )) {
+      lines.push(`   - ${name}`);
+    }
+    lines.push("");
+  }
 
   // Validation section — only emit when at least one component has a `checks` prop
   const hasChecksComponents = allComponents
@@ -894,7 +955,19 @@ Note: state patches appear right after the elements that use them, so the UI fil
     lines.push("  - numeric — value must be a number");
     lines.push("  - url — valid URL format");
     lines.push(
-      '  - matches — must equal another field (args: { "other": "value" })',
+      '  - matches — must equal another field (args: { "other": { "$state": "/path" } })',
+    );
+    lines.push(
+      '  - equalTo — alias for matches (args: { "other": { "$state": "/path" } })',
+    );
+    lines.push(
+      '  - lessThan — value must be less than another field (args: { "other": { "$state": "/path" } })',
+    );
+    lines.push(
+      '  - greaterThan — value must be greater than another field (args: { "other": { "$state": "/path" } })',
+    );
+    lines.push(
+      '  - requiredIf — required only when another field is truthy (args: { "field": { "$state": "/path" } })',
     );
     lines.push("");
     lines.push("Example:");
@@ -907,6 +980,33 @@ Note: state patches appear right after the elements that use them, so the UI fil
     );
     lines.push(
       "Always include validation checks on form inputs for a good user experience (e.g. required, email, minLength).",
+    );
+    lines.push("");
+  }
+
+  // State watchers section — only emit when actions are available (watchers
+  // trigger actions, so the section is irrelevant without them).
+  if (hasCustomActions || hasBuiltInActions) {
+    lines.push("STATE WATCHERS:");
+    lines.push(
+      "Elements can have an optional `watch` field to react to state changes and trigger actions. The `watch` field is a top-level field on the element (sibling of type/props/children), NOT inside props.",
+    );
+    lines.push(
+      "Maps state paths (JSON Pointers) to action bindings. When the value at a watched path changes, the bound actions fire automatically.",
+    );
+    lines.push("");
+    lines.push(
+      "Example (cascading select — country changes trigger city loading):",
+    );
+    lines.push(
+      `  ${JSON.stringify({ type: "Select", props: { value: { $bindState: "/form/country" }, options: ["US", "Canada", "UK"] }, watch: { "/form/country": { action: "loadCities", params: { country: { $state: "/form/country" } } } }, children: [] })}`,
+    );
+    lines.push("");
+    lines.push(
+      "Use `watch` for cascading dependencies where changing one field should trigger side effects (loading data, resetting dependent fields, computing derived values).",
+    );
+    lines.push(
+      "IMPORTANT: `watch` is a top-level field on the element (sibling of type/props/children), NOT inside props. Watchers only fire when the value changes, not on initial render.",
     );
     lines.push("");
   }
@@ -1152,7 +1252,14 @@ function formatZodType(schema: z.ZodType): string {
     }
     case "ZodArray":
     case "array": {
-      const inner = (def.type as z.ZodType) ?? (def.element as z.ZodType);
+      // safely resolve inner type for Zod arrays
+      const inner = (
+        typeof def.element === "object"
+          ? def.element
+          : typeof def.type === "object"
+            ? def.type
+            : undefined
+      ) as z.ZodType | undefined;
       return inner ? `Array<${formatZodType(inner)}>` : "Array<unknown>";
     }
     case "ZodObject":

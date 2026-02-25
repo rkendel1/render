@@ -30,6 +30,7 @@ export {
 export {
   ValidationProvider,
   useValidation,
+  useOptionalValidation,
   useFieldValidation,
   type ValidationContextValue,
   type ValidationProviderProps,
@@ -54,10 +55,13 @@ export {
 } from "./schema";
 
 // Core types (re-exported for convenience)
-export type { Spec } from "@json-render/core";
+export type { Spec, StateStore } from "@json-render/core";
+export { createStateStore } from "@json-render/core";
 
 // Catalog-aware types for React
 export type {
+  EventHandle,
+  BaseComponentProps,
   SetState,
   StateModel,
   ComponentContext,

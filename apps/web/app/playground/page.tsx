@@ -1,10 +1,7 @@
 import { Playground } from "@/components/playground";
+import { pageMetadata } from "@/lib/page-metadata";
 
-import { PAGE_TITLES } from "@/lib/page-titles";
-
-export const metadata = {
-  title: PAGE_TITLES["playground"],
-};
+export const metadata = pageMetadata("playground");
 
 export default function PlaygroundPage() {
   return <Playground />;

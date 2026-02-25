@@ -157,6 +157,14 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 | `defineSchema(builder, options?)` | Create a schema with spec/catalog structure |
 | `SchemaBuilder` | Builder with `s.object()`, `s.array()`, `s.map()`, etc. |
 
+Schema options:
+
+| Option | Purpose |
+|--------|---------|
+| `promptTemplate` | Custom AI prompt generator |
+| `defaultRules` | Default rules injected before custom rules in prompts |
+| `builtInActions` | Actions always available at runtime, auto-injected into prompts (e.g. `setState`) |
+
 ### Catalog
 
 | Export | Purpose |
@@ -180,6 +188,22 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 | `resolvePropValue(value, ctx)` | Resolve a single prop expression |
 | `resolveElementProps(props, ctx)` | Resolve all prop expressions in an element |
 | `PropExpression<T>` | Type for prop values that may contain expressions |
+| `ComputedFunction` | Function signature for `$computed` expressions |
+| `PropResolutionContext` | Context for resolving props (includes `functions` for `$computed`) |
+
+### Validation
+
+| Export | Purpose |
+|--------|---------|
+| `check.required()` | Required validation helper |
+| `check.email()` | Email validation helper |
+| `check.matches(path)` | Cross-field match helper |
+| `check.equalTo(path)` | Cross-field equality helper |
+| `check.lessThan(path)` | Cross-field less-than helper |
+| `check.greaterThan(path)` | Cross-field greater-than helper |
+| `check.requiredIf(path)` | Conditional required helper |
+| `builtInValidationFunctions` | All built-in validation functions |
+| `runValidationCheck()` | Run a single validation check |
 
 ### User Prompt
 
@@ -196,12 +220,88 @@ const spec = compileSpecStream<MySpec>(jsonlString);
 | `autoFixSpec(spec)` | Auto-fix common spec issues (returns corrected copy) |
 | `formatSpecIssues(issues)` | Format validation issues as readable strings |
 
+### Actions
+
+| Export | Purpose |
+|--------|---------|
+| `ActionBinding` | Action binding with `action`, `params`, `confirm`, `preventDefault`, etc. |
+| `BuiltInAction` | Built-in action definition with `name` and `description` |
+
+### Chat Mode (Mixed Streams)
+
+| Export | Purpose |
+|--------|---------|
+| `createJsonRenderTransform()` | TransformStream that separates text from JSONL patches in a mixed stream |
+| `pipeJsonRender()` | Server-side helper to pipe a mixed stream through the transform |
+| `SPEC_DATA_PART` / `SPEC_DATA_PART_TYPE` | Constants for filtering spec data parts |
+
+The transform splits text blocks around spec data by emitting `text-end`/`text-start` pairs, ensuring the AI SDK creates separate text parts and preserving correct interleaving of prose and UI in `message.parts`.
+
+### State Store
+
+| Export | Purpose |
+|--------|---------|
+| `createStateStore(initialState?)` | Create a framework-agnostic in-memory `StateStore` |
+| `StateStore` | Interface for plugging in external state management (Redux, Zustand, XState, etc.) |
+| `StateModel` | State model type (`Record<string, unknown>`) |
+
+The `StateStore` interface allows renderers to use external state management instead of the built-in internal store:
+
+```typescript
+import { createStateStore, type StateStore } from "@json-render/core";
+
+// Simple in-memory store
+const store = createStateStore({ count: 0 });
+
+store.get("/count");          // 0
+store.set("/count", 1);       // updates and notifies subscribers
+store.getSnapshot();          // { count: 1 }
+
+// Subscribe to changes (compatible with React's useSyncExternalStore)
+const unsubscribe = store.subscribe(() => {
+  console.log("state changed:", store.getSnapshot());
+});
+```
+
+Pass the store to `StateProvider` in any renderer package (`@json-render/react`, `@json-render/react-native`, `@json-render/react-pdf`) for controlled mode.
+
+### Store Utilities (for adapter authors)
+
+Available via `@json-render/core/store-utils`:
+
+| Export | Purpose |
+|--------|---------|
+| `createStoreAdapter(config)` | Build a full `StateStore` from a minimal `{ getSnapshot, setSnapshot, subscribe }` config |
+| `immutableSetByPath(root, path, value)` | Immutably set a value at a JSON Pointer path with structural sharing |
+| `flattenToPointers(obj)` | Flatten a nested object into JSON Pointer keyed entries |
+| `StoreAdapterConfig` | Config type for `createStoreAdapter` |
+
+```typescript
+import { createStoreAdapter, immutableSetByPath, flattenToPointers } from "@json-render/core/store-utils";
+```
+
+`createStoreAdapter` handles `get`, `set` (with no-op detection), batched `update`, `getSnapshot`, `getServerSnapshot`, and `subscribe` -- adapter authors only need to supply the snapshot source, write API, and subscribe mechanism:
+
+```typescript
+import { createStoreAdapter } from "@json-render/core/store-utils";
+
+const store = createStoreAdapter({
+  getSnapshot: () => myLib.getState(),
+  setSnapshot: (next) => myLib.setState(next),
+  subscribe: (listener) => myLib.subscribe(listener),
+});
+```
+
+The official adapter packages (`@json-render/redux`, `@json-render/zustand`, `@json-render/jotai`) are all built on top of `createStoreAdapter`.
+
 ### Types
 
 | Export | Purpose |
 |--------|---------|
 | `Spec` | Base spec type |
 | `Catalog` | Catalog type |
+| `BuiltInAction` | Built-in action type (`name` + `description`) |
+| `ComputedFunction` | Function signature for `$computed` expressions |
 | `VisibilityCondition` | Visibility condition type (used by `$cond`) |
 | `VisibilityContext` | Context for evaluating visibility and prop expressions |
 | `SpecStreamLine` | Single patch operation |
@@ -288,6 +388,44 @@ Get the current array index inside a repeat:
 ```
 
 `$index` uses `true` as a sentinel flag because the index is a scalar value with no sub-path to navigate (unlike `$item` which needs a path).
+
+### Template (`$template`)
+
+Interpolate state values into strings using `${/path}` syntax:
+
+```json
+{
+  "label": { "$template": "Hello, ${/user/name}! You have ${/inbox/count} messages." }
+}
+```
+
+Missing paths resolve to an empty string.
+
+### Computed (`$computed`)
+
+Call a registered function with resolved arguments:
+
+```json
+{
+  "text": {
+    "$computed": "fullName",
+    "args": {
+      "first": { "$state": "/form/firstName" },
+      "last": { "$state": "/form/lastName" }
+    }
+  }
+}
+```
+
+Functions are registered in the catalog and provided at runtime via the `functions` prop on the renderer.
+
+```typescript
+import type { ComputedFunction } from "@json-render/core";
+
+const functions: Record<string, ComputedFunction> = {
+  fullName: (args) => `${args.first} ${args.last}`,
+};
+```
 
 ### API
 
@@ -381,6 +519,65 @@ console.log(formatSpecIssues(issues));
 
 // Auto-fix common issues (returns a corrected copy)
 const fixed = autoFixSpec(spec);
+```
+
+## State Watchers
+
+Elements can declare a `watch` field to trigger actions when state values change. `watch` is a top-level field on the element (sibling of `type`, `props`, `children`), not inside `props`.
+
+```json
+{
+  "type": "Select",
+  "props": {
+    "label": "Country",
+    "value": { "$bindState": "/form/country" },
+    "options": ["US", "Canada", "UK"]
+  },
+  "watch": {
+    "/form/country": {
+      "action": "loadCities",
+      "params": { "country": { "$state": "/form/country" } }
+    }
+  },
+  "children": []
+}
+```
+
+Watchers only fire on value changes, not on initial render. Multiple action bindings per path execute sequentially.
+
+## Validation
+
+### Built-in Validation Functions
+
+| Function | Description | Args |
+|----------|-------------|------|
+| `required` | Value must not be empty | — |
+| `email` | Must be a valid email | — |
+| `url` | Must be a valid URL | — |
+| `numeric` | Must be a number | — |
+| `minLength` | Minimum string length | `{ min: number }` |
+| `maxLength` | Maximum string length | `{ max: number }` |
+| `min` | Minimum numeric value | `{ min: number }` |
+| `max` | Maximum numeric value | `{ max: number }` |
+| `pattern` | Must match regex | `{ pattern: string }` |
+| `matches` | Must equal another field | `{ other: { $state: "/path" } }` |
+| `equalTo` | Alias for matches | `{ other: { $state: "/path" } }` |
+| `lessThan` | Must be less than another field | `{ other: { $state: "/path" } }` |
+| `greaterThan` | Must be greater than another field | `{ other: { $state: "/path" } }` |
+| `requiredIf` | Required when condition is truthy | `{ field: { $state: "/path" } }` |
+
+### TypeScript Helpers
+
+```typescript
+import { check } from "@json-render/core";
+
+check.required("Field is required");
+check.email("Invalid email");
+check.matches("/form/password", "Passwords must match");
+check.equalTo("/form/password", "Passwords must match");
+check.lessThan("/form/endDate", "Must be before end date");
+check.greaterThan("/form/startDate", "Must be after start date");
+check.requiredIf("/form/enableNotifications", "Required when notifications enabled");
 ```
 
 ## Custom Schemas

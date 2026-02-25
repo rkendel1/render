@@ -5,19 +5,20 @@ import { join } from "node:path";
 export { getPageTitle } from "@/lib/page-titles";
 
 // Cache font data in memory after first load
-let fontCache: { geistRegular: Buffer } | null = null;
+let fontCache: { geistRegular: Buffer; geistPixelSquare: Buffer } | null = null;
 
 async function loadFonts() {
   if (fontCache) return fontCache;
-  const geistRegular = await readFile(
-    join(process.cwd(), "public/Geist-Regular.ttf"),
-  );
-  fontCache = { geistRegular };
+  const [geistRegular, geistPixelSquare] = await Promise.all([
+    readFile(join(process.cwd(), "public/Geist-Regular.ttf")),
+    readFile(join(process.cwd(), "public/GeistPixel-Square.ttf")),
+  ]);
+  fontCache = { geistRegular, geistPixelSquare };
   return fontCache;
 }
 
 export async function renderOgImage(title: string) {
-  const { geistRegular } = await loadFonts();
+  const { geistRegular, geistPixelSquare } = await loadFonts();
 
   return new ImageResponse(
     <div
@@ -53,8 +54,8 @@ export async function renderOgImage(title: string) {
         <span
           style={{
             fontSize: 36,
-            fontFamily: "Geist",
-            fontWeight: 400,
+            fontFamily: "Geist Pixel Square",
+            fontWeight: 500,
             color: "white",
           }}
         >
@@ -98,6 +99,12 @@ export async function renderOgImage(title: string) {
           data: geistRegular.buffer as ArrayBuffer,
           style: "normal",
           weight: 400,
+        },
+        {
+          name: "Geist Pixel Square",
+          data: geistPixelSquare.buffer as ArrayBuffer,
+          style: "normal",
+          weight: 500,
         },
       ],
     },

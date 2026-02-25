@@ -69,6 +69,12 @@ export interface UIElement<
   on?: Record<string, ActionBinding | ActionBinding[]>;
   /** Repeat children once per item in a state array */
   repeat?: { statePath: string; key?: string };
+  /**
+   * State watchers — maps JSON Pointer state paths to action bindings.
+   * When the value at a watched path changes, the bound actions fire.
+   * Useful for cascading dependencies (e.g. country → city option loading).
+   */
+  watch?: Record<string, ActionBinding | ActionBinding[]>;
 }
 
 /**
@@ -179,6 +185,36 @@ export interface Spec {
 export type StateModel = Record<string, unknown>;
 
 /**
+ * An abstract store that owns state and notifies subscribers on change.
+ *
+ * Consumers can supply their own implementation (backed by Redux, Zustand,
+ * XState, etc.) or use the built-in {@link createStateStore} for a simple
+ * in-memory store.
+ */
+export interface StateStore {
+  /** Read a value by JSON Pointer path. */
+  get: (path: string) => unknown;
+  /**
+   * Write a value by JSON Pointer path and notify subscribers.
+   * Equality is checked by reference (`===`), not deep comparison.
+   * Callers must pass a new object/array reference for changes to be detected.
+   */
+  set: (path: string, value: unknown) => void;
+  /**
+   * Write multiple values at once and notify subscribers (single notification).
+   * Each value is compared by reference (`===`); only paths whose value
+   * actually changed are applied.
+   */
+  update: (updates: Record<string, unknown>) => void;
+  /** Return the full state object (used by `useSyncExternalStore`). */
+  getSnapshot: () => StateModel;
+  /** Optional server snapshot for SSR (passed to `useSyncExternalStore`). Falls back to `getSnapshot` when omitted. */
+  getServerSnapshot?: () => StateModel;
+  /** Register a listener that is called on every state change. Returns an unsubscribe function. */
+  subscribe: (listener: () => void) => () => void;
+}
+
+/**
  * Component schema definition using Zod
  */
 export type ComponentSchema = z.ZodType<Record<string, unknown>>;
@@ -236,7 +272,7 @@ function unescapeJsonPointer(token: string): string {
 /**
  * Parse a JSON Pointer path into unescaped segments.
  */
-function parseJsonPointer(path: string): string[] {
+export function parseJsonPointer(path: string): string[] {
   const raw = path.startsWith("/") ? path.slice(1).split("/") : path.split("/");
   return raw.map(unescapeJsonPointer);
 }
@@ -1010,11 +1046,48 @@ export function createJsonRenderTransform(): TransformStream<
   let buffering = false;
   // Whether we are inside a ```spec fence
   let inSpecFence = false;
+  // Whether we are currently inside a text block (between text-start/text-end).
+  // Used to split text blocks around spec data so the AI SDK creates separate
+  // text parts, preserving interleaving of prose and UI in message.parts.
+  let inTextBlock = false;
+  let textIdCounter = 0;
+
+  /** Close the current text block if one is open. */
+  function closeTextBlock(
+    controller: TransformStreamDefaultController<StreamChunk>,
+  ) {
+    if (inTextBlock) {
+      controller.enqueue({ type: "text-end", id: currentTextId });
+      inTextBlock = false;
+    }
+  }
+
+  /** Ensure a text block is open, starting a new one if needed. */
+  function ensureTextBlock(
+    controller: TransformStreamDefaultController<StreamChunk>,
+  ) {
+    if (!inTextBlock) {
+      textIdCounter++;
+      currentTextId = String(textIdCounter);
+      controller.enqueue({ type: "text-start", id: currentTextId });
+      inTextBlock = true;
+    }
+  }
+
+  /** Emit a text-delta, opening a text block first if necessary. */
+  function emitTextDelta(
+    delta: string,
+    controller: TransformStreamDefaultController<StreamChunk>,
+  ) {
+    ensureTextBlock(controller);
+    controller.enqueue({ type: "text-delta", id: currentTextId, delta });
+  }
 
   function emitPatch(
     patch: SpecStreamLine,
     controller: TransformStreamDefaultController<StreamChunk>,
   ) {
+    closeTextBlock(controller);
     controller.enqueue({
       type: SPEC_DATA_PART_TYPE,
       data: { type: "patch", patch },
@@ -1046,19 +1119,11 @@ export function createJsonRenderTransform(): TransformStream<
         emitPatch(patch, controller);
       } else {
         // Was buffered but isn't JSONL — flush as text
-        controller.enqueue({
-          type: "text-delta",
-          id: currentTextId,
-          delta: lineBuffer,
-        });
+        emitTextDelta(lineBuffer, controller);
       }
     } else {
       // Whitespace-only buffer — forward as-is (preserves blank lines)
-      controller.enqueue({
-        type: "text-delta",
-        id: currentTextId,
-        delta: lineBuffer,
-      });
+      emitTextDelta(lineBuffer, controller);
     }
     lineBuffer = "";
     buffering = false;
@@ -1092,11 +1157,7 @@ export function createJsonRenderTransform(): TransformStream<
     // --- Outside fence: heuristic mode ---
     if (!trimmed) {
       // Empty line — forward for markdown paragraph breaks
-      controller.enqueue({
-        type: "text-delta",
-        id: currentTextId,
-        delta: "\n",
-      });
+      emitTextDelta("\n", controller);
       return;
     }
 
@@ -1104,11 +1165,7 @@ export function createJsonRenderTransform(): TransformStream<
     if (patch) {
       emitPatch(patch, controller);
     } else {
-      controller.enqueue({
-        type: "text-delta",
-        id: currentTextId,
-        delta: line + "\n",
-      });
+      emitTextDelta(line + "\n", controller);
     }
   }
 
@@ -1116,14 +1173,19 @@ export function createJsonRenderTransform(): TransformStream<
     transform(chunk, controller) {
       switch (chunk.type) {
         case "text-start": {
-          currentTextId = (chunk as { id: string }).id;
+          const id = (chunk as { id: string }).id;
+          const idNum = parseInt(id, 10);
+          if (!isNaN(idNum) && idNum >= textIdCounter) {
+            textIdCounter = idNum;
+          }
+          currentTextId = id;
+          inTextBlock = true;
           controller.enqueue(chunk);
           break;
         }
 
         case "text-delta": {
           const delta = chunk as { id: string; delta: string };
-          currentTextId = delta.id;
           const text = delta.delta;
 
           for (let i = 0; i < text.length; i++) {
@@ -1138,11 +1200,7 @@ export function createJsonRenderTransform(): TransformStream<
               } else {
                 // Outside fence, emit newline; inside fence, swallow it
                 if (!inSpecFence) {
-                  controller.enqueue({
-                    type: "text-delta",
-                    id: currentTextId,
-                    delta: "\n",
-                  });
+                  emitTextDelta("\n", controller);
                 }
               }
             } else if (lineBuffer.length === 0 && !buffering) {
@@ -1152,20 +1210,12 @@ export function createJsonRenderTransform(): TransformStream<
                 buffering = true;
                 lineBuffer += ch;
               } else {
-                controller.enqueue({
-                  type: "text-delta",
-                  id: currentTextId,
-                  delta: ch,
-                });
+                emitTextDelta(ch, controller);
               }
             } else if (buffering) {
               lineBuffer += ch;
             } else {
-              controller.enqueue({
-                type: "text-delta",
-                id: currentTextId,
-                delta: ch,
-              });
+              emitTextDelta(ch, controller);
             }
           }
           break;
@@ -1173,7 +1223,10 @@ export function createJsonRenderTransform(): TransformStream<
 
         case "text-end": {
           flushBuffer(controller);
-          controller.enqueue(chunk);
+          if (inTextBlock) {
+            controller.enqueue({ type: "text-end", id: currentTextId });
+            inTextBlock = false;
+          }
           break;
         }
 
@@ -1186,6 +1239,7 @@ export function createJsonRenderTransform(): TransformStream<
 
     flush(controller) {
       flushBuffer(controller);
+      closeTextBlock(controller);
     },
   });
 }
