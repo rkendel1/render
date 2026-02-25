@@ -11,12 +11,12 @@
     "@json-render/core": "workspace:*",
     "@json-render/vue": "workspace:*",
     "vue": "^3.5.0",
-    "zod": "^4.0.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.3",
-    "typescript": "^5.4.5",
-    "vite": "^6.3.5",
-    "vue-tsc": "^2.2.10"
+    "@vitejs/plugin-vue": "^6.0.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.2.5"
   }
 }
