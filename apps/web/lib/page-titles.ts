@@ -40,6 +40,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "docs/api/react": "@json-render/react API",
   "docs/api/vue": "@json-render/vue API",
   "docs/api/react-pdf": "@json-render/react-pdf API",
+  "docs/api/react-email": "@json-render/react-email API",
   "docs/api/react-native": "@json-render/react-native API",
   "docs/api/codegen": "@json-render/codegen API",
   "docs/api/remotion": "@json-render/remotion API",
