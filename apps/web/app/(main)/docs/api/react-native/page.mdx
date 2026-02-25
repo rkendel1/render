@@ -100,7 +100,7 @@ React Native renderer with standard components, providers, and hooks.
 <tbody>
 <tr><td><code>store</code></td><td><code>StateStore</code></td><td>External store (controlled mode). When provided, <code>initialState</code> and <code>onStateChange</code> are ignored.</td></tr>
 <tr><td><code>initialState</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td>Initial state model (uncontrolled mode).</td></tr>
-<tr><td><code>onStateChange</code></td><td><code>(changes: Array&lt;{ path: string; value: unknown }&gt;) =&gt; void</code></td><td>Callback when state changes (uncontrolled mode). Called once per <code>set</code> or <code>update</code> with all changed entries.</td></tr>
+<tr><td><code>onStateChange</code></td><td><code>{'(changes: Array<{ path: string; value: unknown }>) => void'}</code></td><td>Callback when state changes (uncontrolled mode). Called once per <code>set</code> or <code>update</code> with all changed entries.</td></tr>
 </tbody>
 </table>
 
