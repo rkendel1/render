@@ -28,6 +28,7 @@ export {
 
 export {
   ValidationProvider,
+  useOptionalValidation,
   useValidation,
   useFieldValidation,
   type ValidationContextValue,
@@ -60,6 +61,24 @@ export type {
   ActionFn,
   Actions,
 } from "./catalog-types";
+
+// Hooks
+export {
+  useUIStream,
+  useChatUI,
+  useBoundProp,
+  flatToTree,
+  buildSpecFromParts,
+  getTextFromParts,
+  useJsonRenderMessage,
+  type UseUIStreamOptions,
+  type UseUIStreamReturn,
+  type UseChatUIOptions,
+  type UseChatUIReturn,
+  type ChatMessage,
+  type DataPart,
+  type TokenUsage,
+} from "./hooks";
 
 // Renderer
 export {

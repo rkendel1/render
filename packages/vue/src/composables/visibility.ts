@@ -57,11 +57,12 @@ export function useVisibility(): VisibilityContextValue {
 }
 
 /**
- * Composable to check if a condition is visible
+ * Composable to check if a condition is visible. Returns a reactive
+ * `ComputedRef<boolean>` so the result updates whenever state changes.
  */
 export function useIsVisible(
   condition: VisibilityCondition | undefined,
-): boolean {
-  const { isVisible } = useVisibility();
-  return isVisible(condition);
+): ComputedRef<boolean> {
+  const { ctx } = useVisibility();
+  return computed(() => evaluateVisibility(condition, ctx.value));
 }

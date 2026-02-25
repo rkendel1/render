@@ -4,6 +4,7 @@ import { mount } from "@vue/test-utils";
 import { StateProvider } from "./state";
 import {
   ValidationProvider,
+  useOptionalValidation,
   useValidation,
   useFieldValidation,
 } from "./validation";
@@ -32,6 +33,22 @@ function withProviders<T>(
   return { result };
 }
 
+/** Mount only inside StateProvider (no ValidationProvider) */
+function withStateOnly<T>(composable: () => T): { result: T } {
+  let result!: T;
+  const Child = defineComponent({
+    setup() {
+      result = composable();
+      return () => h("div");
+    },
+  });
+  mount(StateProvider as Component, {
+    props: { initialState: {} } as any,
+    slots: { default: () => h(Child) },
+  });
+  return { result };
+}
+
 describe("ValidationProvider — provide/inject", () => {
   it("useValidation() throws outside a provider", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -39,6 +56,20 @@ describe("ValidationProvider — provide/inject", () => {
       "useValidation must be used within a ValidationProvider",
     );
     warn.mockRestore();
+  });
+});
+
+describe("useOptionalValidation", () => {
+  it("returns null outside a ValidationProvider", () => {
+    const { result } = withStateOnly(() => useOptionalValidation());
+    expect(result).toBeNull();
+  });
+
+  it("returns context inside a ValidationProvider", () => {
+    const { result } = withProviders(() => useOptionalValidation());
+    expect(result).not.toBeNull();
+    expect(typeof result!.validate).toBe("function");
+    expect(typeof result!.validateAll).toBe("function");
   });
 });
 

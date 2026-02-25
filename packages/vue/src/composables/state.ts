@@ -199,9 +199,12 @@ export function useStateValue<T>(path: string): ComputedRef<T | undefined> {
 }
 
 /**
- * Composable to get and set a value from the state model.
+ * Composable to get and set a value from the state model by path.
  *
- * @deprecated Use `$bindState` expressions with bindings instead.
+ * This is the path-based variant for use in arbitrary composables. For
+ * registry components that receive `bindings` from the renderer, prefer
+ * `useBoundProp` which reads the already-resolved prop value and writes back
+ * to the bound path.
  */
 export function useStateBinding<T>(
   path: string,

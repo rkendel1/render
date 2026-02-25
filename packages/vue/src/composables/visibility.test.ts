@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { defineComponent, h, type Component } from "vue";
+import { defineComponent, h, type Component, type ComputedRef } from "vue";
 import { mount } from "@vue/test-utils";
-import { StateProvider } from "./state";
-import { VisibilityProvider, useVisibility } from "./visibility";
+import { StateProvider, useStateStore } from "./state";
+import { VisibilityProvider, useVisibility, useIsVisible } from "./visibility";
 
 /** Mount StateProvider → VisibilityProvider with a child that captures context. */
 function withProviders<T>(
@@ -64,5 +64,34 @@ describe("useIsVisible — state integration", () => {
   it("ctx is a ComputedRef whose .value reflects current state", () => {
     const { result } = withProviders(() => useVisibility(), { count: 3 });
     expect(result.ctx.value.stateModel).toEqual({ count: 3 });
+  });
+});
+
+describe("useIsVisible — reactivity", () => {
+  it("returns a ComputedRef<boolean> that updates when state changes", () => {
+    let storeCtx!: ReturnType<typeof useStateStore>;
+    let isVisible!: ComputedRef<boolean>;
+
+    const Child = defineComponent({
+      setup() {
+        storeCtx = useStateStore();
+        isVisible = useIsVisible({ $state: "/flag" });
+        return () => h("div");
+      },
+    });
+
+    mount(StateProvider as Component, {
+      props: { initialState: { flag: false } } as any,
+      slots: {
+        default: () =>
+          h(VisibilityProvider as Component, null, {
+            default: () => h(Child),
+          }),
+      },
+    });
+
+    expect(isVisible.value).toBe(false);
+    storeCtx.set("/flag", true);
+    expect(isVisible.value).toBe(true);
   });
 });

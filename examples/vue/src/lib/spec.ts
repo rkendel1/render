@@ -4,6 +4,7 @@ export const demoSpec: Spec = {
   root: "root",
   state: {
     count: 0,
+    name: "",
     todos: [
       { id: 1, title: "Learn Vue 3", completed: true },
       { id: 2, title: "Try @json-render/vue", completed: false },
@@ -14,7 +15,13 @@ export const demoSpec: Spec = {
     root: {
       type: "Stack",
       props: { gap: 24, padding: 24, direction: "vertical" },
-      children: ["header", "counter-card", "milestone-badge", "todos-card"],
+      children: [
+        "header",
+        "counter-card",
+        "milestone-badge",
+        "todos-card",
+        "input-card",
+      ],
     },
     header: {
       type: "Text",
@@ -95,6 +102,36 @@ export const demoSpec: Spec = {
       },
       on: {
         press: { action: "toggleItem", params: { index: { $index: true } } },
+      },
+    },
+
+    // ---- Bound Input card (useBoundProp demo) ----
+    "input-card": {
+      type: "Card",
+      props: {
+        title: "Bound Input",
+        subtitle: "Type to update state — the display text reacts in real time",
+      },
+      children: ["input-body"],
+    },
+    "input-body": {
+      type: "Stack",
+      props: { gap: 12, direction: "vertical" },
+      children: ["name-input", "name-display"],
+    },
+    "name-input": {
+      type: "Input",
+      props: {
+        value: { $bindState: "/name" },
+        placeholder: "Enter your name…",
+      },
+    },
+    "name-display": {
+      type: "Text",
+      props: {
+        content: { $state: "/name" },
+        size: "md",
+        color: "#6b7280",
       },
     },
   },

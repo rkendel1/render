@@ -201,6 +201,19 @@ export const ValidationProvider = defineComponent({
 });
 
 /**
+ * Composable to access validation context (or null if not inside a ValidationProvider).
+ * Useful for components that optionally participate in form validation.
+ */
+export function useOptionalValidation(): ValidationContextValue | null {
+  return (
+    inject<ValidationContextValue>(
+      VALIDATION_KEY,
+      null as unknown as ValidationContextValue,
+    ) ?? null
+  );
+}
+
+/**
  * Composable to access validation context
  */
 export function useValidation(): ValidationContextValue {

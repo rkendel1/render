@@ -58,6 +58,14 @@ export const catalog = schema.createCatalog({
       slots: [],
       description: "A single item in a list",
     },
+    Input: {
+      props: z.object({
+        value: z.string().optional(),
+        placeholder: z.string().optional(),
+      }),
+      slots: [],
+      description: "A text input field that supports two-way state binding",
+    },
   },
   actions: {
     increment: {

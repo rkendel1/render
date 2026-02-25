@@ -1,5 +1,6 @@
 import { h } from "vue";
 import type { Components } from "@json-render/vue";
+import { useBoundProp } from "@json-render/vue";
 import type { AppCatalog } from "./catalog";
 
 export const components: Components<AppCatalog> = {
@@ -138,6 +139,27 @@ export const components: Components<AppCatalog> = {
       },
       props.label,
     ),
+
+  Input: ({ props, bindings }) => {
+    const [value, setValue] = useBoundProp<string>(
+      props.value as string | undefined,
+      bindings?.value,
+    );
+    return h("input", {
+      value: value ?? "",
+      placeholder: props.placeholder as string | undefined,
+      onInput: (e: Event) => setValue((e.target as HTMLInputElement).value),
+      style: {
+        padding: "8px 12px",
+        borderRadius: "8px",
+        border: "1px solid #d1d5db",
+        fontSize: "14px",
+        outline: "none",
+        width: "100%",
+        boxSizing: "border-box",
+      },
+    });
+  },
 
   ListItem: ({ props, emit }) =>
     h(
