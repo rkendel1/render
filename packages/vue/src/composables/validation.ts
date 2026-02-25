@@ -1,10 +1,12 @@
 import {
+  computed,
   defineComponent,
   inject,
   onMounted,
   onUnmounted,
   provide,
   ref,
+  type ComputedRef,
   type PropType,
 } from "vue";
 import {
@@ -216,43 +218,37 @@ export function useFieldValidation(
   path: string,
   config?: ValidationConfig,
 ): {
-  state: FieldValidationState;
+  state: ComputedRef<FieldValidationState>;
   validate: () => ValidationResult;
   touch: () => void;
   clear: () => void;
-  errors: string[];
-  isValid: boolean;
+  errors: ComputedRef<string[]>;
+  isValid: ComputedRef<boolean>;
 } {
-  const {
-    fieldStates,
-    validate: validateField,
-    touch: touchField,
-    clear: clearField,
-    registerField,
-  } = useValidation();
+  const ctx = useValidation();
 
   onMounted(() => {
     if (path && config) {
-      registerField(path, config);
+      ctx.registerField(path, config);
     }
   });
 
   onUnmounted(() => {
-    clearField(path);
+    ctx.clear(path);
   });
 
-  const fieldState = fieldStates[path] ?? {
+  const defaultState: FieldValidationState = {
     touched: false,
     validated: false,
     result: null,
   };
 
   return {
-    state: fieldState,
-    validate: () => validateField(path, config ?? { checks: [] }),
-    touch: () => touchField(path),
-    clear: () => clearField(path),
-    errors: fieldState.result?.errors ?? [],
-    isValid: fieldState.result?.valid ?? true,
+    state: computed(() => ctx.fieldStates[path] ?? defaultState),
+    validate: () => ctx.validate(path, config ?? { checks: [] }),
+    touch: () => ctx.touch(path),
+    clear: () => ctx.clear(path),
+    errors: computed(() => ctx.fieldStates[path]?.result?.errors ?? []),
+    isValid: computed(() => ctx.fieldStates[path]?.result?.valid ?? true),
   };
 }

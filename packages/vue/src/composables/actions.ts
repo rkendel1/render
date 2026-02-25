@@ -1,10 +1,12 @@
 import {
+  computed,
   defineComponent,
   h,
   inject,
   provide,
   ref,
   watch,
+  type ComputedRef,
   type PropType,
 } from "vue";
 import {
@@ -318,11 +320,13 @@ export function useActions(): ActionContextValue {
  */
 export function useAction(binding: ActionBinding): {
   execute: () => Promise<void>;
-  isLoading: boolean;
+  isLoading: ComputedRef<boolean>;
 } {
-  const { execute, loadingActions } = useActions();
-  const isLoading = loadingActions.has(binding.action);
-  return { execute: () => execute(binding), isLoading };
+  const ctx = useActions();
+  return {
+    execute: () => ctx.execute(binding),
+    isLoading: computed(() => ctx.loadingActions.has(binding.action)),
+  };
 }
 
 // =============================================================================

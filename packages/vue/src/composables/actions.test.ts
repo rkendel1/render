@@ -101,6 +101,6 @@ describe("useAction", () => {
   it("returns { execute, isLoading: false } before execution", () => {
     const { result } = withProviders(() => useAction({ action: "myAction" }));
     expect(typeof result.execute).toBe("function");
-    expect(result.isLoading).toBe(false);
+    expect(result.isLoading.value).toBe(false);
   });
 });

@@ -177,8 +177,10 @@ const {
 ### useStateValue
 
 ```typescript
-const value = useStateValue(path: string);
+const value = useStateValue(path: string); // ComputedRef<T | undefined>
 ```
+
+Returns a `ComputedRef` that automatically updates when the state at `path` changes. Use `.value` to access the current value.
 
 ### useStateBinding (deprecated)
 
@@ -186,6 +188,8 @@ const value = useStateValue(path: string);
 
 ```typescript
 const [value, setValue] = useStateBinding(path: string);
+// value: ComputedRef<T | undefined>
+// setValue: (value: T) => void
 ```
 
 ### useActions
@@ -199,7 +203,8 @@ const { execute } = useActions();
 
 ```typescript
 const { execute, isLoading } = useAction(binding: ActionBinding);
-// execute() => Promise<void>
+// execute: () => Promise<void>
+// isLoading: ComputedRef<boolean>
 ```
 
 ### useIsVisible
@@ -212,12 +217,12 @@ const isVisible = useIsVisible(condition?: VisibilityCondition);
 
 ```typescript
 const {
-  state,     // FieldValidationState
+  state,     // ComputedRef<FieldValidationState>
   validate,  // () => ValidationResult
   touch,     // () => void
   clear,     // () => void
-  errors,    // string[]
-  isValid,   // boolean
+  errors,    // ComputedRef<string[]>
+  isValid,   // ComputedRef<boolean>
 } = useFieldValidation(path: string, config?: ValidationConfig);
 ```
 
@@ -228,6 +233,12 @@ const {
 | API | React | Vue | Note |
 |-----|-------|-----|------|
 | `useStateStore().state` | `StateModel` (plain object) | `ShallowRef<StateModel>` | Vue reactivity; use `state.value` |
+| `useStateValue()` | `T \| undefined` | `ComputedRef<T \| undefined>` | Vue reactivity; use `.value` |
+| `useStateBinding()` | `[T \| undefined, setter]` | `[ComputedRef<T \| undefined>, setter]` | Vue reactivity; use `value.value` |
+| `useAction().isLoading` | `boolean` | `ComputedRef<boolean>` | Vue reactivity; use `.value` |
+| `useFieldValidation().state` | `FieldValidationState` | `ComputedRef<FieldValidationState>` | Vue reactivity; use `.value` |
+| `useFieldValidation().errors` | `string[]` | `ComputedRef<string[]>` | Vue reactivity; use `.value` |
+| `useFieldValidation().isValid` | `boolean` | `ComputedRef<boolean>` | Vue reactivity; use `.value` |
 | `VisibilityContextValue.ctx` | `CoreVisibilityContext` | `ComputedRef<CoreVisibilityContext>` | Vue reactivity; use `ctx.value` |
 | `children` type | `React.ReactNode` | `VNode \| VNode[]` | Platform-specific |
 | `useBoundProp` | exported | not available | React-specific; use `bindings` directly in Vue |

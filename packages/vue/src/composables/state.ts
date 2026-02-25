@@ -1,4 +1,5 @@
 import {
+  computed,
   defineComponent,
   inject,
   onUnmounted,
@@ -6,6 +7,7 @@ import {
   ref,
   shallowRef,
   watch,
+  type ComputedRef,
   type PropType,
   type ShallowRef,
 } from "vue";
@@ -191,9 +193,9 @@ export function useStateStore(): StateContextValue {
 /**
  * Composable to get a value from the state model (reactive)
  */
-export function useStateValue<T>(path: string): T | undefined {
+export function useStateValue<T>(path: string): ComputedRef<T | undefined> {
   const { state } = useStateStore();
-  return getByPath(state.value, path) as T | undefined;
+  return computed(() => getByPath(state.value, path) as T | undefined);
 }
 
 /**
@@ -203,9 +205,9 @@ export function useStateValue<T>(path: string): T | undefined {
  */
 export function useStateBinding<T>(
   path: string,
-): [T | undefined, (value: T) => void] {
+): [ComputedRef<T | undefined>, (value: T) => void] {
   const { state, set } = useStateStore();
-  const value = getByPath(state.value, path) as T | undefined;
+  const value = computed(() => getByPath(state.value, path) as T | undefined);
   const setValue = (newValue: T) => set(path, newValue);
   return [value, setValue];
 }
