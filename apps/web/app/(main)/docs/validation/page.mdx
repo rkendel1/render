@@ -67,7 +67,7 @@ Define custom validators in your catalog's `functions` field. The catalog itself
 
 ```typescript
 import { defineCatalog } from '@json-render/core';
-import { schema } from '@json-render/react'; // or '@json-render/react-native'
+import { schema } from '@json-render/react/schema'; // or '@json-render/react-native/schema'
 import { z } from 'zod';
 
 const catalog = defineCatalog(schema, {

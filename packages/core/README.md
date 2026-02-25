@@ -221,6 +221,63 @@ Schema options:
 
 The transform splits text blocks around spec data by emitting `text-end`/`text-start` pairs, ensuring the AI SDK creates separate text parts and preserving correct interleaving of prose and UI in `message.parts`.
 
+### State Store
+
+| Export | Purpose |
+|--------|---------|
+| `createStateStore(initialState?)` | Create a framework-agnostic in-memory `StateStore` |
+| `StateStore` | Interface for plugging in external state management (Redux, Zustand, XState, etc.) |
+| `StateModel` | State model type (`Record<string, unknown>`) |
+
+The `StateStore` interface allows renderers to use external state management instead of the built-in internal store:
+
+```typescript
+import { createStateStore, type StateStore } from "@json-render/core";
+
+// Simple in-memory store
+const store = createStateStore({ count: 0 });
+
+store.get("/count");          // 0
+store.set("/count", 1);       // updates and notifies subscribers
+store.getSnapshot();          // { count: 1 }
+
+// Subscribe to changes (compatible with React's useSyncExternalStore)
+const unsubscribe = store.subscribe(() => {
+  console.log("state changed:", store.getSnapshot());
+});
+```
+
+Pass the store to `StateProvider` in any renderer package (`@json-render/react`, `@json-render/react-native`, `@json-render/react-pdf`) for controlled mode.
+
+### Store Utilities (for adapter authors)
+
+Available via `@json-render/core/store-utils`:
+
+| Export | Purpose |
+|--------|---------|
+| `createStoreAdapter(config)` | Build a full `StateStore` from a minimal `{ getSnapshot, setSnapshot, subscribe }` config |
+| `immutableSetByPath(root, path, value)` | Immutably set a value at a JSON Pointer path with structural sharing |
+| `flattenToPointers(obj)` | Flatten a nested object into JSON Pointer keyed entries |
+| `StoreAdapterConfig` | Config type for `createStoreAdapter` |
+
+```typescript
+import { createStoreAdapter, immutableSetByPath, flattenToPointers } from "@json-render/core/store-utils";
+```
+
+`createStoreAdapter` handles `get`, `set` (with no-op detection), batched `update`, `getSnapshot`, `getServerSnapshot`, and `subscribe` -- adapter authors only need to supply the snapshot source, write API, and subscribe mechanism:
+
+```typescript
+import { createStoreAdapter } from "@json-render/core/store-utils";
+
+const store = createStoreAdapter({
+  getSnapshot: () => myLib.getState(),
+  setSnapshot: (next) => myLib.setState(next),
+  subscribe: (listener) => myLib.subscribe(listener),
+});
+```
+
+The official adapter packages (`@json-render/redux`, `@json-render/zustand`, `@json-render/jotai`) are all built on top of `createStoreAdapter`.
+
 ### Types
 
 | Export | Purpose |

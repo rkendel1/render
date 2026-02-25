@@ -15,6 +15,7 @@ export type {
   AndCondition,
   OrCondition,
   StateModel,
+  StateStore,
   ComponentSchema,
   ValidationMode,
   PatchOp,
@@ -56,6 +57,10 @@ export {
   SPEC_DATA_PART,
   SPEC_DATA_PART_TYPE,
 } from "./types";
+
+// State Store
+export type { StoreAdapterConfig } from "./state-store";
+export { createStateStore } from "./state-store";
 
 // Visibility
 export type { VisibilityContext } from "./visibility";

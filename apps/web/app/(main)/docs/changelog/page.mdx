@@ -5,6 +5,70 @@ export const metadata = pageMetadata("docs/changelog")
 
 Notable changes and updates to json-render.
 
+## v0.9.1
+
+February 2026
+
+### Fixed: Install failure due to private dependency
+
+`@json-render/react`, `@json-render/react-pdf`, and `@json-render/react-native` v0.9.0 failed to install because `@internal/react-state` (a private workspace package) was published as a dependency. The internal package is now bundled into each renderer at build time, so it no longer needs to be resolved from npm.
+
+---
+
+## v0.9.0
+
+February 2026
+
+### New: External State Store
+
+The `StateStore` interface lets you plug in your own state management (Redux, Zustand, Jotai, XState, etc.) instead of the built-in internal store. Pass a `store` prop to `StateProvider`, `JSONUIProvider`, or `createRenderer` for controlled mode.
+
+- Added `StateStore` interface and `createStateStore()` factory to `@json-render/core`
+- `StateProvider`, `JSONUIProvider`, and `createRenderer` now accept an optional `store` prop
+- When `store` is provided, it becomes the single source of truth (`initialState`/`onStateChange` are ignored)
+- When `store` is omitted, everything works exactly as before (fully backward compatible)
+- Applied across all platform packages: react, react-native, react-pdf
+- Store utilities (`createStoreAdapter`, `immutableSetByPath`, `flattenToPointers`) available via `@json-render/core/store-utils` for building custom adapters
+
+New adapter packages: `@json-render/redux`, `@json-render/zustand`, `@json-render/jotai`.
+
+See the [Data Binding](/docs/data-binding#external-store-controlled-mode) guide for usage.
+
+### Changed: `onStateChange` signature updated (breaking)
+
+The `onStateChange` callback now receives a single array of changed entries instead of being called once per path. This makes batch updates via `update()` easier to handle:
+
+```ts
+// Before
+onStateChange?: (path: string, value: unknown) => void
+
+// After
+onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void
+```
+
+The callback is only called when a `set()` or `update()` call actually changes the state. A `set()` call produces a single-element array; an `update()` call produces one array with all changed paths.
+
+### Fixed: Server-safe schema import
+
+`@json-render/react` barrel-imports React contexts that call `createContext`, which crashes in Next.js App Router API routes (RSC runtime strips `createContext`). All docs, examples, and skills now import `schema` from `@json-render/react/schema` instead of `@json-render/react`.
+
+For combined imports, split into separate `schema` (subpath) and client API (main entry) lines:
+
+```ts
+import { schema } from "@json-render/react/schema";
+import { defineRegistry, Renderer } from "@json-render/react";
+```
+
+### Fixed: Chaining actions
+
+Fixed an issue where chaining multiple actions on the same event (e.g. `setState` followed by a custom action) did not execute all actions. Affected `@json-render/react`, `@json-render/react-native`, and `@json-render/react-pdf`.
+
+### Fixed: Zod array inner type resolution
+
+Fixed safely resolving the inner type for Zod arrays in schema introspection, preventing errors when catalog component props use `z.array()`.
+
+---
+
 ## v0.8.0
 
 February 2026
