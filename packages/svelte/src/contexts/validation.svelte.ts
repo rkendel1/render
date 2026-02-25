@@ -114,7 +114,7 @@ export function createValidationContext(
     fieldConfigs = { ...fieldConfigs, [path]: config };
   };
 
-  return {
+  const ctx: ValidationContext = {
     customFunctions,
     get fieldStates() {
       return fieldStates;
@@ -125,13 +125,9 @@ export function createValidationContext(
     validateAll,
     registerField,
   };
-}
 
-/**
- * Set the validation context in component tree
- */
-export function setValidationContext(ctx: ValidationContext): void {
   setContext(VALIDATION_KEY, ctx);
+  return ctx;
 }
 
 /**

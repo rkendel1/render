@@ -4,29 +4,29 @@
 
 export {
   createStateContext,
-  setStateContext,
   getStateContext,
+  getStateValue,
+  getBoundProp,
   type StateContext,
 } from "./contexts/state.svelte.js";
 
 export {
   createVisibilityContext,
-  setVisibilityContext,
   getVisibilityContext,
+  isVisible,
   type VisibilityContext,
 } from "./contexts/visibility.svelte.js";
 
 export {
   createActionContext,
-  setActionContext,
   getActionContext,
+  getAction,
   type ActionContext,
   type PendingConfirmation,
 } from "./contexts/actions.svelte.js";
 
 export {
   createValidationContext,
-  setValidationContext,
   getValidationContext,
   getFieldValidation,
   type ValidationContext,
@@ -89,7 +89,7 @@ export {
   buildSpecFromParts,
   getTextFromParts,
   type DataPart,
-} from "./utils.js";
+} from "./utils.svelte.js";
 
 // =============================================================================
 // Streaming

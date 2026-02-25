@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { flatToTree, buildSpecFromParts, getTextFromParts } from "./utils.js";
+import {
+  flatToTree,
+  buildSpecFromParts,
+  getTextFromParts,
+} from "./utils.svelte.js";
 import type { FlatElement, SpecDataPart } from "@json-render/core";
 import { SPEC_DATA_PART_TYPE } from "@json-render/core";
 

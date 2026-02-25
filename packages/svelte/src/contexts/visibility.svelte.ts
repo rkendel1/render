@@ -18,13 +18,17 @@ export interface VisibilityContext {
   ctx: CoreVisibilityContext;
 }
 
+export interface CurrentValue<T> {
+  readonly current: T;
+}
+
 /**
  * Create a visibility context that reads from the state context
  */
 export function createVisibilityContext(
   stateCtx: StateContext,
 ): VisibilityContext {
-  return {
+  const ctx: VisibilityContext = {
     get ctx(): CoreVisibilityContext {
       return { stateModel: stateCtx.state };
     },
@@ -32,13 +36,9 @@ export function createVisibilityContext(
       return evaluateVisibility(condition, { stateModel: stateCtx.state });
     },
   };
-}
 
-/**
- * Set the visibility context in component tree
- */
-export function setVisibilityContext(ctx: VisibilityContext): void {
   setContext(VISIBILITY_KEY, ctx);
+  return ctx;
 }
 
 /**
@@ -52,4 +52,18 @@ export function getVisibilityContext(): VisibilityContext {
     );
   }
   return ctx;
+}
+
+/**
+ * Convenience helper to evaluate visibility from context
+ */
+export function isVisible(
+  condition: VisibilityCondition | undefined,
+): CurrentValue<boolean> {
+  const context = getVisibilityContext();
+  return {
+    get current() {
+      return context.isVisible(condition);
+    },
+  };
 }

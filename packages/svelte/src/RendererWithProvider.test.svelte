@@ -3,19 +3,15 @@
   import type { ComponentRegistry, ComponentRenderer } from "./types.js";
   import {
     createStateContext,
-    setStateContext,
   } from "./contexts/state.svelte.js";
   import {
     createVisibilityContext,
-    setVisibilityContext,
   } from "./contexts/visibility.svelte.js";
   import {
     createActionContext,
-    setActionContext,
   } from "./contexts/actions.svelte.js";
   import {
     createValidationContext,
-    setValidationContext,
   } from "./contexts/validation.svelte.js";
   import Renderer from "./Renderer.svelte";
 
@@ -39,16 +35,12 @@
 
   // Create and provide contexts
   const stateCtx = createStateContext(initialState);
-  setStateContext(stateCtx);
 
   const visibilityCtx = createVisibilityContext(stateCtx);
-  setVisibilityContext(visibilityCtx);
 
   const actionCtx = createActionContext(stateCtx, handlers);
-  setActionContext(actionCtx);
 
   const validationCtx = createValidationContext(stateCtx);
-  setValidationContext(validationCtx);
 </script>
 
 <Renderer {spec} {registry} {loading} {fallback} />

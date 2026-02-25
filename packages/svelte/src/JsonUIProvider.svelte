@@ -1,22 +1,10 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { ActionHandler, ValidationFunction } from "@json-render/core";
-  import {
-    createStateContext,
-    setStateContext,
-  } from "./contexts/state.svelte.js";
-  import {
-    createVisibilityContext,
-    setVisibilityContext,
-  } from "./contexts/visibility.svelte.js";
-  import {
-    createActionContext,
-    setActionContext,
-  } from "./contexts/actions.svelte.js";
-  import {
-    createValidationContext,
-    setValidationContext,
-  } from "./contexts/validation.svelte.js";
+  import { createStateContext } from "./contexts/state.svelte.js";
+  import { createVisibilityContext } from "./contexts/visibility.svelte.js";
+  import { createActionContext } from "./contexts/actions.svelte.js";
+  import { createValidationContext } from "./contexts/validation.svelte.js";
 
   interface Props {
     initialState?: Record<string, unknown>;
@@ -38,16 +26,12 @@
 
   // Create and provide contexts
   const stateCtx = createStateContext(initialState, onStateChange);
-  setStateContext(stateCtx);
 
-  const visibilityCtx = createVisibilityContext(stateCtx);
-  setVisibilityContext(visibilityCtx);
+  createVisibilityContext(stateCtx);
 
-  const actionCtx = createActionContext(stateCtx, handlers, navigate);
-  setActionContext(actionCtx);
+  createActionContext(stateCtx, handlers, navigate);
 
-  const validationCtx = createValidationContext(stateCtx, validationFunctions);
-  setValidationContext(validationCtx);
+  createValidationContext(stateCtx, validationFunctions);
 </script>
 
 {@render children()}

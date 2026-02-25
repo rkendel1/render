@@ -78,7 +78,10 @@ function isSpecDataPart(data: unknown): data is SpecDataPart {
  * Build a `Spec` by replaying all spec data parts from a message's parts array.
  * Returns `null` if no spec data parts are present.
  */
-export function buildSpecFromParts(parts: DataPart[]): Spec | null {
+export function buildSpecFromParts(
+  parts: DataPart[],
+  snapshot = true,
+): Spec | null {
   const spec: Spec = { root: "", elements: {} };
   let hasSpec = false;
 
@@ -88,7 +91,10 @@ export function buildSpecFromParts(parts: DataPart[]): Spec | null {
       const payload = part.data;
       if (payload.type === "patch") {
         hasSpec = true;
-        applySpecPatch(spec, payload.patch);
+        applySpecPatch(
+          spec,
+          snapshot ? $state.snapshot(payload.patch) : payload.patch,
+        );
       } else if (payload.type === "flat") {
         hasSpec = true;
         Object.assign(spec, payload.spec);

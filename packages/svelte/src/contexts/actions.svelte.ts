@@ -76,6 +76,10 @@ export interface PendingConfirmation {
   reject: () => void;
 }
 
+export interface CurrentValue<T> {
+  readonly current: T;
+}
+
 /**
  * Action context value
  */
@@ -253,7 +257,7 @@ export function createActionContext(
     }
   };
 
-  return {
+  const ctx: ActionContext = {
     get handlers() {
       return handlers;
     },
@@ -274,13 +278,9 @@ export function createActionContext(
       handlers = { ...handlers, [name]: handler };
     },
   };
-}
 
-/**
- * Set the action context in component tree
- */
-export function setActionContext(ctx: ActionContext): void {
   setContext(ACTION_KEY, ctx);
+  return ctx;
 }
 
 /**
@@ -292,4 +292,18 @@ export function getActionContext(): ActionContext {
     throw new Error("getActionContext must be called within a JsonUIProvider");
   }
   return ctx;
+}
+
+/**
+ * Convenience helper to get a registered action handler by name
+ */
+export function getAction(
+  name: string,
+): CurrentValue<ActionHandler | undefined> {
+  const context = getActionContext();
+  return {
+    get current() {
+      return context.handlers[name];
+    },
+  };
 }
