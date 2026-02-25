@@ -101,17 +101,17 @@ const FunctionsProvider = defineComponent({
     },
   },
   setup(props, { slots }) {
-    provide(FUNCTIONS_KEY, props);
+    const fns = computed(() => props.functions ?? EMPTY_FUNCTIONS);
+    provide(FUNCTIONS_KEY, fns);
     return () => slots.default?.();
   },
 });
 
 function useFunctions(): ComputedRef<Record<string, ComputedFunction>> {
-  const ctx = inject<{ functions?: Record<string, ComputedFunction> }>(
+  return inject<ComputedRef<Record<string, ComputedFunction>>>(
     FUNCTIONS_KEY,
-    { functions: EMPTY_FUNCTIONS },
+    computed(() => EMPTY_FUNCTIONS),
   );
-  return computed(() => ctx.functions ?? EMPTY_FUNCTIONS);
 }
 
 // ---------------------------------------------------------------------------
@@ -264,46 +264,47 @@ const ElementRenderer = defineComponent({
     };
 
     // Watch effect: fire actions when watched state paths change.
-    const watchConfig = props.element.watch;
+    const watchedValues = computed(() => {
+      const cfg = props.element.watch;
+      if (!cfg) return undefined;
+      const values: Record<string, unknown> = {};
+      for (const path of Object.keys(cfg)) {
+        values[path] = getByPath(watchState.value, path);
+      }
+      return values;
+    });
 
-    if (watchConfig) {
-      const watchedValues = computed(() => {
-        const values: Record<string, unknown> = {};
-        for (const path of Object.keys(watchConfig)) {
-          values[path] = getByPath(watchState.value, path);
-        }
-        return values;
-      });
+    watch(
+      watchedValues,
+      (current, prev, onCleanup) => {
+        const cfg = props.element.watch;
+        if (!cfg || !current) return;
 
-      watch(
-        watchedValues,
-        (current, prev, onCleanup) => {
-          let cancelled = false;
-          onCleanup(() => {
-            cancelled = true;
-          });
+        let cancelled = false;
+        onCleanup(() => {
+          cancelled = true;
+        });
 
-          const paths = Object.keys(watchConfig);
-          void (async () => {
-            for (const path of paths) {
-              if (cancelled) break;
-              if (prev && current[path] === prev[path]) continue;
-              const binding = watchConfig[path];
-              if (!binding) continue;
-              const bindings = Array.isArray(binding) ? binding : [binding];
-              await resolveAndExecuteBindings(
-                bindings,
-                fullCtx.value,
-                getSnapshot,
-                execute,
-                () => cancelled,
-              );
-            }
-          })().catch(console.error);
-        },
-        { deep: true },
-      );
-    }
+        const paths = Object.keys(cfg);
+        void (async () => {
+          for (const path of paths) {
+            if (cancelled) break;
+            if (prev && current[path] === prev[path]) continue;
+            const binding = cfg[path];
+            if (!binding) continue;
+            const bindings = Array.isArray(binding) ? binding : [binding];
+            await resolveAndExecuteBindings(
+              bindings,
+              fullCtx.value,
+              getSnapshot,
+              execute,
+              () => cancelled,
+            );
+          }
+        })().catch(console.error);
+      },
+      { deep: true },
+    );
 
     return () => {
       const ctx = fullCtx.value;
@@ -624,13 +625,13 @@ export const JSONUIProvider = defineComponent({
             h(VisibilityProvider, null, {
               default: () =>
                 h(
-                  ActionProvider,
-                  { handlers: props.handlers, navigate: props.navigate },
+                  ValidationProvider,
+                  { customFunctions: props.validationFunctions },
                   {
                     default: () =>
                       h(
-                        ValidationProvider,
-                        { customFunctions: props.validationFunctions },
+                        ActionProvider,
+                        { handlers: props.handlers, navigate: props.navigate },
                         {
                           default: () =>
                             h(
@@ -926,12 +927,12 @@ export function createRenderer<
             default: () =>
               h(VisibilityProvider, null, {
                 default: () =>
-                  h(
-                    ActionProvider,
-                    { handlers: actionHandlers },
-                    {
-                      default: () =>
-                        h(ValidationProvider, null, {
+                  h(ValidationProvider, null, {
+                    default: () =>
+                      h(
+                        ActionProvider,
+                        { handlers: actionHandlers },
+                        {
                           default: () =>
                             h(
                               FunctionsProvider,
@@ -948,9 +949,9 @@ export function createRenderer<
                                 ],
                               },
                             ),
-                        }),
-                    },
-                  ),
+                        },
+                      ),
+                  }),
               }),
           },
         );

@@ -194,10 +194,10 @@ export const ActionProvider = defineComponent({
           );
           return;
         }
-        const valid = validateAll();
+        const { valid, errors } = validateAll();
         const statePath =
           (resolved.params?.statePath as string) || "/formValidation";
-        set(statePath, { valid });
+        set(statePath, { valid, errors });
         return;
       }
 

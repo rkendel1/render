@@ -3,7 +3,6 @@ import {
   shallowRef,
   computed,
   onUnmounted,
-  watchEffect,
   isRef,
   type Ref,
   type ComputedRef,
@@ -259,12 +258,6 @@ export function useUIStream({
 
   const onCompleteRef = ref(onComplete);
   const onErrorRef = ref(onError);
-  watchEffect(() => {
-    onCompleteRef.value = onComplete;
-  });
-  watchEffect(() => {
-    onErrorRef.value = onError;
-  });
 
   let abortController: AbortController | null = null;
 
@@ -678,12 +671,6 @@ export function useChatUI({
 
   const onCompleteRef = ref(onComplete);
   const onErrorRef = ref(onError);
-  watchEffect(() => {
-    onCompleteRef.value = onComplete;
-  });
-  watchEffect(() => {
-    onErrorRef.value = onError;
-  });
 
   let abortController: AbortController | null = null;
 

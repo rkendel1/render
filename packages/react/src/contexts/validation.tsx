@@ -42,8 +42,8 @@ export interface ValidationContextValue {
   touch: (path: string) => void;
   /** Clear validation for a field */
   clear: (path: string) => void;
-  /** Validate all fields */
-  validateAll: () => boolean;
+  /** Validate all fields and return aggregate result with per-field errors */
+  validateAll: () => { valid: boolean; errors: Record<string, string[]> };
   /** Register field config */
   registerField: (path: string, config: ValidationConfig) => void;
 }
@@ -210,15 +210,17 @@ export function ValidationProvider({
 
   const validateAll = useCallback(() => {
     let allValid = true;
+    const errors: Record<string, string[]> = {};
 
     for (const [path, config] of Object.entries(fieldConfigs)) {
       const result = validate(path, config);
       if (!result.valid) {
         allValid = false;
+        errors[path] = result.errors;
       }
     }
 
-    return allValid;
+    return { valid: allValid, errors };
   }, [fieldConfigs, validate]);
 
   const value = useMemo<ValidationContextValue>(
