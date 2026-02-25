@@ -1,50 +1,34 @@
 import type { Components } from "@json-render/react";
 import type { AppCatalog } from "./catalog";
-import {
-  stackStyle,
-  cardStyle,
-  cardTitleStyle,
-  cardSubtitleStyle,
-  textStyle,
-  buttonStyle,
-  badgeStyle,
-  listItemStyle,
-  listItemCheckStyle,
-  listItemTextStyle,
-  rendererBadgeStyle,
-  rendererDotStyle,
-  rendererLabel,
-  rendererTabsWrapperStyle,
-  rendererTabsLabelStyle,
-  rendererTabsStyle,
-  rendererTabStyle,
-} from "../shared/styles";
 
 export const components: Components<AppCatalog> = {
   Stack: ({ props, children }) => (
     <div
-      style={
-        stackStyle(
-          props.direction === "horizontal",
-          props.gap,
-          props.padding,
-          props.align,
-        ) as React.CSSProperties
-      }
+      className={[
+        "json-render-stack",
+        props.direction === "horizontal" && "json-render-stack--horizontal",
+        props.align && `json-render-stack--align-${props.align}`,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={{
+        gap: props.gap ? `${props.gap}px` : undefined,
+        padding: props.padding ? `${props.padding}px` : undefined,
+      }}
     >
       {children}
     </div>
   ),
 
   Card: ({ props, children }) => (
-    <div style={cardStyle as React.CSSProperties}>
+    <div className="json-render-card">
       {props.title && (
-        <div style={{ marginBottom: "4px" }}>
-          <h2 style={cardTitleStyle as React.CSSProperties}>{props.title}</h2>
+        <div className="json-render-card-title-wrap">
+          <h2 className="json-render-card-title">{props.title}</h2>
         </div>
       )}
       {props.subtitle && (
-        <p style={cardSubtitleStyle as React.CSSProperties}>{props.subtitle}</p>
+        <p className="json-render-card-subtitle">{props.subtitle}</p>
       )}
       {children}
     </div>
@@ -52,9 +36,16 @@ export const components: Components<AppCatalog> = {
 
   Text: ({ props }) => (
     <span
-      style={
-        textStyle(props.size, props.weight, props.color) as React.CSSProperties
-      }
+      className={[
+        "json-render-text",
+        props.size && props.size !== "md" && `json-render-text--${props.size}`,
+        props.weight &&
+          props.weight !== "normal" &&
+          `json-render-text--${props.weight}`,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={props.color ? { color: props.color } : undefined}
     >
       {String(props.content ?? "")}
     </span>
@@ -64,14 +55,30 @@ export const components: Components<AppCatalog> = {
     <button
       disabled={props.disabled}
       onClick={() => emit("press")}
-      style={buttonStyle(props.variant, props.disabled) as React.CSSProperties}
+      className={[
+        "json-render-button",
+        props.variant && `json-render-button--${props.variant}`,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {props.label}
     </button>
   ),
 
   Badge: ({ props }) => (
-    <span style={badgeStyle(props.color) as React.CSSProperties}>
+    <span
+      className="json-render-badge"
+      style={
+        props.color
+          ? {
+              backgroundColor: `${props.color}20`,
+              color: props.color,
+              borderColor: `${props.color}40`,
+            }
+          : undefined
+      }
+    >
       {props.label}
     </span>
   ),
@@ -79,49 +86,66 @@ export const components: Components<AppCatalog> = {
   ListItem: ({ props, emit }) => (
     <div
       onClick={() => emit("press")}
-      style={listItemStyle(props.completed) as React.CSSProperties}
+      className={[
+        "json-render-list-item",
+        props.completed && "json-render-list-item--done",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
-      <div style={listItemCheckStyle(props.completed) as React.CSSProperties}>
+      <div
+        className={[
+          "json-render-list-item-check",
+          props.completed && "json-render-list-item-check--done",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         {props.completed ? "✓" : ""}
       </div>
-      <span style={listItemTextStyle(props.completed) as React.CSSProperties}>
+      <span
+        className={[
+          "json-render-list-item-text",
+          props.completed && "json-render-list-item-text--done",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         {props.title}
       </span>
     </div>
   ),
 
   RendererBadge: ({ props }) => (
-    <span style={rendererBadgeStyle(props.renderer) as React.CSSProperties}>
-      <span style={rendererDotStyle(props.renderer) as React.CSSProperties} />
-      {rendererLabel(props.renderer)}
+    <span className="json-render-renderer-badge">
+      <span className="json-render-renderer-dot" />
+      {props.renderer === "vue" ? "Rendered with Vue" : "Rendered with React"}
     </span>
   ),
 
   RendererTabs: ({ props, emit }) => (
-    <div style={rendererTabsWrapperStyle as React.CSSProperties}>
-      <span style={rendererTabsLabelStyle as React.CSSProperties}>Render</span>
-      <div style={rendererTabsStyle as React.CSSProperties}>
+    <div className="json-render-renderer-tabs-wrapper">
+      <span className="json-render-renderer-tabs-label">Render</span>
+      <div className="json-render-renderer-tabs">
         <button
           onClick={() => emit("pressVue")}
-          style={
-            rendererTabStyle(
-              props.renderer === "vue",
-              true,
-              props.renderer,
-            ) as React.CSSProperties
-          }
+          className={[
+            "json-render-renderer-tab",
+            props.renderer === "vue" && "json-render-renderer-tab--active",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           Vue
         </button>
         <button
           onClick={() => emit("pressReact")}
-          style={
-            rendererTabStyle(
-              props.renderer === "react",
-              false,
-              props.renderer,
-            ) as React.CSSProperties
-          }
+          className={[
+            "json-render-renderer-tab",
+            props.renderer === "react" && "json-render-renderer-tab--active",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           React
         </button>

@@ -1,3 +1,4 @@
+import "./shared/styles.css";
 import { demoSpec } from "./spec";
 
 type Renderer = "vue" | "react";

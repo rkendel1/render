@@ -40,8 +40,12 @@ export default function App({
   spec: Spec;
 }) {
   return (
-    <StateProvider initialState={{ ...spec.state, renderer: initialRenderer }}>
-      <DemoRenderer spec={spec} />
-    </StateProvider>
+    <div className={`renderer-${initialRenderer}`}>
+      <StateProvider
+        initialState={{ ...spec.state, renderer: initialRenderer }}
+      >
+        <DemoRenderer spec={spec} />
+      </StateProvider>
+    </div>
   );
 }
