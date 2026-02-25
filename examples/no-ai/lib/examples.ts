@@ -748,7 +748,7 @@ export const examples: Example[] = [
       root: "card",
       state: {
         form: { country: "", city: "" },
-        availableCities: [] as string[],
+        availableCities: [],
       },
       elements: {
         card: {
@@ -815,7 +815,7 @@ export const examples: Example[] = [
           props: {
             label: "City",
             name: "city",
-            options: { $state: "/availableCities" } as unknown as string[],
+            options: { $state: "/availableCities" },
             placeholder: "Select a city",
             value: { $bindState: "/form/city" },
             checks: [{ type: "required", message: "City is required" }],

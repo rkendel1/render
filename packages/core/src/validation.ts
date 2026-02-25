@@ -219,7 +219,10 @@ export const builtInValidationFunctions: Record<string, ValidationFunction> = {
   },
 
   /**
-   * Required only when a condition is met (the `field` arg is truthy)
+   * Required only when a condition is met.
+   * Uses JS truthiness: 0, false, "", null, and undefined are all
+   * treated as "condition not met" (field not required), matching
+   * the visibility system's bare-condition semantics.
    */
   requiredIf: (value: unknown, args?: Record<string, unknown>) => {
     const condition = args?.field;
