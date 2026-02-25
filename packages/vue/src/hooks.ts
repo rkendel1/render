@@ -3,6 +3,7 @@ import {
   shallowRef,
   computed,
   onUnmounted,
+  watchEffect,
   isRef,
   type Ref,
   type ComputedRef,
@@ -256,17 +257,22 @@ export function useUIStream({
   const usage = ref<TokenUsage | null>(null);
   const rawLines = ref<string[]>([]);
 
-  // Keep latest callbacks (Vue refs are always current — no stale closure issues)
   const onCompleteRef = ref(onComplete);
-  onCompleteRef.value = onComplete;
   const onErrorRef = ref(onError);
-  onErrorRef.value = onError;
+  watchEffect(() => {
+    onCompleteRef.value = onComplete;
+  });
+  watchEffect(() => {
+    onErrorRef.value = onError;
+  });
 
   let abortController: AbortController | null = null;
 
   const clear = () => {
     spec.value = null;
     error.value = null;
+    usage.value = null;
+    rawLines.value = [];
   };
 
   const send = async (
@@ -670,11 +676,14 @@ export function useChatUI({
   const isStreaming = ref(false);
   const error = ref<Error | null>(null);
 
-  // Keep latest callbacks (Vue refs are always current — no stale closure issues)
   const onCompleteRef = ref(onComplete);
-  onCompleteRef.value = onComplete;
   const onErrorRef = ref(onError);
-  onErrorRef.value = onError;
+  watchEffect(() => {
+    onCompleteRef.value = onComplete;
+  });
+  watchEffect(() => {
+    onErrorRef.value = onError;
+  });
 
   let abortController: AbortController | null = null;
 
