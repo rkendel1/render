@@ -21,6 +21,10 @@ import type { JsonValue } from "@visual-json/react";
 import { PlaygroundRenderer } from "@/lib/render/renderer";
 import { playgroundCatalog } from "@/lib/render/catalog";
 import { buildCatalogDisplayData } from "@/lib/render/catalog-display";
+import {
+  verifyPlaygroundSpec,
+  buildVerificationFixPrompt,
+} from "@/lib/render/spec-verifier";
 
 type Tab = "json" | "nested" | "stream" | "catalog" | "visual";
 type RenderView = "preview" | "code";
@@ -36,10 +40,19 @@ type MobileView =
 interface Version {
   id: string;
   prompt: string;
+  requestPrompt: string;
+  originPrompt: string;
   tree: Spec | null;
   status: "generating" | "complete" | "error";
   usage: TokenUsage | null;
   rawLines: string[];
+}
+
+interface StartGenerationOptions {
+  requestPrompt: string;
+  displayPrompt: string;
+  previousSpec: Spec | null;
+  originPrompt: string;
 }
 
 /**
@@ -107,6 +120,9 @@ export function Playground() {
   const [renderView, setRenderView] = useState<RenderView>("preview");
   const [mobileView, setMobileView] = useState<MobileView>("preview");
   const [versionsSheetOpen, setVersionsSheetOpen] = useState(false);
+  const [verificationFeedback, setVerificationFeedback] = useState<
+    Record<string, "accepted" | "fix-requested">
+  >({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mobileInputRef = useRef<HTMLTextAreaElement>(null);
   const versionsEndRef = useRef<HTMLDivElement>(null);
@@ -144,6 +160,18 @@ export function Playground() {
 
   // Get the selected version
   const selectedVersion = versions.find((v) => v.id === selectedVersionId);
+  const selectedVersionIndex = selectedVersion
+    ? versions.findIndex((v) => v.id === selectedVersion.id)
+    : -1;
+  const selectedVerification = useMemo(() => {
+    if (!selectedVersion?.tree || selectedVersion.status !== "complete") {
+      return null;
+    }
+    return verifyPlaygroundSpec(selectedVersion.tree);
+  }, [selectedVersion]);
+  const selectedVerificationFeedback = selectedVersionId
+    ? verificationFeedback[selectedVersionId]
+    : undefined;
 
   // Determine which tree to display:
   // - If streaming and selected version is the generating one, show apiSpec
@@ -204,27 +232,119 @@ export function Playground() {
     }
   }, [isStreaming, apiSpec, streamUsage, streamRawLines]);
 
+  const handleClearAll = useCallback(() => {
+    setVersions([]);
+    setSelectedVersionId(null);
+    setVerificationFeedback({});
+    clear();
+    currentTreeRef.current = null;
+    generatingVersionIdRef.current = null;
+  }, [clear]);
+
+  const startGeneration = useCallback(
+    async ({
+      requestPrompt,
+      displayPrompt,
+      previousSpec,
+      originPrompt,
+    }: StartGenerationOptions) => {
+      const trimmedPrompt = requestPrompt.trim();
+      if (!trimmedPrompt || isStreaming) return;
+
+      const newVersionId = Date.now().toString();
+      const newVersion: Version = {
+        id: newVersionId,
+        prompt: displayPrompt,
+        requestPrompt: trimmedPrompt,
+        originPrompt,
+        tree: null,
+        status: "generating",
+        usage: null,
+        rawLines: [],
+      };
+
+      generatingVersionIdRef.current = newVersionId;
+      setVersions((prev) => [...prev, newVersion]);
+      setSelectedVersionId(newVersionId);
+
+      await send(trimmedPrompt, { previousSpec: previousSpec ?? undefined });
+    },
+    [isStreaming, send],
+  );
+
   const handleSubmit = useCallback(async () => {
-    if (!inputValue.trim() || isStreaming) return;
+    const prompt = inputValue.trim();
+    if (!prompt || isStreaming) return;
 
-    const newVersionId = Date.now().toString();
-    const newVersion: Version = {
-      id: newVersionId,
-      prompt: inputValue.trim(),
-      tree: null,
-      status: "generating",
-      usage: null,
-      rawLines: [],
-    };
-
-    generatingVersionIdRef.current = newVersionId;
-    setVersions((prev) => [...prev, newVersion]);
-    setSelectedVersionId(newVersionId);
     setInputValue("");
+    await startGeneration({
+      requestPrompt: prompt,
+      displayPrompt: prompt,
+      previousSpec: currentTreeRef.current,
+      originPrompt: prompt,
+    });
+  }, [inputValue, isStreaming, startGeneration]);
 
-    // Pass the current tree as context so the API can iterate on it
-    await send(inputValue.trim(), { previousSpec: currentTreeRef.current });
-  }, [inputValue, isStreaming, send]);
+  const handleVerificationAccept = useCallback(() => {
+    if (!selectedVersionId) return;
+    setVerificationFeedback((prev) => ({
+      ...prev,
+      [selectedVersionId]: "accepted",
+    }));
+    toast.success("Verification feedback saved.");
+  }, [selectedVersionId]);
+
+  const handleVerificationFix = useCallback(async () => {
+    if (!selectedVersion || !selectedVersion.tree || isStreaming) return;
+
+    const issues = selectedVerification?.issues ?? [];
+    if (issues.length === 0) {
+      toast.success("No verification issues detected.");
+      return;
+    }
+
+    setVerificationFeedback((prev) => ({
+      ...prev,
+      [selectedVersion.id]: "fix-requested",
+    }));
+
+    const label =
+      selectedVersionIndex >= 0
+        ? `Fix verification issues for v${selectedVersionIndex + 1}`
+        : "Fix verification issues";
+
+    await startGeneration({
+      requestPrompt: buildVerificationFixPrompt({
+        originalPrompt: selectedVersion.originPrompt,
+        issues,
+      }),
+      displayPrompt: label,
+      previousSpec: selectedVersion.tree,
+      originPrompt: selectedVersion.originPrompt,
+    });
+  }, [
+    selectedVersion,
+    isStreaming,
+    selectedVerification,
+    selectedVersionIndex,
+    startGeneration,
+  ]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!selectedVersion || isStreaming) return;
+
+    const label =
+      selectedVersionIndex >= 0
+        ? `Regenerate v${selectedVersionIndex + 1}`
+        : "Regenerate";
+
+    await startGeneration({
+      requestPrompt: selectedVersion.originPrompt,
+      displayPrompt: label,
+      previousSpec: null,
+      originPrompt: selectedVersion.originPrompt,
+    });
+  }, [selectedVersion, isStreaming, selectedVersionIndex, startGeneration]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -320,6 +440,92 @@ ${jsx}
   );
 }`;
   }, [currentTree]);
+
+  const verificationIssues = selectedVerification?.issues ?? [];
+  const verificationErrorCount = verificationIssues.filter(
+    (issue) => issue.severity === "error",
+  ).length;
+  const verificationWarningCount =
+    verificationIssues.length - verificationErrorCount;
+
+  const verificationPanel =
+    selectedVersion?.status === "complete" && selectedVersion.tree ? (
+      <div className="border-b border-border px-3 py-2 bg-muted/20">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-xs font-mono text-foreground">
+              verification
+              {verificationIssues.length === 0
+                ? " passed"
+                : ` ${verificationErrorCount} error(s), ${verificationWarningCount} warning(s)`}
+            </p>
+            {selectedVerificationFeedback === "accepted" && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Feedback: looks good
+              </p>
+            )}
+            {selectedVerificationFeedback === "fix-requested" && (
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Feedback: fix requested
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleVerificationAccept}
+              disabled={isStreaming || selectedVerificationFeedback === "accepted"}
+              className="text-[11px] px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-40"
+            >
+              Looks good
+            </button>
+            {verificationIssues.length > 0 && (
+              <button
+                onClick={handleVerificationFix}
+                disabled={isStreaming}
+                className="text-[11px] px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-40"
+              >
+                Fix issues
+              </button>
+            )}
+            <button
+              onClick={handleRegenerate}
+              disabled={isStreaming}
+              className="text-[11px] px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-40"
+            >
+              Regenerate
+            </button>
+          </div>
+        </div>
+        {verificationIssues.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {verificationIssues.slice(0, 3).map((issue, idx) => (
+              <p key={`${issue.code}-${issue.elementKey ?? "root"}-${idx}`} className="text-[11px] text-muted-foreground">
+                [{issue.severity}] {issue.message}
+              </p>
+            ))}
+            {verificationIssues.length > 3 && (
+              <p className="text-[11px] text-muted-foreground">
+                +{verificationIssues.length - 3} more issue(s)
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    ) : null;
+
+  const previewContent = currentTree && currentTree.root ? (
+    <div className="w-full min-h-full flex items-center justify-center p-6">
+      <PlaygroundRenderer
+        spec={currentTree}
+        data={currentTree.state}
+        loading={isStreaming}
+      />
+    </div>
+  ) : (
+    <div className="h-full flex items-center justify-center text-muted-foreground/50 text-sm">
+      {isStreaming ? "generating..." : "// enter a prompt to generate UI"}
+    </div>
+  );
 
   // Chat pane content
   const chatPane = (
@@ -427,11 +633,7 @@ ${jsx}
         <div className="flex justify-between items-center mt-2">
           {versions.length > 0 ? (
             <button
-              onClick={() => {
-                setVersions([]);
-                setSelectedVersionId(null);
-                clear();
-              }}
+              onClick={handleClearAll}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               Clear
@@ -726,21 +928,10 @@ ${jsx}
       </div>
       <div className="flex-1 overflow-auto">
         {renderView === "preview" ? (
-          currentTree && currentTree.root ? (
-            <div className="w-full min-h-full flex items-center justify-center p-6">
-              <PlaygroundRenderer
-                spec={currentTree}
-                data={currentTree.state}
-                loading={isStreaming}
-              />
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-muted-foreground/50 text-sm">
-              {isStreaming
-                ? "generating..."
-                : "// enter a prompt to generate UI"}
-            </div>
-          )
+          <div className="min-h-full flex flex-col">
+            {verificationPanel}
+            <div className="flex-1">{previewContent}</div>
+          </div>
         ) : (
           <CodeBlock
             code={generatedCode}
@@ -1001,48 +1192,51 @@ ${jsx}
           ) : mobileView === "json" ? (
             <CodeBlock code={jsonCode} lang="json" fillHeight hideCopyButton />
           ) : mobileView === "preview" ? (
-            currentTree && currentTree.root ? (
-              <div className="w-full min-h-full flex items-center justify-center p-6">
-                <PlaygroundRenderer
-                  spec={currentTree}
-                  data={currentTree.state}
-                  loading={isStreaming}
-                />
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                {isStreaming ? (
-                  <p className="text-sm text-muted-foreground/50">
-                    generating...
-                  </p>
-                ) : (
-                  <>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Describe what you want to build, then iterate on it.
+            <div className="min-h-full flex flex-col">
+              {verificationPanel}
+              {currentTree && currentTree.root ? (
+                <div className="w-full min-h-full flex items-center justify-center p-6">
+                  <PlaygroundRenderer
+                    spec={currentTree}
+                    data={currentTree.state}
+                    loading={isStreaming}
+                  />
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                  {isStreaming ? (
+                    <p className="text-sm text-muted-foreground/50">
+                      generating...
                     </p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {EXAMPLE_PROMPTS.map((prompt) => (
-                        <button
-                          key={prompt}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            flushSync(() => setInputValue(prompt));
-                            mobileInputRef.current?.focus();
-                            mobileInputRef.current?.setSelectionRange(
-                              prompt.length,
-                              prompt.length,
-                            );
-                          }}
-                          className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
-                        >
-                          {prompt}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Describe what you want to build, then iterate on it.
+                      </p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {EXAMPLE_PROMPTS.map((prompt) => (
+                          <button
+                            key={prompt}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              flushSync(() => setInputValue(prompt));
+                              mobileInputRef.current?.focus();
+                              mobileInputRef.current?.setSelectionRange(
+                                prompt.length,
+                                prompt.length,
+                              );
+                            }}
+                            className="text-xs px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                          >
+                            {prompt}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           ) : (
             /* generated-code */
             <CodeBlock
@@ -1077,11 +1271,7 @@ ${jsx}
           <div className="flex justify-between items-center mt-2">
             {versions.length > 0 ? (
               <button
-                onClick={() => {
-                  setVersions([]);
-                  setSelectedVersionId(null);
-                  clear();
-                }}
+                onClick={handleClearAll}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 Clear

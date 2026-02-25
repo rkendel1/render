@@ -260,7 +260,9 @@ export const playgroundCatalog = defineCatalog(schema, {
         max: z.number().nullable(),
         label: z.string().nullable(),
       }),
-      description: "Star rating display",
+      events: ["change"],
+      description:
+        "Interactive rating input. Use { $bindState } on value for state binding and on.change for updates.",
     },
 
     // ── Charts ──────────────────────────────────────────────────────────
@@ -359,7 +361,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Dropdown select input. Use { $bindState } on value for binding. Use checks for validation.",
+        "Dropdown select input. Use string options (e.g. ['Small','Medium','Large']). Use { $bindState } on value for binding. Use checks for validation.",
     },
 
     Checkbox: {
@@ -381,7 +383,7 @@ export const playgroundCatalog = defineCatalog(schema, {
       }),
       events: ["change"],
       description:
-        "Radio button group. Use { $bindState } on value for binding.",
+        "Radio button group. Use string options (e.g. ['Basic','Pro']). Use { $bindState } on value for binding.",
     },
 
     Switch: {
