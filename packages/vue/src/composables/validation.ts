@@ -3,9 +3,11 @@ import {
   provide,
   inject,
   ref,
+  computed,
   watchEffect,
   type InjectionKey,
   type PropType,
+  type ComputedRef,
 } from "vue";
 import {
   runValidation,
@@ -153,47 +155,37 @@ export function useFieldValidation(
   path: string,
   config?: ValidationConfig,
 ): {
-  state: FieldValidationState;
+  state: ComputedRef<FieldValidationState>;
   validate: () => ValidationResult;
   touch: () => void;
   clear: () => void;
-  errors: string[];
-  isValid: boolean;
+  errors: ComputedRef<string[]>;
+  isValid: ComputedRef<boolean>;
 } {
-  const {
-    fieldStates,
-    validate: validateField,
-    touch: touchField,
-    clear: clearField,
-    registerField,
-  } = useValidation();
+  const ctx = useValidation();
 
   if (path && config) {
     watchEffect(() => {
-      registerField(path, config);
+      ctx.registerField(path, config);
     });
   }
 
-  const state = fieldStates[path] ?? {
+  const defaultState: FieldValidationState = {
     touched: false,
     validated: false,
     result: null,
   };
 
+  const state = computed(() => ctx.fieldStates[path] ?? defaultState);
+  const errors = computed(() => state.value.result?.errors ?? []);
+  const isValid = computed(() => state.value.result?.valid ?? true);
+
   return {
-    get state() {
-      return (
-        fieldStates[path] ?? { touched: false, validated: false, result: null }
-      );
-    },
-    validate: () => validateField(path, config ?? { checks: [] }),
-    touch: () => touchField(path),
-    clear: () => clearField(path),
-    get errors() {
-      return (fieldStates[path] ?? state).result?.errors ?? [];
-    },
-    get isValid() {
-      return (fieldStates[path] ?? state).result?.valid ?? true;
-    },
+    state,
+    validate: () => ctx.validate(path, config ?? { checks: [] }),
+    touch: () => ctx.touch(path),
+    clear: () => ctx.clear(path),
+    errors,
+    isValid,
   };
 }

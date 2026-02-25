@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { JSONUIProvider, Renderer } from "@json-render/vue";
 import { registry } from "~/lib/render/registry";
 import { examples } from "~/lib/examples";

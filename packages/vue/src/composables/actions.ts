@@ -28,10 +28,14 @@ function generateUniqueId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+const MAX_RESOLVE_DEPTH = 20;
+
 function deepResolveValue(
   value: unknown,
   get: (path: string) => unknown,
+  depth: number = 0,
 ): unknown {
+  if (depth > MAX_RESOLVE_DEPTH) return value;
   if (value === null || value === undefined) return value;
 
   if (value === "$id") {
@@ -52,13 +56,13 @@ function deepResolveValue(
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => deepResolveValue(item, get));
+    return value.map((item) => deepResolveValue(item, get, depth + 1));
   }
 
   if (typeof value === "object") {
     const resolved: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      resolved[key] = deepResolveValue(val, get);
+      resolved[key] = deepResolveValue(val, get, depth + 1);
     }
     return resolved;
   }
@@ -250,26 +254,26 @@ export const ActionProvider = defineComponent({
             loadingActionsRef.value = fin;
           }
         });
-      }
-
-      const next = new Set(loadingActionsRef.value);
-      next.add(resolved.action);
-      loadingActionsRef.value = next;
-      try {
-        await executeAction({
-          action: resolved,
-          handler,
-          setState: storeCtx.set,
-          navigate: props.navigate,
-          executeAction: async (name) => {
-            const subBinding: ActionBinding = { action: name };
-            await execute(subBinding);
-          },
-        });
-      } finally {
-        const fin = new Set(loadingActionsRef.value);
-        fin.delete(resolved.action);
-        loadingActionsRef.value = fin;
+      } else {
+        const next = new Set(loadingActionsRef.value);
+        next.add(resolved.action);
+        loadingActionsRef.value = next;
+        try {
+          await executeAction({
+            action: resolved,
+            handler,
+            setState: storeCtx.set,
+            navigate: props.navigate,
+            executeAction: async (name) => {
+              const subBinding: ActionBinding = { action: name };
+              await execute(subBinding);
+            },
+          });
+        } finally {
+          const fin = new Set(loadingActionsRef.value);
+          fin.delete(resolved.action);
+          loadingActionsRef.value = fin;
+        }
       }
     };
 

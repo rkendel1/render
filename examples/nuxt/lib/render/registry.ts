@@ -226,8 +226,12 @@ export const { registry } = defineRegistry(catalog, {
             },
           }),
           validation &&
-            validation.errors.length > 0 &&
-            h("p", { class: "text-xs text-red-500" }, validation.errors[0]),
+            validation.errors.value.length > 0 &&
+            h(
+              "p",
+              { class: "text-xs text-red-500" },
+              validation.errors.value[0],
+            ),
         ].filter(Boolean) as VNode[],
       );
     },
@@ -291,8 +295,12 @@ export const { registry } = defineRegistry(catalog, {
             ].filter(Boolean) as VNode[],
           ),
           validation &&
-            validation.errors.length > 0 &&
-            h("p", { class: "text-xs text-red-500" }, validation.errors[0]),
+            validation.errors.value.length > 0 &&
+            h(
+              "p",
+              { class: "text-xs text-red-500" },
+              validation.errors.value[0],
+            ),
         ].filter(Boolean) as VNode[],
       );
     },
@@ -460,6 +468,8 @@ export const { registry } = defineRegistry(catalog, {
       );
     },
 
+    // Uses defineComponent instead of a plain render function because it
+    // needs local reactive state (openItems ref) to track expanded items.
     Accordion: defineComponent({
       props: {
         props: {

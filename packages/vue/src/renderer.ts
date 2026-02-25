@@ -349,6 +349,9 @@ const ElementRenderer: DefineComponent<
       );
     };
   },
+  // Cast required: ElementRenderer and RepeatChildren reference each other
+  // recursively, which prevents TypeScript from inferring the component type.
+  // The explicit DefineComponent annotation above provides the correct type.
 }) as any;
 
 const RepeatChildren: DefineComponent<
@@ -427,6 +430,7 @@ const RepeatChildren: DefineComponent<
       });
     };
   },
+  // Cast required: see ElementRenderer comment above (mutual recursion).
 }) as any;
 
 // ---------------------------------------------------------------------------

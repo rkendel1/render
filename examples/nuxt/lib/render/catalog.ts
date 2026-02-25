@@ -168,4 +168,6 @@ export const catalog = defineCatalog(schema, {
     },
   },
   actions: {},
+  // Cast needed: zod schema types don't align with the inferred catalog input
+  // type from defineCatalog's generics when no actions are defined.
 } as any);
