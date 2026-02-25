@@ -5,15 +5,18 @@
 Generate dynamic, personalized UIs from prompts without sacrificing reliability. Predefined components and actions for safe, predictable output.
 
 ```bash
+# for React
 npm install @json-render/core @json-render/react
-# pre-built shadcn/ui components
+# for React with pre-built shadcn/ui components
 npm install @json-render/shadcn
-# or for mobile
+# or for React Native
 npm install @json-render/core @json-render/react-native
 # or for video
 npm install @json-render/core @json-render/remotion
 # or for PDF documents
 npm install @json-render/core @json-render/react-pdf
+# or for Vue
+npm install @json-render/core @json-render/vue
 ```
 
 ## Why json-render?
@@ -23,7 +26,7 @@ json-render is a **Generative UI** framework: AI generates interfaces from natur
 - **Guardrailed** - AI can only use components in your catalog
 - **Predictable** - JSON output matches your schema, every time
 - **Fast** - Stream and render progressively as the model responds
-- **Cross-Platform** - React (web) and React Native (mobile) from the same catalog
+- **Cross-Platform** - React, Vue (web), React Native (mobile) from the same catalog
 - **Batteries Included** - 36 pre-built shadcn/ui components ready to use
 
 ## Quick Start
@@ -110,6 +113,7 @@ function Dashboard({ spec }) {
 |---------|-------------|
 | `@json-render/core` | Schemas, catalogs, AI prompts, dynamic props, SpecStream utilities |
 | `@json-render/react` | React renderer, contexts, hooks |
+| `@json-render/vue` | Vue 3 renderer, composables, providers |
 | `@json-render/shadcn` | 36 pre-built shadcn/ui components (Radix UI + Tailwind CSS) |
 | `@json-render/react-native` | React Native renderer with standard mobile components |
 | `@json-render/remotion` | Remotion video renderer, timeline schema |
@@ -146,6 +150,26 @@ const spec = {
 // defineRegistry creates a type-safe component registry
 const { registry } = defineRegistry(catalog, { components });
 <Renderer spec={spec} registry={registry} />
+```
+
+### Vue (UI)
+
+```typescript
+import { h } from "vue";
+import { defineRegistry, Renderer } from "@json-render/vue";
+import { schema } from "@json-render/vue/schema";
+
+const { registry } = defineRegistry(catalog, {
+  components: {
+    Card: ({ props, children }) =>
+      h("div", { class: "card" }, [h("h3", null, props.title), children]),
+    Button: ({ props, emit }) =>
+      h("button", { onClick: () => emit("press") }, props.label),
+  },
+});
+
+// In your Vue component template:
+// <Renderer :spec="spec" :registry="registry" />
 ```
 
 ### shadcn/ui (Web)
