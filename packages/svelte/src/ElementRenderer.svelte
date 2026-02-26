@@ -8,6 +8,7 @@
     type PropResolutionContext,
   } from "@json-render/core";
   import type { ComponentRegistry, ComponentRenderer } from "./renderer.js";
+  import type { EventHandle } from "./catalog-types.js";
   import { getStateContext } from "./contexts/StateProvider.svelte";
   import { getActionContext } from "./contexts/ActionProvider.svelte";
   import { getRepeatScope } from "./contexts/RepeatScopeProvider.svelte";
@@ -81,6 +82,21 @@
       actionCtx.execute({ ...b, params: resolved });
     }
   }
+
+  function on(eventName: string): EventHandle {
+    const binding = element.on?.[eventName];
+    if (!binding) {
+      return { emit: () => {}, shouldPreventDefault: false, bound: false };
+    }
+
+    const actionBindings = Array.isArray(binding) ? binding : [binding];
+    const shouldPreventDefault = actionBindings.some((b) => b.preventDefault);
+    return {
+      emit: () => emit(eventName),
+      shouldPreventDefault,
+      bound: true,
+    };
+  }
 </script>
 
 {#if isVisible && Component}
@@ -88,6 +104,7 @@
     element={resolvedElement}
     bindings={elementBindings}
     {loading}
+    {on}
     {emit}>
     {#if resolvedElement.repeat}
       <RepeatChildren

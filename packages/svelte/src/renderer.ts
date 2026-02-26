@@ -9,6 +9,7 @@ import type {
 import type { Component, Snippet } from "svelte";
 import type {
   BaseComponentProps,
+  EventHandle,
   SetState,
   StateModel,
 } from "./catalog-types.js";
@@ -24,6 +25,8 @@ export interface ComponentRenderProps<P = Record<string, unknown>> {
   children?: Snippet;
   /** Emit a named event. The renderer resolves the event to action binding(s) from the element's `on` field. */
   emit: (event: string) => void;
+  /** Get an event handle with metadata */
+  on: (event: string) => EventHandle;
   /**
    * Two-way binding paths resolved from `$bindState` / `$bindItem` expressions.
    * Maps prop name → absolute state path for write-back.
@@ -131,9 +134,9 @@ export function defineRegistry<
           get emit() {
             return props.emit;
           },
-          // get on() {
-          //   return props.on;
-          // },
+          get on() {
+            return props.on;
+          },
           get bindings() {
             return props.bindings;
           },

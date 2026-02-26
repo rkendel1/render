@@ -51,6 +51,7 @@ export { schema, type SvelteSchema, type SvelteSpec } from "./schema.js";
 // =============================================================================
 
 export type {
+  EventHandle,
   BaseComponentProps,
   SetState,
   StateModel,
