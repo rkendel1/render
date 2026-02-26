@@ -35,6 +35,7 @@
   import VisibilityProvider from "./contexts/VisibilityProvider.svelte";
   import ValidationProvider from "./contexts/ValidationProvider.svelte";
   import ActionProvider from "./contexts/ActionProvider.svelte";
+  import ConfirmDialogManager from "./ConfirmDialogManager.svelte";
   import type { ComponentRegistry } from "./renderer.js";
 
   let {
@@ -53,6 +54,7 @@
     <ValidationProvider customFunctions={validationFunctions}>
       <ActionProvider {handlers} {navigate}>
         {@render children()}
+        <ConfirmDialogManager />
       </ActionProvider>
     </ValidationProvider>
   </VisibilityProvider>

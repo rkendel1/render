@@ -1,10 +1,18 @@
-import type { Catalog, UIElement } from "@json-render/core";
+import type {
+  Catalog,
+  ComputedFunction,
+  SchemaDefinition,
+  Spec,
+  StateStore,
+  UIElement,
+} from "@json-render/core";
 import type { Component, Snippet } from "svelte";
 import type {
   BaseComponentProps,
   SetState,
   StateModel,
 } from "./catalog-types.js";
+import CatalogRenderer from "./CatalogRenderer.svelte";
 
 /**
  * Props passed to component renderers
@@ -178,4 +186,86 @@ export function defineRegistry<
   };
 
   return { registry, handlers, executeAction };
+}
+
+// ============================================================================
+// createRenderer
+// ============================================================================
+
+/**
+ * Props for renderers created with createRenderer
+ */
+export interface CreateRendererProps {
+  spec: Spec | null;
+  store?: StateStore;
+  state?: Record<string, unknown>;
+  onAction?: (actionName: string, params?: Record<string, unknown>) => void;
+  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
+  /** Named functions for `$computed` expressions in props */
+  functions?: Record<string, ComputedFunction>;
+  loading?: boolean;
+  fallback?: Component;
+}
+
+/**
+ * Component map type — maps component names to Vue components
+ */
+export type ComponentMap<
+  TComponents extends Record<string, { props: unknown }>,
+> = {
+  [K in keyof TComponents]: Component<any, any, string>;
+};
+
+/**
+ * Create a renderer from a catalog
+ *
+ * @example
+ * ```typescript
+ * const DashboardRenderer = createRenderer(dashboardCatalog, {
+ *   Card,
+ *   Metric,
+ * });
+ *
+ * // Usage in template
+ * <DashboardRenderer spec={aiGeneratedSpec} {state} />
+ * ```
+ */
+export function createRenderer<
+  TDef extends SchemaDefinition,
+  TCatalog extends { components: Record<string, { props: unknown }> },
+>(
+  _catalog: Catalog<TDef, TCatalog>,
+  components: ComponentMap<TCatalog["components"]>,
+): Component<CreateRendererProps> {
+  const registry: ComponentRegistry =
+    components as unknown as ComponentRegistry;
+
+  return (_, props: CreateRendererProps) =>
+    CatalogRenderer(_, {
+      registry,
+      get spec() {
+        return props.spec;
+      },
+      get store() {
+        return props.store;
+      },
+      get state() {
+        return props.state;
+      },
+      get onAction() {
+        return props.onAction;
+      },
+      get onStateChange() {
+        return props.onStateChange;
+      },
+      get functions() {
+        return props.functions;
+      },
+      get loading() {
+        return props.loading;
+      },
+      get fallback() {
+        return props.fallback;
+      },
+    });
 }

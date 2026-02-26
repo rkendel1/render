@@ -94,16 +94,22 @@ export {
 
 export {
   defineRegistry,
+  createRenderer,
   type DefineRegistryResult,
   type ComponentRenderer,
   type ComponentRegistry,
 } from "./renderer.js";
 export { default as Renderer, type RendererProps } from "./Renderer.svelte";
 export {
+  default as CatalogRenderer,
+  type CatalogRendererProps,
+} from "./CatalogRenderer.svelte";
+export {
   default as JsonUIProvider,
   type JSONUIProviderProps,
 } from "./JsonUIProvider.svelte";
 export { default as ConfirmDialog } from "./ConfirmDialog.svelte";
+export { default as ConfirmDialogManager } from "./ConfirmDialogManager.svelte";
 
 // =============================================================================
 // Re-exports from core
