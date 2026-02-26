@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Spec, ActionHandler } from "@json-render/core";
-  import type { ComponentRegistry, ComponentRenderer } from "./types.js";
+  import type { ComponentRegistry, ComponentRenderer } from "./renderer.js";
   import StateProvider from "./contexts/StateProvider.svelte";
   import VisibilityProvider from "./contexts/VisibilityProvider.svelte";
   import ValidationProvider from "./contexts/ValidationProvider.svelte";

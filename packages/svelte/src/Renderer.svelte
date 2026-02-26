@@ -1,7 +1,7 @@
 <script module lang="ts">
   import type { Spec } from "@json-render/core";
   import ElementRenderer from "./ElementRenderer.svelte";
-  import type { ComponentRegistry, ComponentRenderer } from "./types.js";
+  import type { ComponentRegistry, ComponentRenderer } from "./renderer.js";
 
   /**
    * Props for the Renderer component

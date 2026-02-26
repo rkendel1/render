@@ -1,11 +1,42 @@
-import type { Catalog } from "@json-render/core";
-import type { ComponentRegistry } from "./types.js";
+import type { Catalog, UIElement } from "@json-render/core";
+import type { Component, Snippet } from "svelte";
 import type {
   BaseComponentProps,
   SetState,
   StateModel,
 } from "./catalog-types.js";
-import type { Component } from "svelte";
+
+/**
+ * Props passed to component renderers
+ */
+export interface ComponentRenderProps<P = Record<string, unknown>> {
+  /** The element being rendered */
+  element: UIElement<string, P>;
+  /** Rendered children snippet */
+  children?: Snippet;
+  /** Emit a named event. The renderer resolves the event to action binding(s) from the element's `on` field. */
+  emit: (event: string) => void;
+  /**
+   * Two-way binding paths resolved from `$bindState` / `$bindItem` expressions.
+   * Maps prop name → absolute state path for write-back.
+   */
+  bindings?: Record<string, string>;
+  /** Whether the parent is loading */
+  loading?: boolean;
+}
+
+/**
+ * Component renderer type - a Svelte component that receives ComponentRenderProps
+ */
+export type ComponentRenderer<P = Record<string, unknown>> = Component<
+  ComponentRenderProps<P>
+>;
+
+/**
+ * Registry of component renderers.
+ * Maps component type names to Svelte components.
+ */
+export type ComponentRegistry = Record<string, ComponentRenderer<any>>;
 
 /**
  * Action handler function for defineRegistry

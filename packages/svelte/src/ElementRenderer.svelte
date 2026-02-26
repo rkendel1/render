@@ -7,7 +7,7 @@
     evaluateVisibility,
     type PropResolutionContext,
   } from "@json-render/core";
-  import type { ComponentRegistry, ComponentRenderer } from "./types.js";
+  import type { ComponentRegistry, ComponentRenderer } from "./renderer.js";
   import { getStateContext } from "./contexts/StateProvider.svelte";
   import { getActionContext } from "./contexts/ActionProvider.svelte";
   import { getRepeatScope } from "./contexts/RepeatScopeProvider.svelte";

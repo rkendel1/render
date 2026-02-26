@@ -5,7 +5,7 @@ import RendererWithProvider from "./RendererWithProvider.test.svelte";
 import TestContainer from "./TestContainer.svelte";
 import TestText from "./TestText.svelte";
 import TestButton from "./TestButton.svelte";
-import { defineRegistry } from "./registry.js";
+import { defineRegistry } from "./renderer.js";
 
 describe("Renderer", () => {
   afterEach(() => {

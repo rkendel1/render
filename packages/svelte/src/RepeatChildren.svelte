@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Spec, UIElement } from "@json-render/core";
   import { getByPath } from "@json-render/core";
-  import type { ComponentRegistry, ComponentRenderer } from "./types.js";
+  import type { ComponentRegistry, ComponentRenderer } from "./renderer.js";
   import { getStateContext } from "./contexts/StateProvider.svelte";
   import RepeatScopeProvider from "./contexts/RepeatScopeProvider.svelte";
   import ElementRenderer from "./ElementRenderer.svelte";
