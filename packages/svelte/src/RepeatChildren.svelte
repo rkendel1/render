@@ -40,7 +40,9 @@
             {loading}
             {fallback} />
         {:else if !loading}
-          <!-- Missing child element warning in dev -->
+          {console.warn(
+            `[json-render] Missing element "${childKey}" referenced as child of "${element.type}". This element will not render.`,
+          )}
         {/if}
       {/each}
     </RepeatScopeProvider>

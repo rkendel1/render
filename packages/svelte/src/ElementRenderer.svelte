@@ -100,32 +100,45 @@
 </script>
 
 {#if isVisible && Component}
-  <Component
-    element={resolvedElement}
-    bindings={elementBindings}
-    {loading}
-    {on}
-    {emit}>
-    {#if resolvedElement.repeat}
-      <RepeatChildren
-        element={resolvedElement}
-        {spec}
-        {registry}
-        {loading}
-        {fallback} />
-    {:else if resolvedElement.children}
-      {#each resolvedElement.children as childKey (childKey)}
-        {#if spec.elements[childKey]}
-          <Self
-            element={spec.elements[childKey]}
-            {spec}
-            {registry}
-            {loading}
-            {fallback} />
-        {:else if !loading}
-          <!-- Missing child element warning in dev -->
-        {/if}
-      {/each}
-    {/if}
-  </Component>
+  <svelte:boundary
+    onerror={(error) => {
+      console.error(
+        `[json-render] Rendering error in <${resolvedElement.type}>:`,
+        error,
+      );
+    }}>
+    <Component
+      element={resolvedElement}
+      bindings={elementBindings}
+      {loading}
+      {on}
+      {emit}>
+      {#if resolvedElement.repeat}
+        <RepeatChildren
+          element={resolvedElement}
+          {spec}
+          {registry}
+          {loading}
+          {fallback} />
+      {:else if resolvedElement.children}
+        {#each resolvedElement.children as childKey (childKey)}
+          {#if spec.elements[childKey]}
+            <Self
+              element={spec.elements[childKey]}
+              {spec}
+              {registry}
+              {loading}
+              {fallback} />
+          {:else if !loading}
+            {console.warn(
+              `[json-render] Missing element "${childKey}" referenced as child of "${resolvedElement.type}". This element will not render.`,
+            )}
+          {/if}
+        {/each}
+      {/if}
+    </Component>
+    {#snippet failed()}
+      <!-- render nothing -->
+    {/snippet}
+  </svelte:boundary>
 {/if}
