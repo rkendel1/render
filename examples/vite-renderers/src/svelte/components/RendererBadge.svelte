@@ -1,17 +1,16 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{ renderer: string }> {}
+  interface Props extends BaseComponentProps<{ renderer: string }> {}
 
-  let { element }: Props = $props();
-  let _props = $derived(element.props);
+  let { props }: Props = $props();
 </script>
 
 <span class="json-render-renderer-badge">
   <span class="json-render-renderer-dot"></span>
-  {_props.renderer === "vue"
+  {props.renderer === "vue"
     ? "Rendered with Vue"
-    : _props.renderer === "react"
+    : props.renderer === "react"
       ? "Rendered with React"
       : "Rendered with Svelte"}
 </span>

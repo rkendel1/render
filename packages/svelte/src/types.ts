@@ -1,10 +1,5 @@
 import type { Component, Snippet } from "svelte";
-import type {
-  UIElement,
-  Spec,
-  ActionHandler,
-  StateStore,
-} from "@json-render/core";
+import type { ActionHandler, StateStore, UIElement } from "@json-render/core";
 
 /**
  * Props passed to component renderers
@@ -39,20 +34,6 @@ export type ComponentRenderer<P = Record<string, unknown>> = Component<
 export type ComponentRegistry = Record<string, ComponentRenderer<any>>;
 
 /**
- * Props for the Renderer component
- */
-export interface RendererProps {
-  /** The UI spec to render */
-  spec: Spec | null;
-  /** Component registry */
-  registry: ComponentRegistry;
-  /** Whether the spec is currently loading/streaming */
-  loading?: boolean;
-  /** Fallback component for unknown types */
-  fallback?: ComponentRenderer;
-}
-
-/**
  * Props for JSONUIProvider
  */
 export interface JSONUIProviderProps {
@@ -78,27 +59,4 @@ export interface JSONUIProviderProps {
   onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
   /** Children snippet */
   children: Snippet;
-}
-
-/**
- * Props for renderers created with createRenderer
- */
-export interface CreateRendererProps {
-  /** The spec to render (AI-generated JSON) */
-  spec: Spec | null;
-  /**
-   * External store (controlled mode). When provided, `state` and
-   * `onStateChange` are ignored.
-   */
-  store?: StateStore;
-  /** State context for dynamic values (uncontrolled mode) */
-  state?: Record<string, unknown>;
-  /** Action handler */
-  onAction?: (actionName: string, params?: Record<string, unknown>) => void;
-  /** Callback when state changes (uncontrolled mode) */
-  onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
-  /** Whether the spec is currently loading/streaming */
-  loading?: boolean;
-  /** Fallback component for unknown types */
-  fallback?: ComponentRenderer;
 }

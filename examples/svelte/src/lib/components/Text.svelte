@@ -1,15 +1,14 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     content: string;
     size?: "sm" | "md" | "lg" | "xl";
     weight?: "normal" | "medium" | "bold";
     color?: string;
   }> {}
 
-  let { element }: Props = $props();
-  let _props = $derived(element.props);
+  let { props }: Props = $props();
 
   const sizeMap: Record<string, string> = {
     sm: "12px",
@@ -27,9 +26,9 @@
 
 <span
   style="
-    font-size: {sizeMap[_props.size ?? 'md'] ?? '14px'};
-    font-weight: {weightMap[_props.weight ?? 'normal'] ?? '400'};
-    color: {_props.color ?? '#111827'};
+    font-size: {sizeMap[props.size ?? 'md'] ?? '14px'};
+    font-weight: {weightMap[props.weight ?? 'normal'] ?? '400'};
+    color: {props.color ?? '#111827'};
   ">
-  {String(_props.content ?? "")}
+  {String(props.content ?? "")}
 </span>

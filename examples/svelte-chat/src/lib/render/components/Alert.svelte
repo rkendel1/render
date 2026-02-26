@@ -1,19 +1,19 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import * as Alert from "$lib/components/ui/alert";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     variant?: "default" | "destructive" | null;
     title: string;
     description?: string | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 </script>
 
-<Alert.Root variant={element.props.variant ?? "default"}>
-  <Alert.Title>{element.props.title}</Alert.Title>
-  {#if element.props.description}
-    <Alert.Description>{element.props.description}</Alert.Description>
+<Alert.Root variant={props.variant ?? "default"}>
+  <Alert.Title>{props.title}</Alert.Title>
+  {#if props.description}
+    <Alert.Description>{props.description}</Alert.Description>
   {/if}
 </Alert.Root>

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "  vite",
+    "dev": "portless svelte.json-render vite",
     "build": "vite build",
     "preview": "vite preview",
     "check-types": "svelte-check --tsconfig ./tsconfig.json"

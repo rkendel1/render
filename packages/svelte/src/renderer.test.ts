@@ -1,22 +1,24 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/svelte";
 import type { Spec } from "@json-render/core";
-import type { ComponentRegistry } from "./types.js";
 import RendererWithProvider from "./RendererWithProvider.test.svelte";
 import TestContainer from "./TestContainer.svelte";
 import TestText from "./TestText.svelte";
 import TestButton from "./TestButton.svelte";
+import { defineRegistry } from "./registry.js";
 
 describe("Renderer", () => {
   afterEach(() => {
     cleanup();
   });
 
-  const registry: ComponentRegistry = {
-    Container: TestContainer,
-    Text: TestText,
-    Button: TestButton,
-  };
+  const { registry } = defineRegistry(null as any, {
+    components: {
+      Container: TestContainer,
+      Text: TestText,
+      Button: TestButton,
+    },
+  });
 
   function mountRenderer(
     spec: Spec | null,
@@ -63,7 +65,6 @@ describe("Renderer", () => {
     const textEl = container.querySelector(".test-text");
     expect(textEl).not.toBeNull();
     expect(textEl?.textContent).toBe("Hello World");
-    expect(textEl?.getAttribute("data-type")).toBe("Text");
   });
 
   it("renders nested elements", () => {

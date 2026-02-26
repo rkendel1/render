@@ -55,11 +55,11 @@ export const catalog = defineCatalog(schema, {
 
 ## Defining Components
 
-Components should accept `ComponentRenderProps<TProps>`:
+Components should accept `BaseComponentProps<TProps>`:
 
 ```typescript
-interface ComponentRenderProps<TProps> {
-  element: UIElement<string, TProps>; // The element with resolved props
+interface BaseComponentProps<TProps> {
+  props: TProps; // Resolved props for this component
   children?: Snippet; // Child elements (use {@render children()})
   emit: (event: string) => void; // Fire a named event
   bindings?: Record<string, string>; // Map of prop names to state paths (for $bindState)
@@ -70,14 +70,14 @@ interface ComponentRenderProps<TProps> {
 ```svelte
 <!-- Button.svelte -->
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{ label: string; variant?: string }> {}
-  let { element, emit }: Props = $props();
+  interface Props extends BaseComponentProps<{ label: string; variant?: string }> {}
+  let { props, emit }: Props = $props();
 </script>
 
-<button class={element.props.variant} onclick={() => emit("press")}>
-  {element.props.label}
+<button class={props.variant} onclick={() => emit("press")}>
+  {props.label}
 </button>
 ```
 
@@ -85,17 +85,17 @@ interface ComponentRenderProps<TProps> {
 <!-- Card.svelte -->
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{ title: string }> {
+  interface Props extends BaseComponentProps<{ title: string }> {
     children?: Snippet;
   }
 
-  let { element, children }: Props = $props();
+  let { props, children }: Props = $props();
 </script>
 
 <div class="card">
-  <h2>{element.props.title}</h2>
+  <h2>{props.title}</h2>
   {#if children}
     {@render children()}
   {/if}
@@ -172,14 +172,14 @@ Components use `emit` to fire named events. The element's `on` field maps events
 ```svelte
 <!-- Button.svelte -->
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{ label: string }> {}
+  interface Props extends BaseComponentProps<{ label: string }> {}
 
-  let { element, emit }: Props = $props();
+  let { props, emit }: Props = $props();
 </script>
 
-<button onclick={() => emit("press")}>{element.props.label}</button>
+<button onclick={() => emit("press")}>{props.label}</button>
 ```
 
 ```json
@@ -217,13 +217,13 @@ For writable bindings inside components, use `getBoundProp`:
 ```svelte
 <script lang="ts">
   import { getBoundProp } from "@json-render/svelte";
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{ value?: string }> {}
-  let { element, bindings }: Props = $props();
+  interface Props extends BaseComponentProps<{ value?: string }> {}
+  let { props, bindings }: Props = $props();
 
   let value = getBoundProp<string>(
-    () => element.props.value,
+    () => props.value,
     () => bindings?.value,
   );
 </script>

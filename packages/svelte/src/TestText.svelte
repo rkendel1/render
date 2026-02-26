@@ -1,10 +1,9 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "./types.js";
+  import type { BaseComponentProps } from "./catalog-types.js";
 
-  interface Props extends ComponentRenderProps<{ text?: string }> {}
+  interface Props extends BaseComponentProps<{ text?: string }> {}
 
-  let { element, emit, bindings, loading }: Props = $props();
+  let { props, emit, bindings, loading }: Props = $props();
 </script>
 
-<span class="test-text" data-type={element.type}
-  >{element.props.text ?? ""}</span>
+<span class="test-text">{props.text ?? ""}</span>

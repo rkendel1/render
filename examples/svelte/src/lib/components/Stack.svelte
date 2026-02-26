@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     gap?: number;
     padding?: number;
     direction?: "vertical" | "horizontal";
@@ -11,20 +11,19 @@
     children?: Snippet;
   }
 
-  let { element, children }: Props = $props();
-  let _props = $derived(element.props);
-  let horizontal = $derived(_props.direction === "horizontal");
+  let { props, children }: Props = $props();
+  let horizontal = $derived(props.direction === "horizontal");
 </script>
 
 <div
   style="
     display: flex;
     flex-direction: {horizontal ? 'row' : 'column'};
-    gap: {_props.gap ?? 0}px;
-    padding: {_props.padding ?? 0}px;
-    align-items: {_props.align === 'start'
+    gap: {props.gap ?? 0}px;
+    padding: {props.padding ?? 0}px;
+    align-items: {props.align === 'start'
     ? 'flex-start'
-    : _props.align === 'end'
+    : props.align === 'end'
       ? 'flex-end'
       : horizontal
         ? 'center'

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     title?: string | null;
     data: Array<Record<string, unknown>>;
     xKey: string;
@@ -11,9 +11,9 @@
     height?: number | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 
-  const rawData = $derived(element.props.data);
+  const rawData = $derived(props.data);
   const rawItems = $derived<Array<Record<string, unknown>>>(
     Array.isArray(rawData)
       ? rawData
@@ -25,7 +25,7 @@
   const processedData = $derived(() => {
     if (rawItems.length === 0) return [];
     
-    const { xKey, yKey, aggregate } = element.props;
+    const { xKey, yKey, aggregate } = props;
     
     if (!aggregate) {
       return rawItems.map((item) => ({
@@ -67,8 +67,8 @@
   const chartData = $derived(processedData());
   const maxValue = $derived(Math.max(...chartData.map(d => d.value), 1));
   const minValue = $derived(Math.min(...chartData.map(d => d.value), 0));
-  const chartColor = $derived(element.props.color ?? "var(--chart-1)");
-  const height = $derived(element.props.height ?? 200);
+  const chartColor = $derived(props.color ?? "var(--chart-1)");
+  const height = $derived(props.height ?? 200);
   
   const points = $derived(() => {
     if (chartData.length === 0) return "";
@@ -82,8 +82,8 @@
 </script>
 
 <div class="w-full">
-  {#if element.props.title}
-    <p class="text-sm font-medium mb-2">{element.props.title}</p>
+  {#if props.title}
+    <p class="text-sm font-medium mb-2">{props.title}</p>
   {/if}
   
   {#if chartData.length === 0}

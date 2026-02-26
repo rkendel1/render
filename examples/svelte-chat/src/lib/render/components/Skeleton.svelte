@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     width?: string | null;
     height?: string | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 </script>
 
 <div 
-  class="animate-pulse rounded-md bg-muted {element.props.width ?? 'w-full'} {element.props.height ?? 'h-4'}"
+  class="animate-pulse rounded-md bg-muted {props.width ?? 'w-full'} {props.height ?? 'h-4'}"
 ></div>

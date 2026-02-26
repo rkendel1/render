@@ -1,17 +1,17 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import * as Accordion from "$lib/components/ui/accordion";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     items: Array<{ title: string; content: string }>;
     type?: "single" | "multiple" | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 </script>
 
-<Accordion.Root type={element.props.type === "single" ? "single" : "multiple"} class="w-full">
-  {#each element.props.items ?? [] as item, i}
+<Accordion.Root type={props.type === "single" ? "single" : "multiple"} class="w-full">
+  {#each props.items ?? [] as item, i}
     <Accordion.Item value="item-{i}">
       <Accordion.Trigger>{item.title}</Accordion.Trigger>
       <Accordion.Content>

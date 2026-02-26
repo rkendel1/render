@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     items: Array<{
       title: string;
       description?: string | null;
@@ -10,7 +10,7 @@
     }>;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 
   function getDotColor(status: string | null | undefined) {
     if (status === "completed") return "bg-emerald-500";
@@ -22,7 +22,7 @@
 <div class="relative pl-8">
   <div class="absolute left-[5.5px] top-3 bottom-3 w-px bg-border"></div>
   <div class="flex flex-col gap-6">
-    {#each element.props.items ?? [] as item}
+    {#each props.items ?? [] as item}
       <div class="relative">
         <div class="absolute -left-8 top-0.5 h-3 w-3 rounded-full {getDotColor(item.status)} ring-2 ring-background"></div>
         <div class="flex-1 min-w-0">

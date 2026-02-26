@@ -1,22 +1,22 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import { Button } from "$lib/components/ui/button";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     label: string;
     variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | null;
     size?: "default" | "sm" | "lg" | null;
     disabled?: boolean | null;
   }> {}
 
-  let { element, emit }: Props = $props();
+  let { props, emit }: Props = $props();
 </script>
 
 <Button
-  variant={element.props.variant ?? "default"}
-  size={element.props.size ?? "default"}
-  disabled={element.props.disabled ?? false}
+  variant={props.variant ?? "default"}
+  size={props.size ?? "default"}
+  disabled={props.disabled ?? false}
   onclick={() => emit("press")}
 >
-  {element.props.label}
+  {props.label}
 </Button>

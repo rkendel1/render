@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     title?: string | null;
     data: Array<Record<string, unknown>>;
     nameKey: string;
@@ -9,7 +9,7 @@
     height?: number | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 
   const PIE_COLORS = [
     "var(--chart-1)",
@@ -19,7 +19,7 @@
     "var(--chart-5)",
   ];
 
-  const rawData = $derived(element.props.data);
+  const rawData = $derived(props.data);
   const items = $derived<Array<Record<string, unknown>>>(
     Array.isArray(rawData)
       ? rawData
@@ -30,10 +30,10 @@
 
   const chartData = $derived(
     items.map((item, i) => ({
-      name: String(item[element.props.nameKey] ?? `Segment ${i + 1}`),
-      value: typeof item[element.props.valueKey] === "number"
-        ? item[element.props.valueKey] as number
-        : parseFloat(String(item[element.props.valueKey])) || 0,
+      name: String(item[props.nameKey] ?? `Segment ${i + 1}`),
+      value: typeof item[props.valueKey] === "number"
+        ? item[props.valueKey] as number
+        : parseFloat(String(item[props.valueKey])) || 0,
       color: PIE_COLORS[i % PIE_COLORS.length],
     }))
   );
@@ -72,14 +72,14 @@
 </script>
 
 <div class="w-full">
-  {#if element.props.title}
-    <p class="text-sm font-medium mb-2">{element.props.title}</p>
+  {#if props.title}
+    <p class="text-sm font-medium mb-2">{props.title}</p>
   {/if}
   
   {#if items.length === 0}
     <div class="text-center py-4 text-muted-foreground">No data available</div>
   {:else}
-    <div class="flex items-center gap-4" style="height: {element.props.height ?? 200}px">
+    <div class="flex items-center gap-4" style="height: {props.height ?? 200}px">
       <svg viewBox="0 0 100 100" class="h-full aspect-square">
         {#each segments() as seg}
           {#if seg.endAngle - seg.startAngle >= 1}

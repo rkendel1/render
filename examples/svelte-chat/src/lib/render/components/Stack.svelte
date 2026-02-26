@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     direction?: "horizontal" | "vertical" | null;
     gap?: "sm" | "md" | "lg" | null;
     wrap?: boolean | null;
@@ -10,15 +10,15 @@
     children?: Snippet;
   }
 
-  let { element, children }: Props = $props();
+  let { props, children }: Props = $props();
 
   const gapClass = $derived(
-    { sm: "gap-2", md: "gap-4", lg: "gap-6" }[element.props.gap ?? "md"] ?? "gap-4"
+    { sm: "gap-2", md: "gap-4", lg: "gap-6" }[props.gap ?? "md"] ?? "gap-4"
   );
   const dirClass = $derived(
-    element.props.direction === "horizontal" ? "flex-row" : "flex-col"
+    props.direction === "horizontal" ? "flex-row" : "flex-col"
   );
-  const wrapClass = $derived(element.props.wrap ? "flex-wrap" : "");
+  const wrapClass = $derived(props.wrap ? "flex-wrap" : "");
 </script>
 
 <div class="flex {dirClass} {wrapClass} {gapClass}">

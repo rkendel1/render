@@ -65,11 +65,11 @@ const { registry, handlers, executeAction } = defineRegistry(catalog, {
 
 ## Component Props
 
-Registry components receive `ComponentRenderProps<TProps>`:
+Registry components receive `BaseComponentProps<TProps>`:
 
 ```typescript
-interface ComponentRenderProps<TProps> {
-  element: UIElement<string, TProps>;
+interface BaseComponentProps<TProps> {
+  props: TProps;
   children?: Snippet;
   emit: (event: string) => void;
   bindings?: Record<string, string>;

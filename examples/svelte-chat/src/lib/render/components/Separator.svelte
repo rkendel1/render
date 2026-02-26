@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import { Separator } from "$lib/components/ui/separator";
 
-  interface Props extends ComponentRenderProps<Record<string, never>> {}
+  interface Props extends BaseComponentProps<Record<string, never>> {}
 
   let {}: Props = $props();
 </script>

@@ -50,7 +50,6 @@ export { schema, type SvelteSchema, type SvelteSpec } from "./schema.js";
 // Components
 // =============================================================================
 
-export { default as Renderer } from "./Renderer.svelte";
 export { default as JsonUIProvider } from "./JsonUIProvider.svelte";
 export { default as ConfirmDialog } from "./ConfirmDialog.svelte";
 
@@ -59,12 +58,9 @@ export { default as ConfirmDialog } from "./ConfirmDialog.svelte";
 // =============================================================================
 
 export type {
-  ComponentRenderProps,
   ComponentRenderer,
   ComponentRegistry,
-  RendererProps,
   JSONUIProviderProps,
-  CreateRendererProps,
 } from "./types.js";
 
 // =============================================================================
@@ -72,6 +68,7 @@ export type {
 // =============================================================================
 
 export type {
+  BaseComponentProps,
   SetState,
   StateModel,
   ComponentContext,
@@ -112,11 +109,13 @@ export {
 // Registry
 // =============================================================================
 
-export {
-  defineRegistry,
-  type DefineRegistryResult,
-  type ComponentMap,
-} from "./registry.js";
+export { defineRegistry, type DefineRegistryResult } from "./registry.js";
+
+// =============================================================================
+// Renderer
+// =============================================================================
+
+export { default as Renderer, type RendererProps } from "./Renderer.svelte";
 
 // =============================================================================
 // Re-exports from core

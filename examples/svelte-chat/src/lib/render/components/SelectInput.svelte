@@ -1,21 +1,21 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import { getBoundProp } from "@json-render/svelte";
   import * as Select from "$lib/components/ui/select";
   import { Label } from "$lib/components/ui/label";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     label?: string | null;
     value?: string | null;
     placeholder?: string | null;
     options: Array<{ value: string; label: string }>;
   }> {}
 
-  let { element, bindings }: Props = $props();
+  let { props, bindings }: Props = $props();
 
   function valueBinding() {
     return getBoundProp<string>(
-      () => (element.props.value ?? undefined) as string | undefined,
+      () => (props.value ?? undefined) as string | undefined,
       () => bindings?.value,
     );
   }
@@ -25,7 +25,7 @@
   );
 
   const selectedOption = $derived(
-    element.props.options?.find(o => o.value === value)
+    props.options?.find(o => o.value === value)
   );
 
   function handleChange(newValue: string | undefined) {
@@ -36,19 +36,19 @@
 </script>
 
 <div class="flex flex-col gap-2">
-  {#if element.props.label}
-    <Label class="text-sm font-medium">{element.props.label}</Label>
+  {#if props.label}
+    <Label class="text-sm font-medium">{props.label}</Label>
   {/if}
   <Select.Root type="single" value={value} onValueChange={handleChange}>
     <Select.Trigger>
       {#if selectedOption}
         {selectedOption.label}
       {:else}
-        <span class="text-muted-foreground">{element.props.placeholder ?? "Select..."}</span>
+        <span class="text-muted-foreground">{props.placeholder ?? "Select..."}</span>
       {/if}
     </Select.Trigger>
     <Select.Content>
-      {#each element.props.options ?? [] as opt}
+      {#each props.options ?? [] as opt}
         <Select.Item value={opt.value}>{opt.label}</Select.Item>
       {/each}
     </Select.Content>

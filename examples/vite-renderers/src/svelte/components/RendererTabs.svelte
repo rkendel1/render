@@ -1,10 +1,9 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{ renderer: string }> {}
+  interface Props extends BaseComponentProps<{ renderer: string }> {}
 
-  let { element, emit }: Props = $props();
-  let _props = $derived(element.props);
+  let { props, emit }: Props = $props();
 </script>
 
 <div class="json-render-renderer-tabs-wrapper">
@@ -15,7 +14,7 @@
       onclick={() => emit("pressVue")}
       class={[
         "json-render-renderer-tab",
-        _props.renderer === "vue" && "json-render-renderer-tab--active",
+        props.renderer === "vue" && "json-render-renderer-tab--active",
       ]
         .filter(Boolean)
         .join(" ")}>
@@ -26,7 +25,7 @@
       onclick={() => emit("pressReact")}
       class={[
         "json-render-renderer-tab",
-        _props.renderer === "react" && "json-render-renderer-tab--active",
+        props.renderer === "react" && "json-render-renderer-tab--active",
       ]
         .filter(Boolean)
         .join(" ")}>
@@ -37,7 +36,7 @@
       onclick={() => emit("pressSvelte")}
       class={[
         "json-render-renderer-tab",
-        _props.renderer === "svelte" && "json-render-renderer-tab--active",
+        props.renderer === "svelte" && "json-render-renderer-tab--active",
       ]
         .filter(Boolean)
         .join(" ")}>

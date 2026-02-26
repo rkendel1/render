@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import { Info, Lightbulb, AlertTriangle, Star } from "lucide-svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     type?: "info" | "tip" | "warning" | "important" | null;
     title?: string | null;
     content: string;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 
   const configs = {
     info: {
@@ -33,25 +33,25 @@
     },
   };
 
-  const config = $derived(configs[element.props.type ?? "info"] ?? configs.info);
+  const config = $derived(configs[props.type ?? "info"] ?? configs.info);
 </script>
 
 <div class="border-l-4 {config.border} {config.bg} rounded-r-lg p-4">
   <div class="flex items-start gap-3">
-    {#if element.props.type === "tip"}
+    {#if props.type === "tip"}
       <Lightbulb class="h-5 w-5 mt-0.5 shrink-0 {config.iconColor}" />
-    {:else if element.props.type === "warning"}
+    {:else if props.type === "warning"}
       <AlertTriangle class="h-5 w-5 mt-0.5 shrink-0 {config.iconColor}" />
-    {:else if element.props.type === "important"}
+    {:else if props.type === "important"}
       <Star class="h-5 w-5 mt-0.5 shrink-0 {config.iconColor}" />
     {:else}
       <Info class="h-5 w-5 mt-0.5 shrink-0 {config.iconColor}" />
     {/if}
     <div class="flex-1 min-w-0">
-      {#if element.props.title}
-        <p class="font-semibold text-sm mb-1">{element.props.title}</p>
+      {#if props.title}
+        <p class="font-semibold text-sm mb-1">{props.title}</p>
       {/if}
-      <p class="text-sm text-muted-foreground">{element.props.content}</p>
+      <p class="text-sm text-muted-foreground">{props.content}</p>
     </div>
   </div>
 </div>

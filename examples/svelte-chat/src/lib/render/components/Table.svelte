@@ -1,20 +1,20 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import * as Table from "$lib/components/ui/table";
   import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     data: Array<Record<string, unknown>>;
     columns: Array<{ key: string; label: string }>;
     emptyMessage?: string | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 
   let sortKey = $state<string | null>(null);
   let sortDir = $state<"asc" | "desc">("asc");
 
-  const rawData = $derived(element.props.data);
+  const rawData = $derived(props.data);
   const items = $derived<Array<Record<string, unknown>>>(
     Array.isArray(rawData)
       ? rawData
@@ -50,13 +50,13 @@
 
 {#if items.length === 0}
   <div class="text-center py-4 text-muted-foreground">
-    {element.props.emptyMessage ?? "No data"}
+    {props.emptyMessage ?? "No data"}
   </div>
 {:else}
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        {#each element.props.columns as col}
+        {#each props.columns as col}
           <Table.Head>
             <button
               type="button"
@@ -79,9 +79,9 @@
       </Table.Row>
     </Table.Header>
     <Table.Body>
-      {#each sorted as item, i}
+        {#each sorted as item, i}
         <Table.Row>
-          {#each element.props.columns as col}
+          {#each props.columns as col}
             <Table.Cell>{String(item[col.key] ?? "")}</Table.Cell>
           {/each}
         </Table.Row>

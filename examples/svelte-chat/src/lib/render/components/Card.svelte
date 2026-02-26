@@ -1,26 +1,26 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
   import * as Card from "$lib/components/ui/card";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     title?: string | null;
     description?: string | null;
   }> {
     children?: Snippet;
   }
 
-  let { element, children }: Props = $props();
+  let { props, children }: Props = $props();
 </script>
 
 <Card.Root>
-  {#if element.props.title || element.props.description}
+  {#if props.title || props.description}
     <Card.Header>
-      {#if element.props.title}
-        <Card.Title>{element.props.title}</Card.Title>
+      {#if props.title}
+        <Card.Title>{props.title}</Card.Title>
       {/if}
-      {#if element.props.description}
-        <Card.Description>{element.props.description}</Card.Description>
+      {#if props.description}
+        <Card.Description>{props.description}</Card.Description>
       {/if}
     </Card.Header>
   {/if}

@@ -1,19 +1,19 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     text: string;
     href: string;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 </script>
 
 <a
-  href={element.props.href}
+  href={props.href}
   target="_blank"
   rel="noopener noreferrer"
   class="text-primary underline underline-offset-4 hover:text-primary/80"
 >
-  {element.props.text}
+  {props.text}
 </a>

@@ -1,14 +1,11 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "./types.js";
+  import type { BaseComponentProps } from "./catalog-types.js";
 
-  interface Props extends ComponentRenderProps<{ label?: string }> {}
+  interface Props extends BaseComponentProps<{ label?: string }> {}
 
-  let { element, emit, bindings, loading }: Props = $props();
+  let { props, emit, bindings, loading }: Props = $props();
 </script>
 
-<button
-  class="test-button"
-  data-type={element.type}
-  onclick={() => emit("press")}>
-  {element.props.label ?? "Button"}
+<button class="test-button" onclick={() => emit("press")}>
+  {props.label ?? "Button"}
 </button>

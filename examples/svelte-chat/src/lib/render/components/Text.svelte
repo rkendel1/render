@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     content: string;
     muted?: boolean | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 </script>
 
-<p class={element.props.muted ? "text-muted-foreground" : ""}>
-  {element.props.content}
+<p class={props.muted ? "text-muted-foreground" : ""}>
+  {props.content}
 </p>

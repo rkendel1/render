@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     title?: string | null;
     data: Array<Record<string, unknown>>;
     xKey: string;
@@ -11,9 +11,9 @@
     height?: number | null;
   }> {}
 
-  let { element }: Props = $props();
+  let { props }: Props = $props();
 
-  const rawData = $derived(element.props.data);
+  const rawData = $derived(props.data);
   const rawItems = $derived<Array<Record<string, unknown>>>(
     Array.isArray(rawData)
       ? rawData
@@ -23,9 +23,9 @@
   );
 
   const processedData = $derived(() => {
-    if (rawItems.length === 0) return { items: [], valueKey: element.props.yKey };
+    if (rawItems.length === 0) return { items: [], valueKey: props.yKey };
     
-    const { xKey, yKey, aggregate } = element.props;
+    const { xKey, yKey, aggregate } = props;
     
     if (!aggregate) {
       const formatted = rawItems.map((item) => ({
@@ -70,18 +70,18 @@
 
   const chartData = $derived(processedData());
   const maxValue = $derived(Math.max(...chartData.items.map(d => d.value), 1));
-  const chartColor = $derived(element.props.color ?? "var(--chart-1)");
+  const chartColor = $derived(props.color ?? "var(--chart-1)");
 </script>
 
 <div class="w-full">
-  {#if element.props.title}
-    <p class="text-sm font-medium mb-2">{element.props.title}</p>
+  {#if props.title}
+    <p class="text-sm font-medium mb-2">{props.title}</p>
   {/if}
   
   {#if chartData.items.length === 0}
     <div class="text-center py-4 text-muted-foreground">No data available</div>
   {:else}
-    <div class="space-y-2" style="height: {element.props.height ?? 200}px">
+    <div class="space-y-2" style="height: {props.height ?? 200}px">
       {#each chartData.items as item}
         <div class="flex items-center gap-2">
           <span class="text-xs text-muted-foreground w-16 truncate">{item.label}</span>

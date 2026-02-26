@@ -1,7 +1,11 @@
-import type { Component } from "svelte";
 import type { Catalog } from "@json-render/core";
-import type { ComponentRenderProps, ComponentRenderer } from "./types.js";
-import type { SetState, StateModel } from "./catalog-types.js";
+import type { ComponentRegistry } from "./types.js";
+import type {
+  BaseComponentProps,
+  SetState,
+  StateModel,
+} from "./catalog-types.js";
+import type { Component } from "svelte";
 
 /**
  * Action handler function for defineRegistry
@@ -15,14 +19,9 @@ type DefineRegistryActionFn = (
 /**
  * Result returned by defineRegistry
  */
-export interface DefineRegistryResult<
-  TComponents extends Record<string, ComponentRenderer<any>> = Record<
-    string,
-    ComponentRenderer<any>
-  >,
-> {
+export interface DefineRegistryResult {
   /** Component registry for Renderer */
-  registry: TComponents;
+  registry: ComponentRegistry;
   /**
    * Create ActionProvider-compatible handlers.
    */
@@ -44,7 +43,7 @@ export interface DefineRegistryResult<
 /**
  * Create a registry from a catalog with Svelte components and/or actions.
  *
- * Components must accept `ComponentRenderProps` as their props interface.
+ * Components must accept `BaseComponentProps` as their props interface.
  *
  * @example
  * ```ts
@@ -68,17 +67,43 @@ export interface DefineRegistryResult<
  */
 export function defineRegistry<
   C extends Catalog,
-  TComponents extends Record<string, ComponentRenderer<any>>,
+  TComponents extends Record<string, Component<BaseComponentProps<any>>>,
 >(
   _catalog: C,
   options: {
-    /** Svelte components that accept ComponentRenderProps */
+    /** Svelte components that accept BaseComponentProps */
     components?: TComponents;
     /** Action handlers */
     actions?: Record<string, DefineRegistryActionFn>;
   },
-): DefineRegistryResult<TComponents> {
-  const registry = (options.components ?? {}) as TComponents;
+): DefineRegistryResult {
+  const registry: ComponentRegistry = {};
+
+  if (options.components) {
+    for (const [name, componentFn] of Object.entries(options.components)) {
+      registry[name] = (_, props) =>
+        (componentFn as Component<BaseComponentProps<any>>)(_, {
+          get props() {
+            return props.element.props;
+          },
+          get children() {
+            return props.children;
+          },
+          get emit() {
+            return props.emit;
+          },
+          // get on() {
+          //   return props.on;
+          // },
+          get bindings() {
+            return props.bindings;
+          },
+          get loading() {
+            return props.loading;
+          },
+        });
+    }
+  }
 
   // Build action helpers
   const actionMap = options.actions
@@ -123,19 +148,3 @@ export function defineRegistry<
 
   return { registry, handlers, executeAction };
 }
-
-/**
- * Component map type - maps component names to Svelte components
- * that accept ComponentRenderProps with the appropriate props type.
- */
-export type ComponentMap<
-  TComponents extends Record<string, { props: unknown }>,
-> = {
-  [K in keyof TComponents]: Component<
-    ComponentRenderProps<
-      TComponents[K]["props"] extends { _output: infer O }
-        ? O
-        : Record<string, unknown>
-    >
-  >;
-};

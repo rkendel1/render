@@ -1,16 +1,15 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { ComponentRenderProps } from "@json-render/svelte";
+  import type { BaseComponentProps } from "@json-render/svelte";
 
-  interface Props extends ComponentRenderProps<{
+  interface Props extends BaseComponentProps<{
     title?: string;
     subtitle?: string;
   }> {
     children?: Snippet;
   }
 
-  let { element, children }: Props = $props();
-  let _props = $derived(element.props);
+  let { props, children }: Props = $props();
 </script>
 
 <div
@@ -21,7 +20,7 @@
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   ">
-  {#if _props.title}
+  {#if props.title}
     <h2
       style="
         font-size: 16px;
@@ -29,17 +28,17 @@
         color: #111827;
         margin: 0 0 4px 0;
       ">
-      {_props.title}
+      {props.title}
     </h2>
   {/if}
-  {#if _props.subtitle}
+  {#if props.subtitle}
     <p
       style="
         font-size: 13px;
         color: #6b7280;
         margin: 0 0 12px 0;
       ">
-      {_props.subtitle}
+      {props.subtitle}
     </p>
   {/if}
   {#if children}

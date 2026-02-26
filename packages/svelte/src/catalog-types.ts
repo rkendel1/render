@@ -26,18 +26,24 @@ export type SetState = (
 // =============================================================================
 
 /**
- * Context passed to component render functions
+ * Catalog-agnostic base type for component render function arguments.
+ * Use this when building reusable component libraries.
  */
-export interface ComponentContext<
-  C extends Catalog,
-  K extends keyof InferCatalogComponents<C>,
-> {
-  props: InferComponentProps<C, K>;
+export interface BaseComponentProps<P = Record<string, unknown>> {
+  props: P;
   children?: Snippet;
   emit: (event: string) => void;
   bindings?: Record<string, string>;
   loading?: boolean;
 }
+
+/**
+ * Context passed to component render functions
+ */
+export interface ComponentContext<
+  C extends Catalog,
+  K extends keyof InferCatalogComponents<C>,
+> extends BaseComponentProps<InferComponentProps<C, K>> {}
 
 /**
  * Component render function type for Svelte
