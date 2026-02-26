@@ -12,6 +12,7 @@
   import { getStateContext } from "./contexts/StateProvider.svelte";
   import { getActionContext } from "./contexts/ActionProvider.svelte";
   import { getRepeatScope } from "./contexts/RepeatScopeProvider.svelte";
+  import { getFunctions } from "./contexts/FunctionsContextProvider.svelte";
   import RepeatChildren from "./RepeatChildren.svelte";
   import Self from "./ElementRenderer.svelte";
 
@@ -28,8 +29,9 @@
   const stateCtx = getStateContext();
   const actionCtx = getActionContext();
   const repeatScope = getRepeatScope();
+  const functions = getFunctions();
 
-  // Build context with repeat scope (used for both visibility and props)
+  // Build context with repeat scope and $computed functions
   let fullCtx = $derived<PropResolutionContext>(
     repeatScope
       ? {
@@ -37,8 +39,9 @@
           repeatItem: repeatScope.item,
           repeatIndex: repeatScope.index,
           repeatBasePath: repeatScope.basePath,
+          functions,
         }
-      : { stateModel: stateCtx.state },
+      : { stateModel: stateCtx.state, functions },
   );
 
   // Evaluate visibility

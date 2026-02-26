@@ -1,4 +1,5 @@
 <script module lang="ts">
+  import type { ComputedFunction } from "@json-render/core";
   /**
    * Props for JSONUIProvider
    */
@@ -21,6 +22,8 @@
       string,
       (value: unknown, args?: Record<string, unknown>) => boolean
     >;
+    /** Named functions for `$computed` expressions in props */
+    functions?: Record<string, ComputedFunction>;
     /** Callback when state changes (uncontrolled mode) */
     onStateChange?: (changes: Array<{ path: string; value: unknown }>) => void;
     /** Children snippet */
@@ -35,6 +38,7 @@
   import VisibilityProvider from "./contexts/VisibilityProvider.svelte";
   import ValidationProvider from "./contexts/ValidationProvider.svelte";
   import ActionProvider from "./contexts/ActionProvider.svelte";
+  import FunctionsContextProvider from "./contexts/FunctionsContextProvider.svelte";
   import ConfirmDialogManager from "./ConfirmDialogManager.svelte";
   import type { ComponentRegistry } from "./renderer.js";
 
@@ -44,6 +48,7 @@
     handlers = {},
     navigate,
     validationFunctions = {},
+    functions,
     onStateChange,
     children,
   }: JSONUIProviderProps = $props();
@@ -53,8 +58,10 @@
   <VisibilityProvider>
     <ValidationProvider customFunctions={validationFunctions}>
       <ActionProvider {handlers} {navigate}>
-        {@render children()}
-        <ConfirmDialogManager />
+        <FunctionsContextProvider {functions}>
+          {@render children()}
+          <ConfirmDialogManager />
+        </FunctionsContextProvider>
       </ActionProvider>
     </ValidationProvider>
   </VisibilityProvider>

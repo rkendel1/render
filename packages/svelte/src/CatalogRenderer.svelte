@@ -27,6 +27,7 @@
     state,
     onAction,
     onStateChange,
+    functions,
     loading = false,
     fallback,
   }: CatalogRendererProps = $props();
@@ -48,6 +49,7 @@
   {store}
   initialState={state}
   handlers={actionHandlers}
+  {functions}
   {onStateChange}>
   <Renderer {spec} {registry} {loading} {fallback} />
 </JsonUIProvider>

@@ -40,6 +40,12 @@ export {
   type RepeatScopeValue,
 } from "./contexts/RepeatScopeProvider.svelte";
 
+export {
+  default as FunctionsContextProvider,
+  getFunctions,
+  type FunctionsContext,
+} from "./contexts/FunctionsContextProvider.svelte";
+
 // =============================================================================
 // Schema
 // =============================================================================
