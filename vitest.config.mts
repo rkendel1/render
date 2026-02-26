@@ -10,7 +10,7 @@ export default defineConfig({
   resolve: {
     // Ensure Svelte resolves to browser bundle, not server
     conditions: ["browser"],
-    // Deduplicate React, Svelte and Vue so tests don't get two copies
+    // Deduplicate React and Vue so tests don't get two copies
     // (pnpm strict resolution can cause packages to resolve different copies)
     alias: {
       react: path.resolve(__dirname, "node_modules/react"),

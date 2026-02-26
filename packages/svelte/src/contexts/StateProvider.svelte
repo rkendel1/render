@@ -56,7 +56,7 @@
    */
   export function getBoundProp<T>(
     propValue: () => T | undefined,
-    bindingPath: string | undefined,
+    bindingPath: () => string | undefined,
   ): CurrentValue<T | undefined> {
     const context = getStateContext();
     return {
@@ -64,8 +64,9 @@
         return propValue();
       },
       set current(value: T | undefined) {
-        if (bindingPath) {
-          context.set(bindingPath, value);
+        const path = bindingPath();
+        if (path) {
+          context.set(path, value);
         }
       },
     };

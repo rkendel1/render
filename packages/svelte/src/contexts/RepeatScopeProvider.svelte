@@ -23,7 +23,7 @@
   }
 </script>
 
-<script>
+<script lang="ts">
   interface Props {
     item: unknown;
     index: number;
