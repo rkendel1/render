@@ -427,7 +427,6 @@ export function createChatUI({
     const historyForApi = messages
       .slice(0, -1)
       .map((m) => ({ role: m.role, content: m.text }));
-    historyForApi.push({ role: "user" as const, content: text.trim() });
 
     let accumulatedText = "";
     let currentSpec: Spec = { root: "", elements: {} };
