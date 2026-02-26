@@ -36,10 +36,7 @@ export type ComponentRenderer<P = Record<string, unknown>> = Component<
  * Registry of component renderers.
  * Maps component type names to Svelte components.
  */
-export type ComponentRegistry = Record<
-  string,
-  ComponentRenderer<any> | undefined
->;
+export type ComponentRegistry = Record<string, ComponentRenderer<any>>;
 
 /**
  * Props for the Renderer component

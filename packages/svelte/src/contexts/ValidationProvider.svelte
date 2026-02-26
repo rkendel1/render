@@ -110,8 +110,8 @@
 
   const stateCtx = getStateContext();
 
-  let fieldStates = $state<Record<string, FieldValidationState>>({});
-  let fieldConfigs = $state<Record<string, CoreValidationConfig>>({});
+  let fieldStates = $state.raw<Record<string, FieldValidationState>>({});
+  let fieldConfigs = $state.raw<Record<string, CoreValidationConfig>>({});
 
   const validate = (
     path: string,

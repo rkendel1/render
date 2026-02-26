@@ -3,7 +3,7 @@
   import { getByPath } from "@json-render/core";
   import type { ComponentRegistry, ComponentRenderer } from "./types.js";
   import { getStateContext } from "./contexts/StateProvider.svelte";
-  import { setRepeatScope } from "./contexts/repeat-scope.js";
+  import RepeatScopeProvider from "./contexts/RepeatScopeProvider.svelte";
   import ElementRenderer from "./ElementRenderer.svelte";
 
   interface Props {
@@ -28,20 +28,21 @@
 
 {#each items as itemValue, index (element.repeat?.key && typeof itemValue === "object" && itemValue !== null ? String((itemValue as any)[element.repeat.key] ?? index) : String(index))}
   {@const basePath = `${element.repeat!.statePath}/${index}`}
-  {setRepeatScope({ item: itemValue, index, basePath })}
 
   {#if element.children}
-    {#each element.children as childKey (childKey)}
-      {#if spec.elements[childKey]}
-        <ElementRenderer
-          element={spec.elements[childKey]}
-          {spec}
-          {registry}
-          {loading}
-          {fallback} />
-      {:else if !loading}
-        <!-- Missing child element warning in dev -->
-      {/if}
-    {/each}
+    <RepeatScopeProvider item={itemValue} {index} {basePath}>
+      {#each element.children as childKey (childKey)}
+        {#if spec.elements[childKey]}
+          <ElementRenderer
+            element={spec.elements[childKey]}
+            {spec}
+            {registry}
+            {loading}
+            {fallback} />
+        {:else if !loading}
+          <!-- Missing child element warning in dev -->
+        {/if}
+      {/each}
+    </RepeatScopeProvider>
   {/if}
 {/each}

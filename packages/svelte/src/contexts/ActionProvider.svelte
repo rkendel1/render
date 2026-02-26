@@ -145,6 +145,7 @@
   } from "@json-render/core";
   import { getStateContext } from "./StateProvider.svelte";
   import { getOptionalValidationContext } from "./ValidationProvider.svelte";
+  import { SvelteSet } from "svelte/reactivity";
 
   interface Props {
     handlers?: Record<string, CoreActionHandler>;
@@ -157,9 +158,9 @@
   const stateCtx = getStateContext();
   const validation = getOptionalValidationContext();
 
-  let registeredHandlers = $state<Record<string, CoreActionHandler>>({});
-  let loadingActions = $state<Set<string>>(new Set());
-  let pendingConfirmation = $state<PendingConfirmation | null>(null);
+  let registeredHandlers = $state.raw<Record<string, CoreActionHandler>>({});
+  let loadingActions = new SvelteSet<string>();
+  let pendingConfirmation = $state.raw<PendingConfirmation | null>(null);
 
   const execute = async (binding: CoreActionBinding): Promise<void> => {
     const resolved = resolveAction(binding, stateCtx.getSnapshot());
@@ -280,7 +281,7 @@
           },
         };
       }).then(async () => {
-        loadingActions = new Set(loadingActions).add(resolved.action);
+        loadingActions.add(resolved.action);
         try {
           await executeAction({
             action: resolved,
@@ -293,14 +294,12 @@
             },
           });
         } finally {
-          const next = new Set(loadingActions);
-          next.delete(resolved.action);
-          loadingActions = next;
+          loadingActions.delete(resolved.action);
         }
       });
     }
 
-    loadingActions = new Set(loadingActions).add(resolved.action);
+    loadingActions.add(resolved.action);
     try {
       await executeAction({
         action: resolved,
@@ -313,9 +312,7 @@
         },
       });
     } finally {
-      const next = new Set(loadingActions);
-      next.delete(resolved.action);
-      loadingActions = next;
+      loadingActions.delete(resolved.action);
     }
   };
 

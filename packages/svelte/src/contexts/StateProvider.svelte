@@ -99,7 +99,7 @@
   }
 
   // Keep a reactive copy of the current store snapshot.
-  let model: CoreStateModel = activeStore().getSnapshot();
+  let model: CoreStateModel = $state.raw(activeStore().getSnapshot());
 
   $effect(() => {
     const currentStore = activeStore();

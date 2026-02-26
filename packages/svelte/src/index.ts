@@ -35,10 +35,10 @@ export {
 } from "./contexts/ValidationProvider.svelte";
 
 export {
-  setRepeatScope,
+  default as RepeatScopeProvider,
   getRepeatScope,
   type RepeatScopeValue,
-} from "./contexts/repeat-scope.js";
+} from "./contexts/RepeatScopeProvider.svelte";
 
 // =============================================================================
 // Schema

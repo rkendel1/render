@@ -10,7 +10,7 @@
   import type { ComponentRegistry, ComponentRenderer } from "./types.js";
   import { getStateContext } from "./contexts/StateProvider.svelte";
   import { getActionContext } from "./contexts/ActionProvider.svelte";
-  import { getRepeatScope } from "./contexts/repeat-scope.js";
+  import { getRepeatScope } from "./contexts/RepeatScopeProvider.svelte";
   import RepeatChildren from "./RepeatChildren.svelte";
   import Self from "./ElementRenderer.svelte";
 
