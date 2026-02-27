@@ -77,11 +77,14 @@ embed.mountJSON(container);
 ### With Runtime UI Resolution
 
 ```typescript
+// Track context externally
+let appContext = { user: "Alice", count: 0 };
+
 const embed = createBaseEmbed({
   registry,
-  context: { user: "Alice", count: 0 },
+  context: appContext,
   runtime: {
-    resolveUI: (ctx) => {
+    resolveUI: (ctx: any) => {
       // Dynamically generate UI from context
       return {
         type: "Card",
@@ -96,7 +99,9 @@ const embed = createBaseEmbed({
     },
     dispatch: (action, params) => {
       if (action === "increment") {
-        embed.updateContext({ ...ctx, count: ctx.count + 1 });
+        // Update external context
+        appContext = { ...appContext, count: appContext.count + 1 };
+        embed.updateContext(appContext);
       }
     },
     subscribe: (signal, handler) => {

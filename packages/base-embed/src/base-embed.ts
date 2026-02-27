@@ -276,7 +276,10 @@ export class BaseEmbed {
    * Convert RenderNode to Spec format
    */
   private renderNodeToSpec(node: RenderNode): Spec {
-    const elements: Record<string, any> = {};
+    const elements: Record<
+      string,
+      { type: string; props: Record<string, unknown>; children: string[] }
+    > = {};
     let counter = 0;
 
     const processNode = (n: RenderNode, parentKey?: string): string => {
