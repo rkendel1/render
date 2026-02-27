@@ -92,7 +92,7 @@ describe("@json-render/wc-builder", () => {
 
       const classCode = builder.generateClass();
 
-      // Boolean attributes should use: value !== 'false' && value !== null
+      // boolean attributes should use: value !== 'false' && value !== null
       expect(classCode).toContain("value !== 'false' && value !== null");
     });
   });
