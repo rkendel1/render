@@ -1,10 +1,10 @@
-import type { NextConfig } from "next";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   serverExternalPackages: ["@ai-sdk/openai"],
   webpack: (config) => {
     config.resolve.alias["@ai-sdk/openai"] = join(
