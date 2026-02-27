@@ -261,6 +261,18 @@ card.setAttribute("title", "Updated");
 
 See the `examples/wc-builder/` directory for complete examples.
 
+## Limitations
+
+### Function Serialization
+
+The builder uses `Function.prototype.toString()` to serialize render functions into the bundle. This has some limitations:
+
+- Functions with closures or external dependencies may not work correctly
+- Complex render logic may not serialize properly
+- For production use, consider using a proper bundling tool (webpack, rollup, etc.)
+
+To work around this, keep render functions simple and self-contained, or use a build tool to bundle the components properly.
+
 ## License
 
 Apache-2.0

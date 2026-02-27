@@ -100,11 +100,11 @@ describe("@json-render/wc-builder", () => {
 
       const components: Record<string, ComponentDefinition> = {
         Card: {
-          contract: catalog.components.Card,
+          contract: catalog.components.Card!,
           render: () => document.createElement("div"),
         },
         Button: {
-          contract: catalog.components.Button,
+          contract: catalog.components.Button!,
           render: () => document.createElement("button"),
         },
       };
@@ -132,7 +132,7 @@ describe("@json-render/wc-builder", () => {
 
       const components: Record<string, ComponentDefinition> = {
         Alert: {
-          contract: catalog.components.Alert,
+          contract: catalog.components.Alert!,
           render: () => document.createElement("div"),
         },
       };
@@ -160,7 +160,7 @@ describe("@json-render/wc-builder", () => {
 
       const components: Record<string, ComponentDefinition> = {
         Card: {
-          contract: catalog.components.Card,
+          contract: catalog.components.Card!,
           render: () => document.createElement("div"),
         },
       };
@@ -186,7 +186,7 @@ describe("@json-render/wc-builder", () => {
 
       const components: Record<string, ComponentDefinition> = {
         Simple: {
-          contract: catalog.components.Simple,
+          contract: catalog.components.Simple!,
           render: () => document.createElement("div"),
         },
       };
@@ -213,7 +213,7 @@ describe("@json-render/wc-builder", () => {
 
       const components: Record<string, ComponentDefinition> = {
         Text: {
-          contract: catalog.components.Text,
+          contract: catalog.components.Text!,
           render: () => document.createElement("span"),
         },
       };
@@ -238,7 +238,7 @@ describe("@json-render/wc-builder", () => {
 
       const components: Record<string, ComponentDefinition> = {
         Box: {
-          contract: catalog.components.Box,
+          contract: catalog.components.Box!,
           render: () => document.createElement("div"),
         },
       };

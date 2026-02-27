@@ -72,7 +72,12 @@ export abstract class RenderOnlyComponent extends HTMLElement {
    */
   private render(): void {
     const content = this.renderContent();
-    this._renderRoot.innerHTML = "";
+
+    // Clear existing content efficiently
+    while (this._renderRoot.firstChild) {
+      this._renderRoot.removeChild(this._renderRoot.firstChild);
+    }
+
     this._renderRoot.appendChild(content);
   }
 
@@ -176,6 +181,9 @@ export class Renderer {
 
   /**
    * Render children elements
+   *
+   * Note: This builds a flat list of RenderNode metadata.
+   * The actual DOM rendering happens in renderElement().
    */
   private renderChildren(element: UIElement, spec: Spec): RenderNode[] {
     if (!element.children || element.children.length === 0) {
@@ -190,8 +198,13 @@ export class Renderer {
         continue;
       }
 
-      const rendered = this.renderElement(childElement, spec);
-      if (!rendered) {
+      // Check visibility before adding
+      const stateModel: Record<string, unknown> = spec.state || {};
+      const isVisible =
+        !childElement.visible ||
+        evaluateVisibility(childElement.visible, { stateModel });
+
+      if (!isVisible) {
         continue;
       }
 

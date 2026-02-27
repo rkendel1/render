@@ -96,13 +96,18 @@ class ${className} extends HTMLElement {
 
   render() {
     const props = this.getProps();
-    const children = Array.from(this.children);
+    const children = [];
     const context = this.getContext();
     
-    const result = renderFunctions['${this.contract.name}'](props, [], context);
+    const result = renderFunctions['${this.contract.name}'](props, children, context);
     
-    this.shadowRoot.innerHTML = '';
-    this.shadowRoot.appendChild(result);
+    if (this.shadowRoot) {
+      // Clear existing content efficiently
+      while (this.shadowRoot.firstChild) {
+        this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+      }
+      this.shadowRoot.appendChild(result);
+    }
   }
 
   getProps() {
@@ -278,6 +283,10 @@ export class CatalogBuilder {
 
   /**
    * Generate the render functions object
+   *
+   * Note: Function serialization with toString() has limitations:
+   * - Functions with closures or external dependencies may not work correctly
+   * - For production use, consider using a proper bundling tool
    */
   private generateRenderFunctionsObject(): string {
     const functions: string[] = [];

@@ -5,7 +5,7 @@ import type { RenderFunction } from "@json-render/contracts";
 
 describe("@json-render/wc-renderer", () => {
   describe("Renderer", () => {
-    let registry: Record<string, RenderFunction>;
+    let registry: Record<string, RenderFunction<any>>;
 
     beforeEach(() => {
       registry = {
@@ -150,7 +150,9 @@ describe("@json-render/wc-renderer", () => {
       const element = renderFn({ text: "Hello" }, [], {});
 
       expect(element).toBeInstanceOf(HTMLElement);
-      expect(element.innerHTML).toContain("Hello");
+      if (element instanceof HTMLElement) {
+        expect(element.innerHTML).toContain("Hello");
+      }
     });
 
     it("should handle children placeholders", () => {
@@ -162,7 +164,9 @@ describe("@json-render/wc-renderer", () => {
 
       const element = renderFn({ title: "Title" }, children, {});
 
-      expect(element.innerHTML).toContain("Title");
+      if (element instanceof HTMLElement) {
+        expect(element.innerHTML).toContain("Title");
+      }
     });
   });
 

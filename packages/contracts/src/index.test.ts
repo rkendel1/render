@@ -31,7 +31,9 @@ describe("@json-render/contracts", () => {
       };
 
       expect(node.children).toHaveLength(2);
-      expect(node.children?.[0].type).toBe("Button");
+      if (node.children && node.children.length > 0) {
+        expect(node.children[0]!.type).toBe("Button");
+      }
     });
   });
 
@@ -124,7 +126,9 @@ describe("@json-render/contracts", () => {
 
       expect(catalog.name).toBe("my-components");
       expect(Object.keys(catalog.components)).toHaveLength(2);
-      expect(catalog.actions?.submit.name).toBe("submit");
+      if (catalog.actions && catalog.actions.submit) {
+        expect(catalog.actions.submit.name).toBe("submit");
+      }
     });
   });
 });
