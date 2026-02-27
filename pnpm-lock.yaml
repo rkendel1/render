@@ -867,6 +867,28 @@ importers:
         specifier: ^3.2.5
         version: 3.2.5(typescript@5.9.3)
 
+  packages/base-embed:
+    dependencies:
+      '@json-render/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@json-render/core':
+        specifier: workspace:*
+        version: link:../core
+      '@json-render/wc-renderer':
+        specifier: workspace:*
+        version: link:../wc-renderer
+    devDependencies:
+      '@internal/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+
   packages/codegen:
     dependencies:
       '@json-render/core':
@@ -16627,7 +16649,7 @@ snapshots:
   '@stripe/ui-extension-tools@0.0.1(@babel/core@7.29.0)(babel-jest@27.5.1(@babel/core@7.29.0))':
     dependencies:
       '@types/jest': 28.1.8
-      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@9.39.2(jiti@2.6.1))(typescript@4.9.5))(eslint@8.57.1)(typescript@4.9.5)
+      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@4.9.5))(eslint@8.57.1)(typescript@4.9.5)
       '@typescript-eslint/parser': 5.62.0(eslint@8.57.1)(typescript@4.9.5)
       eslint: 8.57.1
       eslint-plugin-react: 7.37.5(eslint@8.57.1)
@@ -16982,7 +17004,7 @@ snapshots:
       '@types/node': 22.19.6
     optional: true
 
-  '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@9.39.2(jiti@2.6.1))(typescript@4.9.5))(eslint@8.57.1)(typescript@4.9.5)':
+  '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@4.9.5))(eslint@8.57.1)(typescript@4.9.5)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
       '@typescript-eslint/parser': 5.62.0(eslint@8.57.1)(typescript@4.9.5)
