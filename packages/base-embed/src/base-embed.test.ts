@@ -125,10 +125,13 @@ describe("BaseEmbed", () => {
 
   describe("updateContext", () => {
     it("should update context and re-render", () => {
-      const resolveUI = vi.fn((ctx: any) => ({
-        type: "Text",
-        props: { content: ctx.message },
-      }));
+      const resolveUI = vi.fn((ctx: unknown) => {
+        const context = ctx as { message: string };
+        return {
+          type: "Text",
+          props: { content: context.message },
+        };
+      });
 
       const registry: Record<string, RenderFunction> = {
         Text: (props) => {

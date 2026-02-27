@@ -198,8 +198,9 @@ export class BaseEmbed {
     return {
       getValue: runtime?.resolveUI
         ? (path: string) => {
-            // Use runtime to resolve values
-            // This is a simplified implementation
+            // TODO: Implement proper getValue for accessing nested context values
+            // This should use a path resolver to get values from this.props.context
+            // For now, returns undefined as getValue is optional in render-only mode
             return undefined;
           }
         : undefined,
