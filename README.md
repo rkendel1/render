@@ -17,6 +17,10 @@ npm install @json-render/core @json-render/remotion
 npm install @json-render/core @json-render/react-pdf
 # or for Vue
 npm install @json-render/core @json-render/vue
+# or for Web Components (framework-agnostic, zero dependencies)
+npm install @json-render/core @json-render/wc-renderer @json-render/contracts
+# or for building distributable Web Component bundles
+npm install @json-render/wc-builder @json-render/contracts
 ```
 
 ## Why json-render?
@@ -122,6 +126,9 @@ function Dashboard({ spec }) {
 | `@json-render/zustand` | Zustand adapter for `StateStore` |
 | `@json-render/jotai` | Jotai adapter for `StateStore` |
 | `@json-render/xstate` | XState Store (atom) adapter for `StateStore` |
+| **`@json-render/contracts`** | **Type contracts for Web Components (render-only architecture)** |
+| **`@json-render/wc-renderer`** | **Web Component render engine - zero dependencies, pure presentation** |
+| **`@json-render/wc-builder`** | **Catalog → custom element compiler for distributable WC bundles** |
 
 ## Renderers
 
@@ -285,6 +292,70 @@ const spec = {
 
 // Render to buffer, stream, or file
 const buffer = await renderToBuffer(spec);
+```
+
+### Web Components (Framework-Agnostic)
+
+**Render-only, zero-dependency custom elements for maximum portability:**
+
+```typescript
+import { Renderer, createSimpleRenderer } from "@json-render/wc-renderer";
+import type { RenderFunction } from "@json-render/contracts";
+
+// Define render functions
+const registry: Record<string, RenderFunction> = {
+  Card: createSimpleRenderer((props: { title: string }) => {
+    return `<div class="card"><h3>${props.title}</h3></div>`;
+  }),
+  Button: createSimpleRenderer((props: { label: string }) => {
+    return `<button>${props.label}</button>`;
+  }),
+};
+
+// Create renderer with external context
+const renderer = new Renderer(registry, {
+  getValue: (path) => externalStore.get(path),
+  triggerAction: (action, params) => externalRuntime.dispatch(action, params),
+});
+
+const element = renderer.render(spec);
+document.body.appendChild(element);
+```
+
+**Build distributable custom elements:**
+
+```typescript
+import { buildCatalog } from "@json-render/wc-builder";
+import type { CatalogContract, ComponentDefinition } from "@json-render/contracts";
+
+const catalog: CatalogContract = {
+  name: "my-components",
+  components: {
+    Card: {
+      name: "Card",
+      props: [{ name: "title", type: "string", required: true }],
+    },
+  },
+};
+
+const components: Record<string, ComponentDefinition> = {
+  Card: {
+    contract: catalog.components.Card,
+    render: (props) => {
+      const div = document.createElement("div");
+      div.innerHTML = `<h3>${props.title}</h3>`;
+      return div;
+    },
+  },
+};
+
+const { bundle, types } = buildCatalog(catalog, components, {
+  prefix: "my",
+  generateTypes: true,
+});
+
+// Output: JavaScript bundle + TypeScript definitions
+// Use: <my-card title="Hello"></my-card>
 ```
 
 ## Features
