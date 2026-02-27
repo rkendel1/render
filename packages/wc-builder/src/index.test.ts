@@ -80,6 +80,21 @@ describe("@json-render/wc-builder", () => {
       expect(types).toContain("DividerProps");
       expect(types).toContain("{}");
     });
+
+    it("should generate correct boolean attribute handling", () => {
+      const contract: ComponentContract = {
+        name: "Toggle",
+        props: [{ name: "checked", type: "boolean", required: false }],
+      };
+
+      const renderFn = () => document.createElement("div");
+      const builder = new ComponentBuilder(contract, renderFn);
+
+      const classCode = builder.generateClass();
+
+      // boolean attributes should use: value !== 'false' && value !== null
+      expect(classCode).toContain("value !== 'false' && value !== null");
+    });
   });
 
   describe("CatalogBuilder", () => {

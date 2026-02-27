@@ -117,7 +117,7 @@ class ${className} extends HTMLElement {
         (prop) => `
     if (this.hasAttribute('${prop.name}')) {
       const value = this.getAttribute('${prop.name}');
-      props['${prop.name}'] = ${prop.type === "number" ? "parseFloat(value)" : prop.type === "boolean" ? "value === 'true'" : "value"};
+      props['${prop.name}'] = ${prop.type === "number" ? "parseFloat(value)" : prop.type === "boolean" ? "value !== 'false' && value !== null" : "value"};
     }
     `,
       )
