@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BaseEmbed Example</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      h1 {
+        color: #333;
+      }
+      #app {
+        border: 1px solid #ddd;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+      }
+      .card {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        margin: 0.5rem 0;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 0.25rem;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>BaseEmbed Example</h1>
+    <p>This example demonstrates the BaseEmbed component with render-only Web Components.</p>
+    
+    <div id="app"></div>
+
+    <div style="margin-top: 2rem;">
+      <h2>Controls</h2>
+      <button onclick="updateUser()">Change User</button>
+      <button onclick="incrementCount()">Increment Count</button>
+      <button onclick="resetContext()">Reset</button>
+    </div>
+
+    <script type="module">
+      // This is a conceptual example - would need actual built package
+      // import { createBaseEmbed } from '@json-render/base-embed';
+
+      // Simulated BaseEmbed for demonstration
+      class BaseEmbedExample {
+        constructor() {
+          this.context = { user: 'Alice', count: 0 };
+          this.container = document.getElementById('app');
+        }
+
+        render() {
+          this.container.innerHTML = `
+            <div class="card">
+              <h3>Hello ${this.context.user}!</h3>
+              <p>Count: ${this.context.count}</p>
+              <button onclick="window.embedInstance.dispatch('increment')">Click Me</button>
+            </div>
+          `;
+        }
+
+        dispatch(action, params) {
+          console.log('Action:', action, params);
+          if (action === 'increment') {
+            this.updateContext({ ...this.context, count: this.context.count + 1 });
+          }
+        }
+
+        updateContext(newContext) {
+          this.context = newContext;
+          this.render();
+        }
+
+        mount() {
+          this.render();
+          return this.container;
+        }
+      }
+
+      // Create and mount instance
+      window.embedInstance = new BaseEmbedExample();
+      window.embedInstance.mount();
+
+      // Global control functions
+      window.updateUser = () => {
+        const names = ['Alice', 'Bob', 'Charlie', 'Diana'];
+        const currentUser = window.embedInstance.context.user;
+        const currentIndex = names.indexOf(currentUser);
+        const nextUser = names[(currentIndex + 1) % names.length];
+        window.embedInstance.updateContext({
+          ...window.embedInstance.context,
+          user: nextUser
+        });
+      };
+
+      window.incrementCount = () => {
+        window.embedInstance.dispatch('increment');
+      };
+
+      window.resetContext = () => {
+        window.embedInstance.updateContext({ user: 'Alice', count: 0 });
+      };
+    </script>
+  </body>
+</html>
